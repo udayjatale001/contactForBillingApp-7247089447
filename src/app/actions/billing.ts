@@ -2,8 +2,6 @@
 
 import { z } from 'zod';
 import { billingSchema } from '@/lib/types';
-import { generateCustomerNotification } from '@/ai/flows/generate-customer-notification';
-import { summarizeSaleForOwner } from '@/ai/flows/summarize-sale-for-owner';
 
 const fullBillSchema = billingSchema.extend({
     totalCarat: z.number(),
