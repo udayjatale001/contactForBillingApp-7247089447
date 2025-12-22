@@ -57,7 +57,7 @@ export function BillSummaryDialog({ result, open, onOpenChange }: BillSummaryDia
                 <Separator />
                 <DetailItem label="Paid To" value={billDetails.paidTo} />
                 <DetailItem label="Payment Mode" value={billDetails.paymentMode} />
-                <DetailItem label="Date &amp; Time" value={new Date(billDetails.createdAt).toLocaleString()} />
+                <DetailItem label="Date & Time" value={new Date(billDetails.createdAt).toLocaleString()} />
             </div>
         </div>
 
