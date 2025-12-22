@@ -26,7 +26,7 @@ export function BillSummaryDialog({ result, open, onOpenChange }: BillSummaryDia
     return null;
   }
   
-  const { billDetails, customerMessage, ownerMessage } = result;
+  const { billDetails } = result;
 
   const DetailItem = ({ label, value, className }: { label: string, value: React.ReactNode, className?: string}) => (
     <div className={`flex justify-between items-center ${className}`}>
@@ -41,7 +41,7 @@ export function BillSummaryDialog({ result, open, onOpenChange }: BillSummaryDia
         <DialogHeader>
           <DialogTitle>Bill Generated Successfully</DialogTitle>
           <DialogDescription>
-            A summary of the bill and generated notifications.
+            A summary of the generated bill.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 py-4">
@@ -57,21 +57,7 @@ export function BillSummaryDialog({ result, open, onOpenChange }: BillSummaryDia
                 <Separator />
                 <DetailItem label="Paid To" value={billDetails.paidTo} />
                 <DetailItem label="Payment Mode" value={billDetails.paymentMode} />
-                <DetailItem label="Date & Time" value={new Date(billDetails.createdAt).toLocaleString()} />
-            </div>
-
-            <div className="space-y-2">
-                <h3 className="font-semibold text-sm">Customer Notification (Generated)</h3>
-                <div className="text-sm p-3 bg-secondary rounded-md italic">
-                    "{customerMessage}"
-                </div>
-            </div>
-
-            <div className="space-y-2">
-                <h3 className="font-semibold text-sm">Owner Notification (Generated)</h3>
-                 <div className="text-sm p-3 bg-secondary rounded-md italic">
-                    "{ownerMessage}"
-                </div>
+                <DetailItem label="Date &amp; Time" value={new Date(billDetails.createdAt).toLocaleString()} />
             </div>
         </div>
 

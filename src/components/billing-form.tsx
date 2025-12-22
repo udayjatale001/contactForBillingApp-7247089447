@@ -299,7 +299,7 @@ export function BillingForm() {
                 </div>
               </CardContent>
               <Button type="submit" className="w-full h-12 rounded-t-none text-lg" disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="animate-spin" /> : 'Generate Bill & Send Notifications'}
+                {isSubmitting ? <Loader2 className="animate-spin" /> : 'Generate Bill'}
               </Button>
             </Card>
           </div>

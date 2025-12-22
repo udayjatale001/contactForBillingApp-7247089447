@@ -17,7 +17,7 @@ type FullBillDetails = z.infer<typeof fullBillSchema>;
 
 export async function createBill(
   data: FullBillDetails
-): Promise<{ success: true; billDetails: FullBillDetails; customerMessage: string; ownerMessage: string; } | { success: false; error: string; }> {
+): Promise<{ success: true; billDetails: FullBillDetails; } | { success: false; error: string; }> {
   const validatedData = fullBillSchema.safeParse(data);
 
   if (!validatedData.success) {
@@ -30,35 +30,14 @@ export async function createBill(
     // Here you would save the 'bill' object to your Firestore database.
     // For this demo, we'll just log it to the console.
     console.log('Saving bill to Firestore:', bill);
-
-    // Generate notification for the customer
-    const customerNotification = await generateCustomerNotification({
-      customerName: bill.customerName,
-      totalCarat: bill.totalCarat,
-      paidAmount: bill.paidAmount,
-      dueAmount: bill.dueAmount,
-    });
-
-    // Generate summary for the owner
-    const ownerSummary = await summarizeSaleForOwner({
-      customerName: bill.customerName,
-      totalCarat: bill.totalCarat,
-      caratType: bill.caratType,
-      totalAmount: bill.totalAmount,
-      paidAmount: bill.paidAmount,
-      paidTo: bill.paidTo,
-      paymentMode: bill.paymentMode,
-    });
     
     return {
       success: true,
       billDetails: bill,
-      customerMessage: customerNotification.message,
-      ownerMessage: ownerSummary.summaryMessage,
     };
 
   } catch (error) {
     console.error('Error creating bill:', error);
-    return { success: false, error: 'Failed to process bill and generate notifications.' };
+    return { success: false, error: 'Failed to process bill.' };
   }
 }
