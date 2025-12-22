@@ -48,15 +48,13 @@ export function BillingForm() {
     defaultValues: {
       paymentMode: 'Cash',
       paidTo: 'Gopal Dada',
-      smallCarat: 0,
-      bigCarat: 0,
     },
   });
 
   const { watch, trigger, formState: { errors } } = form;
-  const smallCarat = watch('smallCarat', 0);
-  const bigCarat = watch('bigCarat', 0);
-  const paidAmount = watch('paidAmount', 0);
+  const smallCarat = watch('smallCarat');
+  const bigCarat = watch('bigCarat');
+  const paidAmount = watch('paidAmount');
 
   const totalAmount = React.useMemo(() => {
     const smallCaratAmount = (Number(smallCarat) || 0) * 17;
@@ -70,7 +68,7 @@ export function BillingForm() {
   }, [totalAmount, paidAmount]);
 
   React.useEffect(() => {
-    if (paidAmount > totalAmount) {
+    if (paidAmount && totalAmount > 0 && paidAmount > totalAmount) {
         form.setError('paidAmount', {
             type: 'manual',
             message: 'Paid amount cannot be greater than total amount.'
@@ -86,7 +84,7 @@ export function BillingForm() {
   async function onSubmit(data: BillingFormValues) {
     setIsSubmitting(true);
     const isValid = await trigger();
-    if (!isValid || paidAmount > totalAmount) {
+    if (!isValid || (paidAmount && totalAmount > 0 && paidAmount > totalAmount)) {
         setIsSubmitting(false);
         toast({
             variant: 'destructive',
@@ -197,7 +195,7 @@ export function BillingForm() {
                                 <FormItem>
                                     <FormLabel>Small Carat (Rate: ₹17)</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder="e.g., 10" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                                    <Input type="number" placeholder="e.g., 10" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -210,7 +208,7 @@ export function BillingForm() {
                                 <FormItem>
                                     <FormLabel>Big Carat (Rate: ₹20)</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder="e.g., 5" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                                    <Input type="number" placeholder="e.g., 5" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -232,7 +230,7 @@ export function BillingForm() {
                             <FormItem>
                                 <FormLabel>Paid Amount</FormLabel>
                                 <FormControl>
-                                <Input type="number" placeholder="Enter paid amount" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)}/>
+                                <Input type="number" placeholder="Enter paid amount" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

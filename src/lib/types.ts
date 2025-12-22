@@ -12,11 +12,11 @@ export const billingSchema = z.object({
     .nonnegative({ message: 'Out Carat cannot be negative.' }),
   smallCarat: z.coerce
     .number()
-    .nonnegative({ message: 'Small Carat cannot be negative.' })
+    .positive({ message: 'Small Carat must be a positive number.' })
     .optional(),
   bigCarat: z.coerce
     .number()
-    .nonnegative({ message: 'Big Carat cannot be negative.' })
+    .positive({ message: 'Big Carat must be a positive number.' })
     .optional(),
   paidAmount: z.coerce
     .number({ required_error: 'Paid amount is required.' })
@@ -27,6 +27,9 @@ export const billingSchema = z.object({
   paymentMode: z.enum(['Online Payment', 'Cash'], {
     required_error: 'You need to select a payment mode.',
   }),
+}).refine(data => data.smallCarat || data.bigCarat, {
+    message: "At least one carat type (Small or Big) must be provided.",
+    path: ["smallCarat"],
 });
 
 export type BillingFormValues = z.infer<typeof billingSchema>;
