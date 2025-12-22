@@ -133,6 +133,7 @@ export function OwnerDashboard() {
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "var(--radius)",
                       }}
+                      formatter={(value: number) => `₹${value.toLocaleString()}`}
                     />
                     <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
