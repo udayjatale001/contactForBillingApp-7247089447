@@ -1,0 +1,212 @@
+{
+  "entities": {
+    "Bill": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Bill",
+      "type": "object",
+      "description": "Represents a billing record for a customer's fruit purchase.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the bill."
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Name of the customer."
+        },
+        "inCarat": {
+          "type": "number",
+          "description": "Carat count at the beginning."
+        },
+        "outCarat": {
+          "type": "number",
+          "description": "Carat count at the end."
+        },
+        "totalCarat": {
+          "type": "number",
+          "description": "Total carat count (In Carat - Out Carat)."
+        },
+        "caratType": {
+          "type": "string",
+          "description": "Type of carat (Small Carat or Big Carat)."
+        },
+        "rate": {
+          "type": "number",
+          "description": "Rate per carat."
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total amount to be paid."
+        },
+        "paidAmount": {
+          "type": "number",
+          "description": "Amount paid by the customer."
+        },
+        "dueAmount": {
+          "type": "number",
+          "description": "Remaining amount to be paid (Total Amount - Paid Amount)."
+        },
+        "paidTo": {
+          "type": "string",
+          "description": "Name of the person to whom the payment was made (Gopal Dada, Yuvraj Dada, Suyash Dada, Gaju Dada)."
+        },
+        "paymentMode": {
+          "type": "string",
+          "description": "Mode of payment (PhonePe or Cash)."
+        },
+        "kharch": {
+          "type": "number",
+          "description": "Expense amount."
+        },
+        "ethiliumGas": {
+          "type": "number",
+          "description": "Cost of ethilium gas."
+        },
+        "otherBill": {
+          "type": "number",
+          "description": "Other bill amount."
+        },
+        "dateAndTime": {
+          "type": "string",
+          "description": "Date and time when the bill was generated.",
+          "format": "date-time"
+        },
+        "managerId": {
+          "type": "string",
+          "description": "Reference to the Manager who created the bill. (Relationship: Manager 1:N Bill)"
+        }
+      },
+      "required": [
+        "id",
+        "customerName",
+        "inCarat",
+        "outCarat",
+        "totalCarat",
+        "caratType",
+        "rate",
+        "totalAmount",
+        "paidAmount",
+        "dueAmount",
+        "paidTo",
+        "paymentMode",
+        "dateAndTime",
+        "managerId"
+      ]
+    },
+    "Manager": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Manager",
+      "type": "object",
+      "description": "Represents a manager user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the manager."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the manager.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the manager."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name"
+      ]
+    },
+    "Owner": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Owner",
+      "type": "object",
+      "description": "Represents the owner of the business.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the owner."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the owner.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the owner."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/owners/{ownerId}",
+        "definition": {
+          "entityName": "Owner",
+          "schema": {
+            "$ref": "#/backend/entities/Owner"
+          },
+          "description": "Stores owner profiles. Each document represents a single owner.",
+          "params": [
+            {
+              "name": "ownerId",
+              "description": "The unique identifier of the owner. This is usually the Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/managers/{managerId}",
+        "definition": {
+          "entityName": "Manager",
+          "schema": {
+            "$ref": "#/backend/entities/Manager"
+          },
+          "description": "Stores manager profiles. Each document represents a single manager.",
+          "params": [
+            {
+              "name": "managerId",
+              "description": "The unique identifier of the manager. This is usually the Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/managers/{managerId}/bills/{billId}",
+        "definition": {
+          "entityName": "Bill",
+          "schema": {
+            "$ref": "#/backend/entities/Bill"
+          },
+          "description": "Stores bills created by managers. Includes denormalized 'managerId' for authorization independence.",
+          "params": [
+            {
+              "name": "managerId",
+              "description": "The unique identifier of the manager who created the bill. This is usually the Firebase Auth UID."
+            },
+            {
+              "name": "billId",
+              "description": "The unique identifier of the bill."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This Firestore structure prioritizes security, scalability, and debuggability following the specified design principles. It leverages denormalization to ensure Authorization Independence, structural segregation for homogeneous security postures, and access modeling for consistent authorization patterns. The structure is designed to handle the app's core features, including manager billing, bill generation, automated messaging, and owner panel functionalities.\n\n**Authorization Independence:** The `bills` subcollection under each `manager` document includes the `managerId` field. This denormalization is CRUCIAL. It allows security rules to validate that the manager creating/modifying the bill has the correct access without needing to perform a `get()` operation on the parent `manager` document.\n\n**Structural Segregation:**\n*   `managers` and `owners` are in separate collections, reflecting different access requirements. This prevents mixing data with different security needs.\n\n**Access Modeling:**\n*   **Path-Based Ownership:** `/managers/{managerId}/bills/{billId}` establishes clear ownership of bills by managers.\n\n**QAPs (Rules Are Not Filters):**\n*   Secure `list` operations are supported by the path-based ownership model. Listing bills under a specific manager is secure because rules can easily verify the manager's authentication and ID against the path. Security rules will check that a manager is authenticated, and that the manager id in the `request.auth.uid` matches the managerId in the path.\n\n**Invariants:**\n*   The structure maintains ownership integrity (managerId)."
+  }
+}
