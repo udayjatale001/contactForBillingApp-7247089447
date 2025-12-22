@@ -302,20 +302,20 @@ export function BillingForm() {
               <CardContent className="space-y-4 text-base">
                 <div className="flex justify-between font-bold text-lg">
                   <span className="text-muted-foreground">Total Amount:</span>
-                  <span>rs{totalAmount.toLocaleString()}</span>
+                  <span>{totalAmount.toLocaleString()}rs</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Paid Amount:</span>
-                  <span>rs{(Number(paidAmount) || 0).toLocaleString()}</span>
+                  <span>{(Number(paidAmount) || 0).toLocaleString()}rs</span>
                 </div>
                 <Separator />
                 <div className={cn("flex justify-between font-bold text-xl", dueAmount > 0 ? 'text-destructive' : 'text-primary')}>
                   <span className="text-muted-foreground">Due Amount:</span>
-                  <span>rs{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}</span>
+                  <span>{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}rs</span>
                 </div>
                  {dueAmount < 0 && (
-                     <p className="text-sm text-green-600 font-medium">Change to return: rs{(-dueAmount).toLocaleString()}</p>
+                     <p className="text-sm text-green-600 font-medium">Change to return: {(-dueAmount).toLocaleString()}rs</p>
                  )}
               </CardContent>
               <Button type="submit" className="w-full h-12 rounded-t-none text-lg" disabled={isSubmitting}>

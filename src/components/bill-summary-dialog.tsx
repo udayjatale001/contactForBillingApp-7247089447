@@ -51,9 +51,9 @@ export function BillSummaryDialog({ result, open, onOpenChange }: BillSummaryDia
                 <Separator />
                 {billDetails.smallCarat && billDetails.smallCarat > 0 && <DetailItem label="Small Carat" value={billDetails.smallCarat} />}
                 {billDetails.bigCarat && billDetails.bigCarat > 0 && <DetailItem label="Big Carat" value={billDetails.bigCarat} />}
-                <DetailItem label="Total Amount" value={`rs${billDetails.totalAmount.toLocaleString()}`} className="font-bold text-base"/>
-                <DetailItem label="Paid Amount" value={`rs${billDetails.paidAmount.toLocaleString()}`} />
-                <DetailItem label="Due Amount" value={<Badge variant={billDetails.dueAmount > 0 ? "destructive" : "default"}>rs{billDetails.dueAmount.toLocaleString()}</Badge>} />
+                <DetailItem label="Total Amount" value={`${billDetails.totalAmount.toLocaleString()}rs`} className="font-bold text-base"/>
+                <DetailItem label="Paid Amount" value={`${billDetails.paidAmount.toLocaleString()}rs`} />
+                <DetailItem label="Due Amount" value={<Badge variant={billDetails.dueAmount > 0 ? "destructive" : "default"}>{billDetails.dueAmount.toLocaleString()}rs</Badge>} />
                 <Separator />
                 <DetailItem label="Paid To" value={billDetails.paidTo} />
                 <DetailItem label="Payment Mode" value={billDetails.paymentMode} />

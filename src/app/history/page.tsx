@@ -92,12 +92,12 @@ export default function HistoryPage() {
                   className="cursor-pointer"
                 >
                   <TableCell>{bill.customerName}</TableCell>
-                  <TableCell>rs{bill.totalAmount.toLocaleString()}</TableCell>
+                  <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
                   <TableCell>
                     <Badge
                       variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}
                     >
-                      rs{bill.dueAmount.toLocaleString()}
+                      {bill.dueAmount.toLocaleString()}rs
                     </Badge>
                   </TableCell>
                   <TableCell>{bill.createdAt.toLocaleDateString()}</TableCell>
@@ -130,15 +130,15 @@ export default function HistoryPage() {
                   label="Carat Type"
                   value={selectedBill.caratType}
                 />
-                <DetailItem label="Rate" value={`rs${selectedBill.rate}`} />
+                <DetailItem label="Rate" value={`${selectedBill.rate}rs`} />
                 <DetailItem
                   label="Total Amount"
-                  value={`rs${selectedBill.totalAmount.toLocaleString()}`}
+                  value={`${selectedBill.totalAmount.toLocaleString()}rs`}
                   className="font-bold text-base"
                 />
                 <DetailItem
                   label="Paid Amount"
-                  value={`rs${selectedBill.paidAmount.toLocaleString()}`}
+                  value={`${selectedBill.paidAmount.toLocaleString()}rs`}
                 />
                 <DetailItem
                   label="Due Amount"
@@ -148,7 +148,7 @@ export default function HistoryPage() {
                         selectedBill.dueAmount > 0 ? 'destructive' : 'default'
                       }
                     >
-                      rs{selectedBill.dueAmount.toLocaleString()}
+                      {selectedBill.dueAmount.toLocaleString()}rs
                     </Badge>
                   }
                 />

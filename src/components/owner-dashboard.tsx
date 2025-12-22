@@ -84,7 +84,7 @@ export function OwnerDashboard() {
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">rs{mockBills.reduce((sum, bill) => sum + bill.paidAmount, 0).toLocaleString()}</div>
+            <div className="text-2xl font-bold">{mockBills.reduce((sum, bill) => sum + bill.paidAmount, 0).toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">in the last 6 months</p>
           </CardContent>
         </Card>
@@ -93,7 +93,7 @@ export function OwnerDashboard() {
             <CardTitle className="text-sm font-medium">Total Due</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">rs{dueBills.reduce((sum, bill) => sum + bill.dueAmount, 0).toLocaleString()}</div>
+            <div className="text-2xl font-bold text-destructive">{dueBills.reduce((sum, bill) => sum + bill.dueAmount, 0).toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">{dueBills.length} active dues</p>
           </CardContent>
         </Card>
@@ -126,14 +126,14 @@ export function OwnerDashboard() {
             <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={salesData}>
                     <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `rs${value / 1000}k`}/>
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value / 1000}krs`}/>
                     <Tooltip
                       contentStyle={{
                         background: "hsl(var(--background))",
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "var(--radius)",
                       }}
-                      formatter={(value: number) => `rs${value.toLocaleString()}`}
+                      formatter={(value: number) => `${value.toLocaleString()}rs`}
                     />
                     <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -160,7 +160,7 @@ export function OwnerDashboard() {
                   <TableRow key={bill.id}>
                     <TableCell>{bill.customerName}</TableCell>
                     <TableCell className="text-right font-medium text-destructive">
-                      rs{bill.dueAmount.toLocaleString()}
+                      {bill.dueAmount.toLocaleString()}rs
                     </TableCell>
                   </TableRow>
                 ))}
@@ -190,10 +190,10 @@ export function OwnerDashboard() {
                 {recentBills.map((bill) => (
                   <TableRow key={bill.id}>
                     <TableCell>{bill.customerName}</TableCell>
-                    <TableCell>rs{bill.totalAmount.toLocaleString()}</TableCell>
+                    <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
                     <TableCell>
                       <Badge variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}>
-                         rs{bill.dueAmount.toLocaleString()}
+                         {bill.dueAmount.toLocaleString()}rs
                       </Badge>
                     </TableCell>
                     <TableCell>{bill.createdAt.toLocaleDateString()}</TableCell>
