@@ -1,12 +1,21 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { AppLayout } from '@/components/app-layout';
 import { Toaster } from '@/components/ui/toaster';
+import { FirebaseClientProvider } from '@/firebase';
+import { AuthGuard } from '@/components/auth-guard';
+import { Inter } from 'next/font/google';
+import { cn } from '@/lib/utils';
+import { RootStateProvider } from '@/components/root-state-provider';
 
 export const metadata: Metadata = {
   title: 'Aanand Sagar Billing App',
   description: 'Billing application for Aanand Sagar Fresh Fruit',
 };
+
+const fontSans = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+});
 
 export default function RootLayout({
   children,
@@ -23,8 +32,12 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased">
-        <AppLayout>{children}</AppLayout>
+      <body className={cn('font-body antialiased', fontSans.variable)}>
+        <FirebaseClientProvider>
+          <AuthGuard>
+            <RootStateProvider>{children}</RootStateProvider>
+          </AuthGuard>
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>
