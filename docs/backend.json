@@ -54,18 +54,6 @@
           "type": "string",
           "description": "Mode of payment (PhonePe or Cash)."
         },
-        "kharch": {
-          "type": "number",
-          "description": "Expense amount."
-        },
-        "ethiliumGas": {
-          "type": "number",
-          "description": "Cost of ethilium gas."
-        },
-        "otherBill": {
-          "type": "number",
-          "description": "Other bill amount."
-        },
         "dateAndTime": {
           "type": "string",
           "description": "Date and time when the bill was generated.",

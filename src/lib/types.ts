@@ -22,9 +22,6 @@ export const billingSchema = z.object({
   paymentMode: z.enum(['PhonePe', 'Cash'], {
     required_error: 'You need to select a payment mode.',
   }),
-  kharch: z.coerce.number().nonnegative().optional().default(0),
-  ethiliumGas: z.coerce.number().nonnegative().optional().default(0),
-  otherBill: z.coerce.number().nonnegative().optional().default(0),
 });
 
 export type BillingFormValues = z.infer<typeof billingSchema>;

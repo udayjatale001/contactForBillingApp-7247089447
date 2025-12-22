@@ -47,9 +47,6 @@ export function BillingForm() {
       caratType: 'Small Carat',
       paymentMode: 'Cash',
       paidTo: 'Gopal Dada',
-      kharch: 0,
-      ethiliumGas: 0,
-      otherBill: 0,
     },
   });
 
@@ -267,47 +264,6 @@ export function BillingForm() {
                     </FormItem>
                   )}
                 />
-
-                <Separator />
-                <CardTitle className="text-lg">Extra Details</CardTitle>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                   <FormField
-                    control={form.control}
-                    name="kharch"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Kharch</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                    control={form.control}
-                    name="ethiliumGas"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ethilium Gas</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                    control={form.control}
-                    name="otherBill"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Other Bill</FormLabel>
-                        <FormControl>
-                          <Input type="number" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
               </CardContent>
             </Card>
 
