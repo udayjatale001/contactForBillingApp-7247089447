@@ -20,24 +20,16 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from './ui/button';
 import { Logo } from './icons/logo';
-import { useAuth } from '@/firebase';
-import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      toast({ title: 'Logged out successfully.' });
-      router.push('/login');
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Logout failed.' });
-    }
+    toast({ title: 'Logged out successfully.' });
+    router.push('/login');
   };
 
   const menuItems = [

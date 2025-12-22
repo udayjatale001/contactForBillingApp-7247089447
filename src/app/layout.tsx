@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { FirebaseClientProvider } from '@/firebase';
-import { AuthGuard } from '@/components/auth-guard';
 import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { RootStateProvider } from '@/components/root-state-provider';
@@ -33,11 +31,7 @@ export default function RootLayout({
         />
       </head>
       <body className={cn('font-body antialiased', fontSans.variable)}>
-        <FirebaseClientProvider>
-          <AuthGuard>
-            <RootStateProvider>{children}</RootStateProvider>
-          </AuthGuard>
-        </FirebaseClientProvider>
+        <RootStateProvider>{children}</RootStateProvider>
         <Toaster />
       </body>
     </html>
