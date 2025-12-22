@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as React from 'react';
-import { Gem, Loader2, User, ChevronsUpDown, ShoppingCart, Banknote, Landmark } from 'lucide-react';
+import { Gem, Loader2, User, ChevronsUpDown, Banknote } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -26,13 +26,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { BillingFormValues, billingSchema } from '@/lib/types';
 import { createBill } from '@/app/actions/billing';
 import { useToast } from '@/hooks/use-toast';
 import { BillSummaryDialog } from './bill-summary-dialog';
-import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { cn } from '@/lib/utils';
 
 
@@ -193,7 +192,7 @@ export function BillingForm() {
                             name="smallCarat"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Small Carat (Rate: ₹17)</FormLabel>
+                                    <FormLabel>Small Carat (Rate: 17rs)</FormLabel>
                                     <FormControl>
                                     <Input type="number" placeholder="e.g., 10" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
@@ -206,7 +205,7 @@ export function BillingForm() {
                             name="bigCarat"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Big Carat (Rate: ₹20)</FormLabel>
+                                    <FormLabel>Big Carat (Rate: 20rs)</FormLabel>
                                     <FormControl>
                                     <Input type="number" placeholder="e.g., 5" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
@@ -303,20 +302,20 @@ export function BillingForm() {
               <CardContent className="space-y-4 text-base">
                 <div className="flex justify-between font-bold text-lg">
                   <span className="text-muted-foreground">Total Amount:</span>
-                  <span>₹{totalAmount.toLocaleString()}</span>
+                  <span>rs{totalAmount.toLocaleString()}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Paid Amount:</span>
-                  <span>₹{(Number(paidAmount) || 0).toLocaleString()}</span>
+                  <span>rs{(Number(paidAmount) || 0).toLocaleString()}</span>
                 </div>
                 <Separator />
                 <div className={cn("flex justify-between font-bold text-xl", dueAmount > 0 ? 'text-destructive' : 'text-primary')}>
                   <span className="text-muted-foreground">Due Amount:</span>
-                  <span>₹{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}</span>
+                  <span>rs{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}</span>
                 </div>
                  {dueAmount < 0 && (
-                     <p className="text-sm text-green-600 font-medium">Change to return: ₹{(-dueAmount).toLocaleString()}</p>
+                     <p className="text-sm text-green-600 font-medium">Change to return: rs{(-dueAmount).toLocaleString()}</p>
                  )}
               </CardContent>
               <Button type="submit" className="w-full h-12 rounded-t-none text-lg" disabled={isSubmitting}>
