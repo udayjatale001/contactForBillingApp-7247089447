@@ -49,8 +49,8 @@ export function BillSummaryDialog({ result, open, onOpenChange }: BillSummaryDia
             <div className="space-y-2 p-4 border rounded-lg">
                 <h3 className="font-semibold">Bill for {billDetails.customerName}</h3>
                 <Separator />
-                <DetailItem label="Total Carat" value={`${billDetails.totalCarat} (${billDetails.caratType})`} />
-                <DetailItem label="Rate" value={`₹${billDetails.rate}`} />
+                {billDetails.smallCarat && billDetails.smallCarat > 0 && <DetailItem label="Small Carat" value={billDetails.smallCarat} />}
+                {billDetails.bigCarat && billDetails.bigCarat > 0 && <DetailItem label="Big Carat" value={billDetails.bigCarat} />}
                 <DetailItem label="Total Amount" value={`₹${billDetails.totalAmount.toLocaleString()}`} className="font-bold text-base"/>
                 <DetailItem label="Paid Amount" value={`₹${billDetails.paidAmount.toLocaleString()}`} />
                 <DetailItem label="Due Amount" value={<Badge variant={billDetails.dueAmount > 0 ? "destructive" : "default"}>₹{billDetails.dueAmount.toLocaleString()}</Badge>} />

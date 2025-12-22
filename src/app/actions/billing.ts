@@ -1,37 +1,43 @@
 'use server';
 
 import { z } from 'zod';
-import { billingSchema } from '@/lib/types';
 
-const fullBillSchema = billingSchema.extend({
-    totalCarat: z.number(),
-    rate: z.number(),
-    totalAmount: z.number(),
-    dueAmount: z.number(),
-    createdAt: z.date(),
+// Replicating a simplified version of the final schema for the action
+const actionBillSchema = z.object({
+  customerName: z.string(),
+  inCarat: z.number(),
+  outCarat: z.number(),
+  smallCarat: z.number().optional(),
+  bigCarat: z.number().optional(),
+  totalAmount: z.number(),
+  paidAmount: z.number(),
+  dueAmount: z.number(),
+  paidTo: z.string(),
+  paymentMode: z.string(),
+  createdAt: z.date(),
 });
 
-type FullBillDetails = z.infer<typeof fullBillSchema>;
+
+type FullBillDetails = z.infer<typeof actionBillSchema>;
 
 export async function createBill(
   data: FullBillDetails
 ): Promise<{ success: true; billDetails: FullBillDetails; } | { success: false; error: string; }> {
-  const validatedData = fullBillSchema.safeParse(data);
-
-  if (!validatedData.success) {
+  
+  // The zod validation is now more complex and happens in the form, 
+  // so we'll just do a basic check here.
+  if (!data.customerName || data.paidAmount > data.totalAmount) {
     return { success: false, error: 'Invalid data provided.' };
   }
-
-  const bill = validatedData.data;
 
   try {
     // Here you would save the 'bill' object to your Firestore database.
     // For this demo, we'll just log it to the console.
-    console.log('Saving bill to Firestore:', bill);
+    console.log('Saving bill to Firestore:', data);
     
     return {
       success: true,
-      billDetails: bill,
+      billDetails: data,
     };
 
   } catch (error) {

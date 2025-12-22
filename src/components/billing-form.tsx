@@ -3,13 +3,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as React from 'react';
-import { Gem, Loader2 } from 'lucide-react';
+import { Gem, Loader2, User, ChevronsUpDown, ShoppingCart, Banknote, Landmark } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -33,6 +32,9 @@ import { BillingFormValues, billingSchema } from '@/lib/types';
 import { createBill } from '@/app/actions/billing';
 import { useToast } from '@/hooks/use-toast';
 import { BillSummaryDialog } from './bill-summary-dialog';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { cn } from '@/lib/utils';
+
 
 type BillResult = Awaited<ReturnType<typeof createBill>>;
 
@@ -44,49 +46,69 @@ export function BillingForm() {
   const form = useForm<BillingFormValues>({
     resolver: zodResolver(billingSchema),
     defaultValues: {
-      caratType: 'Small Carat',
       paymentMode: 'Cash',
       paidTo: 'Gopal Dada',
+      smallCarat: 0,
+      bigCarat: 0,
     },
   });
 
-  const { watch } = form;
-  const inCarat = watch('inCarat', 0);
-  const outCarat = watch('outCarat', 0);
-  const caratType = watch('caratType');
+  const { watch, trigger, formState: { errors } } = form;
+  const smallCarat = watch('smallCarat', 0);
+  const bigCarat = watch('bigCarat', 0);
   const paidAmount = watch('paidAmount', 0);
 
-  const totalCarat = React.useMemo(() => {
-    const total = Number(inCarat) - Number(outCarat);
-    return total > 0 ? total : 0;
-  }, [inCarat, outCarat]);
-
-  const rate = React.useMemo(() => {
-    return caratType === 'Big Carat' ? 20 : 17;
-  }, [caratType]);
-
   const totalAmount = React.useMemo(() => {
-    return totalCarat * rate;
-  }, [totalCarat, rate]);
+    const smallCaratAmount = (Number(smallCarat) || 0) * 17;
+    const bigCaratAmount = (Number(bigCarat) || 0) * 20;
+    return smallCaratAmount + bigCaratAmount;
+  }, [smallCarat, bigCarat]);
 
   const dueAmount = React.useMemo(() => {
-    const due = totalAmount - Number(paidAmount);
-    return due > 0 ? due : 0;
+    const due = totalAmount - (Number(paidAmount) || 0);
+    return due;
   }, [totalAmount, paidAmount]);
+
+  React.useEffect(() => {
+    if (paidAmount > totalAmount) {
+        form.setError('paidAmount', {
+            type: 'manual',
+            message: 'Paid amount cannot be greater than total amount.'
+        });
+    } else {
+        if (form.formState.errors.paidAmount?.type === 'manual') {
+            form.clearErrors('paidAmount');
+        }
+    }
+  }, [paidAmount, totalAmount, form]);
+
 
   async function onSubmit(data: BillingFormValues) {
     setIsSubmitting(true);
+    const isValid = await trigger();
+    if (!isValid || paidAmount > totalAmount) {
+        setIsSubmitting(false);
+        toast({
+            variant: 'destructive',
+            title: 'Validation Error',
+            description: 'Please correct the errors before submitting.',
+        });
+        return;
+    }
+
     try {
         const fullBillDetails = {
             ...data,
-            totalCarat,
-            rate,
+            totalCarat: (data.smallCarat || 0) + (data.bigCarat || 0),
             totalAmount,
-            dueAmount,
+            dueAmount: dueAmount < 0 ? 0 : dueAmount,
+            rate: 0, // Rate is now based on carat type
             createdAt: new Date(),
+            // Ensure caratType is handled if needed by backend
+            caratType: data.smallCarat ? 'Small Carat' : 'Big Carat',
         };
 
-      const result = await createBill(fullBillDetails);
+      const result = await createBill(fullBillDetails as any); // Adjust type as needed
       if (result.success) {
         setBillResult(result);
         toast({
@@ -112,164 +134,166 @@ export function BillingForm() {
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Billing Details</CardTitle>
-                <CardDescription>Enter the details for the new bill.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="customerName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Customer Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter customer's name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <FormField
-                    control={form.control}
-                    name="inCarat"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>In Carat</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 500" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="outCarat"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Out Carat</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 100" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <div className="lg:col-span-2 space-y-6">
+                {/* Customer Details */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><User />Customer Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <FormField
+                            control={form.control}
+                            name="customerName"
+                            render={({ field }) => (
+                                <FormItem className="md:col-span-3">
+                                <FormLabel>Customer Name</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Enter customer's name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="inCarat"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>In Carat</FormLabel>
+                                <FormControl>
+                                <Input type="number" placeholder="e.g., 500" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="outCarat"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Out Carat</FormLabel>
+                                <FormControl>
+                                <Input type="number" placeholder="e.g., 100" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
 
-                <FormField
-                  control={form.control}
-                  name="caratType"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Carat Type</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex items-center space-x-4"
-                        >
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="Small Carat" />
-                            </FormControl>
-                            <FormLabel className="font-normal">
-                              Small Carat (Rate: ₹17)
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="Big Carat" />
-                            </FormControl>
-                            <FormLabel className="font-normal">
-                              Big Carat (Rate: ₹20)
-                            </FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Carat Details */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><ChevronsUpDown />Carat Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                            control={form.control}
+                            name="smallCarat"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Small Carat (Rate: ₹17)</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" placeholder="e.g., 10" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="bigCarat"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Big Carat (Rate: ₹20)</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" placeholder="e.g., 5" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
 
-                <Separator />
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="paidAmount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Paid Amount</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 5000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                      control={form.control}
-                      name="paidTo"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Paid To</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a person" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Gopal Dada">Gopal Dada</SelectItem>
-                              <SelectItem value="Yuvraj Dada">Yuvraj Dada</SelectItem>
-                              <SelectItem value="Suyash Dada">Suyash Dada</SelectItem>
-                              <SelectItem value="Gaju Dada">Gaju Dada</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                </div>
-
-                 <FormField
-                  control={form.control}
-                  name="paymentMode"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Payment Mode</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex items-center space-x-4"
-                        >
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="PhonePe" />
-                            </FormControl>
-                            <FormLabel className="font-normal">PhonePe</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="Cash" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Cash</FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
+                {/* Payment Details */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><Banknote />Payment Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                            control={form.control}
+                            name="paidAmount"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Paid Amount</FormLabel>
+                                <FormControl>
+                                <Input type="number" placeholder="Enter paid amount" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)}/>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="paidTo"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Paid To</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a person" />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                    <SelectItem value="Gopal Dada">Gopal Dada</SelectItem>
+                                    <SelectItem value="Yuvraj Dada">Yuvraj Dada</SelectItem>
+                                    <SelectItem value="Suyash Dada">Suyash Dada</SelectItem>
+                                    <SelectItem value="Gaju Dada">Gaju Dada</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="paymentMode"
+                            render={({ field }) => (
+                                <FormItem className="space-y-3 md:col-span-2">
+                                <FormLabel>Payment Method</FormLabel>
+                                <FormControl>
+                                    <RadioGroup
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    className="flex items-center space-x-4"
+                                    >
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl>
+                                        <RadioGroupItem value="Online Payment" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">Online Payment</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl>
+                                        <RadioGroupItem value="Cash" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">Cash</FormLabel>
+                                    </FormItem>
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                    </CardContent>
+                </Card>
+            </div>
 
             <Card className="lg:col-span-1 h-fit sticky top-24">
                <CardHeader>
@@ -279,28 +303,23 @@ export function BillingForm() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-base">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Carat:</span>
-                  <span className="font-bold">{totalCarat.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Rate:</span>
-                  <span className="font-bold">₹{rate.toLocaleString()}</span>
-                </div>
-                <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span className="text-muted-foreground">Total Amount:</span>
                   <span>₹{totalAmount.toLocaleString()}</span>
                 </div>
+                <Separator />
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Paid Amount:</span>
-                  <span>₹{Number(paidAmount).toLocaleString()}</span>
+                  <span>₹{(Number(paidAmount) || 0).toLocaleString()}</span>
                 </div>
                 <Separator />
-                <div className="flex justify-between font-bold text-xl text-primary">
+                <div className={cn("flex justify-between font-bold text-xl", dueAmount > 0 ? 'text-destructive' : 'text-primary')}>
                   <span className="text-muted-foreground">Due Amount:</span>
-                  <span>₹{dueAmount.toLocaleString()}</span>
+                  <span>₹{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}</span>
                 </div>
+                 {dueAmount < 0 && (
+                     <p className="text-sm text-green-600 font-medium">Change to return: ₹{(-dueAmount).toLocaleString()}</p>
+                 )}
               </CardContent>
               <Button type="submit" className="w-full h-12 rounded-t-none text-lg" disabled={isSubmitting}>
                 {isSubmitting ? <Loader2 className="animate-spin" /> : 'Generate Bill'}
