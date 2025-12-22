@@ -3,7 +3,12 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Apple, LayoutDashboard, LogOut } from 'lucide-react';
+import {
+  LayoutDashboard,
+  LogOut,
+  FileText,
+  Info,
+} from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import {
@@ -43,6 +48,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       label: 'Dashboard',
       icon: LayoutDashboard,
     },
+    {
+      href: '/history',
+      label: 'History',
+      icon: FileText,
+    },
+    {
+      href: '/about',
+      label: 'About',
+      icon: Info,
+    },
   ];
 
   return (
@@ -75,7 +90,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton onClick={handleLogout} tooltip={{children: 'Logout'}}>
+              <SidebarMenuButton
+                onClick={handleLogout}
+                tooltip={{ children: 'Logout' }}
+              >
                 <LogOut />
                 <span>Logout</span>
               </SidebarMenuButton>
