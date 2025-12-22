@@ -61,9 +61,13 @@ export function BillingForm() {
     return total > 0 ? total : 0;
   }, [inCarat, outCarat]);
 
-  const rate = React.useMemo(() => (caratType === 'Big Carat' ? 20 : 17), [caratType]);
+  const rate = React.useMemo(() => {
+    return caratType === 'Big Carat' ? 20 : 17;
+  }, [caratType]);
 
-  const totalAmount = React.useMemo(() => totalCarat * rate, [totalCarat, rate]);
+  const totalAmount = React.useMemo(() => {
+    return totalCarat * rate;
+  }, [totalCarat, rate]);
 
   const dueAmount = React.useMemo(() => {
     const due = totalAmount - Number(paidAmount);
