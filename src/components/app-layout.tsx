@@ -10,6 +10,7 @@ import {
   Info,
   Loader2,
   Home,
+  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -79,6 +80,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       label: 'History',
       icon: FileText,
       ownerOnly: false,
+    },
+    {
+      href: '/owner',
+      label: 'Owner',
+      icon: User,
+      ownerOnly: true,
     },
     {
       href: '/dashboard',
