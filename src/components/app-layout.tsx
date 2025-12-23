@@ -76,16 +76,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       ownerOnly: false,
     },
     {
-      href: '/history',
-      label: 'History',
-      icon: FileText,
-      ownerOnly: false,
-    },
-    {
       href: '/owner',
       label: 'Owner',
       icon: User,
       ownerOnly: true,
+    },
+    {
+      href: '/history',
+      label: 'History',
+      icon: FileText,
+      ownerOnly: false,
     },
     {
       href: '/dashboard',
@@ -104,7 +104,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const menuItems = React.useMemo(() => {
      if (isOwner === null) return []; // Still loading role
     return baseMenuItems.filter(item => !item.ownerOnly || isOwner);
-  }, [isOwner]);
+  }, [isOwner, baseMenuItems]);
 
   if (isUserLoading || user === null || isOwner === null) {
      return (
