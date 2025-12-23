@@ -79,6 +79,13 @@ export function BillingForm() {
     }
   }, [paidAmount, totalAmount, form]);
 
+  const handleSaveBill = () => {
+    toast({
+      title: 'Bill Saved!',
+      description: 'The bill has been saved successfully.',
+    });
+    setBillResult(null);
+  };
 
   async function onSubmit(data: BillingFormValues) {
     setIsSubmitting(true);
@@ -108,10 +115,7 @@ export function BillingForm() {
       const result = await createBill(fullBillDetails as any); // Adjust type as needed
       if (result.success) {
         setBillResult(result);
-        toast({
-          title: 'Bill Generated Successfully!',
-          description: `Bill for ${data.customerName} has been created.`,
-        });
+        // We don't show the toast immediately, but after the user saves the bill.
         form.reset();
       } else {
         throw new Error(result.error || 'Failed to create bill.');
@@ -159,7 +163,7 @@ export function BillingForm() {
                             <FormItem>
                                 <FormLabel>In Carat</FormLabel>
                                 <FormControl>
-                                <Input type="number" placeholder="e.g., 500" {...field} />
+                                <Input type="number" placeholder="e.g., 500" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -172,7 +176,7 @@ export function BillingForm() {
                             <FormItem>
                                 <FormLabel>Out Carat</FormLabel>
                                 <FormControl>
-                                <Input type="number" placeholder="e.g., 100" {...field} />
+                                <Input type="number" placeholder="e.g., 100" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -330,6 +334,7 @@ export function BillingForm() {
           result={billResult}
           open={!!billResult}
           onOpenChange={() => setBillResult(null)}
+          onSave={handleSaveBill}
         />
       )}
     </>
