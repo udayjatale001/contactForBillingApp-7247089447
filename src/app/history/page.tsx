@@ -116,13 +116,13 @@ export default function HistoryPage() {
                     className="cursor-pointer"
                   >
                     <TableCell>{bill.customerName}</TableCell>
-                    <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
-                    <TableCell>{bill.paidAmount.toLocaleString()}rs</TableCell>
+                    <TableCell>₹{bill.totalAmount.toLocaleString()}</TableCell>
+                    <TableCell>₹{bill.paidAmount.toLocaleString()}</TableCell>
                     <TableCell>
                       <Badge
                         variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}
                       >
-                        {bill.dueAmount.toLocaleString()}rs
+                        ₹{bill.dueAmount.toLocaleString()}
                       </Badge>
                     </TableCell>
                     <TableCell>{new Date(bill.createdAt).toLocaleDateString()}</TableCell>
@@ -150,30 +150,37 @@ export default function HistoryPage() {
                 Detailed information for bill ID: {selectedBill.id}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-6 py-4">
-              <div className="space-y-2 p-4 border rounded-lg">
-                <h3 className="font-semibold">
-                  Bill for {selectedBill.customerName}
+            <div className="space-y-4 py-4">
+              <div className="space-y-3 p-4 border rounded-lg">
+                <h3 className="font-semibold text-center mb-2">
+                  Bill for: {selectedBill.customerName}
                 </h3>
                 <Separator />
-                 <DetailItem
+                <DetailItem
                   label="Total Carat"
                   value={selectedBill.totalCarat}
                 />
-                <DetailItem
-                  label="Carat Type"
-                  value={selectedBill.caratType}
-                />
-                {selectedBill.totalCarat > 0 && <DetailItem label="Rate" value={`${(selectedBill.totalAmount/selectedBill.totalCarat).toFixed(2)}rs`} />}
+                <Separator />
+                <div>
+                    <p className="text-sm text-muted-foreground mb-2">Carat Type</p>
+                    {selectedBill.smallCarat && selectedBill.smallCarat > 0 && <DetailItem label="Small" value={selectedBill.smallCarat}/>}
+                    {selectedBill.bigCarat && selectedBill.bigCarat > 0 && <DetailItem label="Big" value={selectedBill.bigCarat}/>}
+                </div>
+                 <Separator />
+                 <div>
+                    <p className="text-sm text-muted-foreground mb-2">Rate</p>
+                    {(selectedBill.bigCarat || 0) > 0 && <DetailItem label="Big" value="20 per carat"/>}
+                    {(selectedBill.smallCarat || 0) > 0 && <DetailItem label="Small" value="17 per carat"/>}
+                </div>
                 <Separator />
                 <DetailItem
                   label="Total Amount"
-                  value={`${selectedBill.totalAmount.toLocaleString()}rs`}
+                  value={`₹${selectedBill.totalAmount.toLocaleString()}`}
                   className="font-bold text-base"
                 />
                 <DetailItem
                   label="Paid Amount"
-                  value={`${selectedBill.paidAmount.toLocaleString()}rs`}
+                  value={`₹${selectedBill.paidAmount.toLocaleString()}`}
                 />
                 <DetailItem
                   label="Due Amount"
@@ -183,7 +190,7 @@ export default function HistoryPage() {
                         selectedBill.dueAmount > 0 ? 'destructive' : 'default'
                       }
                     >
-                      {selectedBill.dueAmount.toLocaleString()}rs
+                     ₹{selectedBill.dueAmount.toLocaleString()}
                     </Badge>
                   }
                 />
@@ -199,7 +206,7 @@ export default function HistoryPage() {
                 />
               </div>
             </div>
-            <DialogFooter className="sm:justify-between non-printable">
+            <DialogFooter className="sm:justify-between non-printable px-6 pb-4">
               <Button variant="outline" onClick={handlePrint}>
                 Print
               </Button>

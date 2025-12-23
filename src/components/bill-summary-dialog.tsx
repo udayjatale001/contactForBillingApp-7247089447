@@ -61,9 +61,9 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave }: BillSumm
                     {bill.smallCarat && bill.smallCarat > 0 && <DetailItem label="Small Carat" value={bill.smallCarat} />}
                     {bill.bigCarat && bill.bigCarat > 0 && <DetailItem label="Big Carat" value={bill.bigCarat} />}
                     <Separator className="my-2"/>
-                    <DetailItem label="Total Amount" value={`${bill.totalAmount.toLocaleString()}rs`} className="font-bold text-base"/>
-                    <DetailItem label="Paid Amount" value={`${bill.paidAmount.toLocaleString()}rs`} />
-                    <DetailItem label="Due Amount" value={<Badge variant={bill.dueAmount > 0 ? "destructive" : "default"}>{bill.dueAmount.toLocaleString()}rs</Badge>} />
+                    <DetailItem label="Total Amount" value={`₹${bill.totalAmount.toLocaleString()}`} className="font-bold text-base"/>
+                    <DetailItem label="Paid Amount" value={`₹${bill.paidAmount.toLocaleString()}`} />
+                    <DetailItem label="Due Amount" value={<Badge variant={bill.dueAmount > 0 ? "destructive" : "default"}>₹{bill.dueAmount.toLocaleString()}</Badge>} />
                     <Separator className="my-2"/>
                     <DetailItem label="Paid To" value={bill.paidTo} />
                     <DetailItem label="Date" value={new Date(bill.createdAt).toLocaleDateString()} />
