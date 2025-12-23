@@ -309,7 +309,7 @@ export function OwnerDashboard() {
           <CardHeader>
             <CardTitle>Recent Bills</CardTitle>
             <CardDescription>
-              The 5 most recently generated bills.
+              .
             </CardDescription>
           </CardHeader>
           <CardContent>

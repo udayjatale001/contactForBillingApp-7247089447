@@ -11,6 +11,7 @@ import {
   Loader2,
   Home,
   User,
+  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -88,9 +89,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       ownerOnly: false,
     },
     {
-      href: '/uday',
-      label: 'Uday',
+      href: '/Admin',
+      label: 'Admin',
       icon: User,
+      ownerOnly: false,
+    },
+    {
+      href: '/notifications',
+      label: 'Notification',
+      icon: Bell,
       ownerOnly: false,
     },
     {
