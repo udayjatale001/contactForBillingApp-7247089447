@@ -80,7 +80,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       icon: FileText,
       ownerOnly: false,
     },
-     {
+    {
       href: '/dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
@@ -97,7 +97,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const menuItems = React.useMemo(() => {
      if (isOwner === null) return []; // Still loading role
     return baseMenuItems.filter(item => !item.ownerOnly || isOwner);
-  }, [isOwner, baseMenuItems]);
+  }, [isOwner]);
 
   if (isUserLoading || user === null || isOwner === null) {
      return (
