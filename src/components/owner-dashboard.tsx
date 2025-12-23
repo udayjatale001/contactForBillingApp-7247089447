@@ -19,7 +19,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { Button } from './ui/button';
-import { BellRing, Send, FileText } from 'lucide-react';
+import { BellRing, Send, FileText, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
 import type { Bill } from '@/lib/types';
@@ -32,17 +32,16 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 
 export function OwnerDashboard() {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user } = useUser();
   
   const billsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'bills');
+    return query(collection(firestore, 'bills'));
   }, [firestore]);
 
   const { data: bills, isLoading } = useCollection<Bill>(billsQuery);
@@ -50,13 +49,24 @@ export function OwnerDashboard() {
   const [isSendingReminders, setIsSendingReminders] = React.useState(false);
   const [selectedBill, setSelectedBill] = React.useState<Bill | null>(null);
 
-  const totalRevenue = React.useMemo(() => (bills || []).reduce((sum, bill) => sum + bill.paidAmount, 0), [bills]);
-  const totalDue = React.useMemo(() => (bills || []).reduce((sum, bill) => sum + bill.dueAmount, 0), [bills]);
-  const dueBills = React.useMemo(() => (bills || []).filter((bill) => bill.dueAmount > 0).sort((a, b) => b.dueAmount - a.dueAmount), [bills]);
-  const recentBills = React.useMemo(() => [...(bills || [])].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5), [bills]);
-
-  const inactiveCustomers = React.useMemo(() => {
-    if (!bills) return [];
+  const stats = React.useMemo(() => {
+    if (!bills) {
+      return {
+        totalRevenue: 0,
+        totalDue: 0,
+        salesCount: 0,
+        dueBills: [],
+        recentBills: [],
+        inactiveCustomers: [],
+        salesData: [],
+      };
+    }
+    
+    const totalRevenue = bills.reduce((sum, bill) => sum + bill.paidAmount, 0);
+    const totalDue = bills.reduce((sum, bill) => sum + bill.dueAmount, 0);
+    const dueBills = bills.filter((bill) => bill.dueAmount > 0).sort((a, b) => b.dueAmount - a.dueAmount);
+    const recentBills = [...bills].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+    
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     
@@ -68,13 +78,10 @@ export function OwnerDashboard() {
         }
     });
 
-    return Object.entries(customerLastActivity)
+    const inactiveCustomers = Object.entries(customerLastActivity)
       .filter(([, lastDate]) => lastDate < oneMonthAgo)
       .map(([name, lastDate]) => ({ customerName: name, lastActivityDate: lastDate }));
-  }, [bills]);
-
-  const salesData = React.useMemo(() => {
-    if (!bills) return [];
+      
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const monthlyTotals: { [key: string]: number } = {};
 
@@ -89,21 +96,30 @@ export function OwnerDashboard() {
       monthlyTotals[key] += bill.paidAmount;
     });
 
-    return Object.entries(monthlyTotals)
+    const salesData = Object.entries(monthlyTotals)
       .map(([name, total]) => ({ name, total }))
-      .sort((a,b) => new Date(a.name).getTime() - new Date(b.name).getTime()) // Ensure chronological order
-      .slice(-6); // Last 6 months
+      .sort((a,b) => new Date(a.name).getTime() - new Date(b.name).getTime())
+      .slice(-6);
+
+    return {
+      totalRevenue,
+      totalDue,
+      salesCount: bills.length,
+      dueBills,
+      recentBills,
+      inactiveCustomers,
+      salesData,
+    };
   }, [bills]);
 
-
   const handleSendReminders = async () => {
-    if (inactiveCustomers.length === 0) {
+    if (stats.inactiveCustomers.length === 0) {
       toast({ title: 'No inactive customers to remind.' });
       return;
     }
     setIsSendingReminders(true);
     try {
-      for (const customer of inactiveCustomers) {
+      for (const customer of stats.inactiveCustomers) {
         await composeReminderMessage({
           customerName: customer.customerName,
           lastActivityDate: customer.lastActivityDate.toISOString().split('T')[0],
@@ -111,7 +127,7 @@ export function OwnerDashboard() {
       }
       toast({
         title: 'Reminders Sent!',
-        description: `Sent reminder messages to ${inactiveCustomers.length} inactive customer(s).`,
+        description: `Sent reminder messages to ${stats.inactiveCustomers.length} inactive customer(s).`,
       });
     } catch (error) {
       toast({
@@ -134,6 +150,14 @@ export function OwnerDashboard() {
     </div>
   );
 
+  if (isLoading) {
+    return (
+      <div className="flex h-[80vh] items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -142,7 +166,7 @@ export function OwnerDashboard() {
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalRevenue.toLocaleString()}rs</div>
+            <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">from all saved bills</p>
           </CardContent>
         </Card>
@@ -151,8 +175,8 @@ export function OwnerDashboard() {
             <CardTitle className="text-sm font-medium">Total Due</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{totalDue.toLocaleString()}rs</div>
-            <p className="text-xs text-muted-foreground">{dueBills.length} active dues</p>
+            <div className="text-2xl font-bold text-destructive">{stats.totalDue.toLocaleString()}rs</div>
+            <p className="text-xs text-muted-foreground">{stats.dueBills.length} active dues</p>
           </CardContent>
         </Card>
         <Card>
@@ -160,7 +184,7 @@ export function OwnerDashboard() {
             <CardTitle className="text-sm font-medium">Sales</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{bills?.length || 0}</div>
+            <div className="text-2xl font-bold">+{stats.salesCount}</div>
             <p className="text-xs text-muted-foreground">total bills generated</p>
           </CardContent>
         </Card>
@@ -169,7 +193,7 @@ export function OwnerDashboard() {
             <CardTitle className="text-sm font-medium">Inactive Customers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{inactiveCustomers.length}</div>
+            <div className="text-2xl font-bold">{stats.inactiveCustomers.length}</div>
             <p className="text-xs text-muted-foreground">No activity for over a month</p>
           </CardContent>
         </Card>
@@ -181,9 +205,9 @@ export function OwnerDashboard() {
             <CardTitle>Monthly Report</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-             {salesData.length > 0 ? (
+             {stats.salesData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={350}>
-                  <BarChart data={salesData}>
+                  <BarChart data={stats.salesData}>
                     <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value / 1000}krs`} />
                     <Tooltip
@@ -216,7 +240,7 @@ export function OwnerDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {dueBills.length > 0 ? (
+            {stats.dueBills.length > 0 ? (
                 <Table>
                 <TableHeader>
                     <TableRow>
@@ -225,7 +249,7 @@ export function OwnerDashboard() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {dueBills.map((bill) => (
+                    {stats.dueBills.map((bill) => (
                     <TableRow key={bill.id}>
                         <TableCell>{bill.customerName}</TableCell>
                         <TableCell className="text-right font-medium text-destructive">
@@ -254,7 +278,7 @@ export function OwnerDashboard() {
             <CardDescription>A list of the most recent bills generated.</CardDescription>
           </CardHeader>
           <CardContent>
-             {recentBills.length > 0 ? (
+             {stats.recentBills.length > 0 ? (
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -266,7 +290,7 @@ export function OwnerDashboard() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {recentBills.map((bill) => (
+                        {stats.recentBills.map((bill) => (
                         <TableRow key={bill.id} onClick={() => handleBillClick(bill)} className="cursor-pointer">
                             <TableCell>{bill.customerName}</TableCell>
                             <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
@@ -301,15 +325,15 @@ export function OwnerDashboard() {
           </CardHeader>
           <CardContent>
             <div className="p-4 border rounded-lg bg-secondary/50">
-              <p className="font-semibold">{inactiveCustomers.length} inactive customer(s) found.</p>
+              <p className="font-semibold">{stats.inactiveCustomers.length} inactive customer(s) found.</p>
               <ul className="text-sm text-muted-foreground list-disc pl-5 mt-2 max-h-24 overflow-y-auto">
-                {inactiveCustomers.map(c => <li key={c.customerName}>{c.customerName} (Last visit: {c.lastActivityDate.toLocaleDateString()})</li>)}
-                {inactiveCustomers.length === 0 && <li>All customers have been active recently!</li>}
+                {stats.inactiveCustomers.map(c => <li key={c.customerName}>{c.customerName} (Last visit: {c.lastActivityDate.toLocaleDateString()})</li>)}
+                {stats.inactiveCustomers.length === 0 && <li>All customers have been active recently!</li>}
               </ul>
             </div>
           </CardContent>
           <CardContent>
-            <Button onClick={handleSendReminders} disabled={isSendingReminders || inactiveCustomers.length === 0} className="w-full">
+            <Button onClick={handleSendReminders} disabled={isSendingReminders || stats.inactiveCustomers.length === 0} className="w-full">
               {isSendingReminders ? 'Sending...' : 'Send Reminder(s)'}
               <Send className="ml-2 h-4 w-4" />
             </Button>
@@ -334,7 +358,7 @@ export function OwnerDashboard() {
                 <Separator />
                 <DetailItem label="Total Carat" value={selectedBill.totalCarat} />
                 <DetailItem label="Carat Type" value={selectedBill.caratType} />
-                <DetailItem label="Rate" value={`${(selectedBill.totalAmount / selectedBill.totalCarat).toFixed(2)}rs`} />
+                {selectedBill.totalCarat > 0 && <DetailItem label="Rate" value={`${(selectedBill.totalAmount / selectedBill.totalCarat).toFixed(2)}rs`} />}
                 <Separator />
                 <DetailItem label="Total Amount" value={`${selectedBill.totalAmount.toLocaleString()}rs`} className="font-bold text-base" />
                 <DetailItem label="Paid Amount" value={`${selectedBill.paidAmount.toLocaleString()}rs`} />

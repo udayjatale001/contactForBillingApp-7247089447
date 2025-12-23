@@ -39,6 +39,10 @@ export default function HistoryPage() {
 
   const billsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
+    // Querying the global 'bills' collection for an owner might be desired,
+    // but for a manager, we query their specific subcollection.
+    // The logic below assumes a manager is viewing their own bills.
+    // For an owner, you might use a different query.
     return query(
       collection(firestore, 'managers', user.uid, 'bills'),
       orderBy('createdAt', 'desc')
@@ -160,7 +164,7 @@ export default function HistoryPage() {
                   label="Carat Type"
                   value={selectedBill.caratType}
                 />
-                <DetailItem label="Rate" value={`${(selectedBill.totalAmount/selectedBill.totalCarat).toFixed(2)}rs`} />
+                {selectedBill.totalCarat > 0 && <DetailItem label="Rate" value={`${(selectedBill.totalAmount/selectedBill.totalCarat).toFixed(2)}rs`} />}
                 <Separator />
                 <DetailItem
                   label="Total Amount"
