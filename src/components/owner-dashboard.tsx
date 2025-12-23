@@ -313,7 +313,7 @@ export function OwnerDashboard() {
                         <TableHead>Total</TableHead>
                         <TableHead>Paid</TableHead>
                         <TableHead>Due</TableHead>
-                        <TableHead>Date</TableHead>
+                        <TableHead>Date & Time</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -327,7 +327,7 @@ export function OwnerDashboard() {
                                 ₹{bill.dueAmount.toLocaleString()}
                             </Badge>
                             </TableCell>
-                            <TableCell>{new Date(bill.createdAt).toLocaleDateString()}</TableCell>
+                            <TableCell>{new Date(bill.createdAt).toLocaleString()}</TableCell>
                         </TableRow>
                         ))}
                     </TableBody>
@@ -396,8 +396,8 @@ export function OwnerDashboard() {
                  <Separator />
                  <div>
                     <p className="text-sm text-muted-foreground mb-2">Rate</p>
-                    {(selectedBill.bigCarat || 0) > 0 && <DetailItem label="Big" value="20 per carat"/>}
-                    {(selectedBill.smallCarat || 0) > 0 && <DetailItem label="Small" value="17 per carat"/>}
+                    {(selectedBill.bigCarat || 0) > 0 && <DetailItem label="Big" value="₹20 per carat"/>}
+                    {(selectedBill.smallCarat || 0) > 0 && <DetailItem label="Small" value="₹17 per carat"/>}
                 </div>
                 <Separator />
                 <DetailItem

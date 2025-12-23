@@ -105,7 +105,7 @@ export default function HistoryPage() {
                   <TableHead>Total Amount</TableHead>
                   <TableHead>Paid Amount</TableHead>
                   <TableHead>Due Amount</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead>Date & Time</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -125,7 +125,7 @@ export default function HistoryPage() {
                         ₹{bill.dueAmount.toLocaleString()}
                       </Badge>
                     </TableCell>
-                    <TableCell>{new Date(bill.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(bill.createdAt).toLocaleString()}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -169,8 +169,8 @@ export default function HistoryPage() {
                  <Separator />
                  <div>
                     <p className="text-sm text-muted-foreground mb-2">Rate</p>
-                    {(selectedBill.bigCarat || 0) > 0 && <DetailItem label="Big" value="20 per carat"/>}
-                    {(selectedBill.smallCarat || 0) > 0 && <DetailItem label="Small" value="17 per carat"/>}
+                    {(selectedBill.bigCarat || 0) > 0 && <DetailItem label="Big" value="₹20 per carat"/>}
+                    {(selectedBill.smallCarat || 0) > 0 && <DetailItem label="Small" value="₹17 per carat"/>}
                 </div>
                 <Separator />
                 <DetailItem
