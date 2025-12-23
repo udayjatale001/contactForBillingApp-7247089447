@@ -19,12 +19,12 @@ export const billingSchema = z.object({
     .gt(0, { message: 'Big Carat must be a positive number.' })
     .optional(),
   paidAmount: z.coerce
-    .number({ required_error: 'Paid amount is required.' })
+    .number()
     .nonnegative({ message: 'Paid amount cannot be negative.' }).optional(),
   paidTo: z.enum(['Gopal Dada', 'Yuvraj Dada', 'Suyash Dada', 'Gaju Dada'], {
     required_error: 'You need to select who was paid.',
   }),
-  paymentMode: z.enum(['Online Payment', 'Cash'], {
+  paymentMode: z.enum(['Online Payment', 'Cash', 'Due'], {
     required_error: 'You need to select a payment mode.',
   }),
 }).refine(data => data.smallCarat || data.bigCarat, {
@@ -52,3 +52,5 @@ export type Bill = {
   paymentMode: string;
   createdAt: Date;
 };
+
+    

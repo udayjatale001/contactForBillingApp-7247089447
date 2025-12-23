@@ -62,6 +62,7 @@ export function BillingForm() {
   const smallCarat = watch('smallCarat');
   const bigCarat = watch('bigCarat');
   const paidAmount = watch('paidAmount');
+  const paymentMode = watch('paymentMode');
 
   const totalAmount = React.useMemo(() => {
     const smallCaratAmount = (Number(smallCarat) || 0) * 17;
@@ -70,9 +71,13 @@ export function BillingForm() {
   }, [smallCarat, bigCarat]);
 
   const dueAmount = React.useMemo(() => {
-    const due = totalAmount - (Number(paidAmount) || 0);
+    let effectivePaidAmount = Number(paidAmount) || 0;
+    if (paymentMode === 'Due') {
+        effectivePaidAmount = 0;
+    }
+    const due = totalAmount - effectivePaidAmount;
     return due;
-  }, [totalAmount, paidAmount]);
+  }, [totalAmount, paidAmount, paymentMode]);
 
   React.useEffect(() => {
     if (paidAmount && totalAmount > 0 && paidAmount > totalAmount) {
@@ -86,6 +91,13 @@ export function BillingForm() {
         }
     }
   }, [paidAmount, totalAmount, form]);
+
+    React.useEffect(() => {
+    if (paymentMode === 'Due') {
+      form.setValue('paidAmount', 0);
+    }
+  }, [paymentMode, form]);
+
 
   const handleSaveBill = () => {
     if (generatedBill) {
@@ -106,7 +118,7 @@ export function BillingForm() {
   async function onSubmit(data: BillingFormValues) {
     setIsSubmitting(true);
     const isValid = await trigger();
-    if (!isValid || (paidAmount && totalAmount > 0 && paidAmount > totalAmount)) {
+    if (!isValid || (data.paidAmount && totalAmount > 0 && data.paidAmount > totalAmount)) {
         setIsSubmitting(false);
         toast({
             variant: 'destructive',
@@ -117,14 +129,20 @@ export function BillingForm() {
     }
 
     try {
+        const finalPaidAmount = data.paymentMode === 'Due' ? 0 : data.paidAmount || 0;
+        const finalDueAmount = totalAmount - finalPaidAmount;
+
         const fullBillDetails: Bill = {
             id: uuidv4(),
             ...data,
             inCarat: data.inCarat || 0,
             outCarat: data.outCarat || 0,
+            smallCarat: data.smallCarat || undefined,
+            bigCarat: data.bigCarat || undefined,
             totalCarat: (data.smallCarat || 0) + (data.bigCarat || 0),
             totalAmount,
-            dueAmount: dueAmount < 0 ? 0 : dueAmount,
+            paidAmount: finalPaidAmount,
+            dueAmount: finalDueAmount < 0 ? 0 : finalDueAmount,
             createdAt: new Date(),
             caratType: data.smallCarat ? 'Small Carat' : 'Big Carat',
         };
@@ -244,7 +262,7 @@ export function BillingForm() {
                             <FormItem>
                                 <FormLabel>Paid Amount</FormLabel>
                                 <FormControl>
-                                <Input type="number" placeholder="Enter paid amount" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}/>
+                                <Input type="number" placeholder="Enter paid amount" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} disabled={paymentMode === 'Due'}/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -297,6 +315,12 @@ export function BillingForm() {
                                         </FormControl>
                                         <FormLabel className="font-normal">Cash</FormLabel>
                                     </FormItem>
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl>
+                                        <RadioGroupItem value="Due" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">Due</FormLabel>
+                                    </FormItem>
                                     </RadioGroup>
                                 </FormControl>
                                 <FormMessage />
@@ -331,7 +355,7 @@ export function BillingForm() {
                 <Separator />
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Paid Amount:</span>
-                  <span>{(Number(paidAmount) || 0).toLocaleString()}rs</span>
+                  <span>{(paymentMode === 'Due' ? 0 : Number(paidAmount) || 0).toLocaleString()}rs</span>
                 </div>
                 <Separator />
                 <div className={cn("flex justify-between font-bold text-xl", dueAmount > 0 ? 'text-destructive' : 'text-primary')}>
@@ -360,3 +384,5 @@ export function BillingForm() {
     </>
   );
 }
+
+    
