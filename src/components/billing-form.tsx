@@ -303,6 +303,15 @@ export function BillingForm() {
                                 </FormItem>
                             )}
                             />
+                        <div className="md:col-span-2">
+                            <FormLabel>Due Amount</FormLabel>
+                            <div className={cn("flex items-center justify-between rounded-md border border-input bg-muted px-3 py-2 text-sm mt-2", dueAmount > 0 ? 'text-destructive' : 'text-primary')}>
+                                <span>{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}rs</span>
+                            </div>
+                            {dueAmount < 0 && (
+                                <p className="text-sm text-green-600 font-medium mt-2">Change to return: {(-dueAmount).toLocaleString()}rs</p>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
             </div>
