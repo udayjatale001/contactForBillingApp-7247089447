@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as React from 'react';
 import { Gem, Loader2, User, ChevronsUpDown, Banknote } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -28,19 +29,18 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { BillingFormValues, billingSchema } from '@/lib/types';
-import { createBill } from '@/app/actions/billing';
+import { BillingFormValues, billingSchema, Bill } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { BillSummaryDialog } from './bill-summary-dialog';
 import { cn } from '@/lib/utils';
+import { useAppContext } from './root-state-provider';
 
-
-type BillResult = Awaited<ReturnType<typeof createBill>>;
 
 export function BillingForm() {
   const { toast } = useToast();
+  const { addBill } = useAppContext();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [billResult, setBillResult] = React.useState<BillResult | null>(null);
+  const [generatedBill, setGeneratedBill] = React.useState<Bill | null>(null);
 
   const defaultFormValues = {
       customerName: '',
@@ -88,16 +88,18 @@ export function BillingForm() {
   }, [paidAmount, totalAmount, form]);
 
   const handleSaveBill = () => {
-    toast({
-      title: 'Bill Saved!',
-      description: 'The bill has been saved successfully.',
-    });
-    setBillResult(null);
-    form.reset(defaultFormValues);
+    if (generatedBill) {
+      addBill(generatedBill);
+      toast({
+        title: 'Bill Saved!',
+        description: 'The bill has been successfully added to the history.',
+      });
+      handleCloseDialog();
+    }
   };
 
   const handleCloseDialog = () => {
-    setBillResult(null);
+    setGeneratedBill(null);
     form.reset(defaultFormValues);
   }
 
@@ -115,23 +117,20 @@ export function BillingForm() {
     }
 
     try {
-        const fullBillDetails = {
+        const fullBillDetails: Bill = {
+            id: uuidv4(),
             ...data,
+            inCarat: data.inCarat || 0,
+            outCarat: data.outCarat || 0,
             totalCarat: (data.smallCarat || 0) + (data.bigCarat || 0),
             totalAmount,
             dueAmount: dueAmount < 0 ? 0 : dueAmount,
-            rate: 0, // Rate is now based on carat type
             createdAt: new Date(),
-            // Ensure caratType is handled if needed by backend
             caratType: data.smallCarat ? 'Small Carat' : 'Big Carat',
         };
 
-      const result = await createBill(fullBillDetails as any); // Adjust type as needed
-      if (result.success) {
-        setBillResult(result);
-      } else {
-        throw new Error(result.error || 'Failed to create bill.');
-      }
+      setGeneratedBill(fullBillDetails);
+
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -341,10 +340,10 @@ export function BillingForm() {
           </div>
         </form>
       </Form>
-      {billResult && (
+      {generatedBill && (
         <BillSummaryDialog
-          result={billResult}
-          open={!!billResult}
+          bill={generatedBill}
+          open={!!generatedBill}
           onOpenChange={handleCloseDialog}
           onSave={handleSaveBill}
         />

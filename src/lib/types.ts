@@ -33,3 +33,22 @@ export const billingSchema = z.object({
 });
 
 export type BillingFormValues = z.infer<typeof billingSchema>;
+
+
+// This will represent the final, saved bill structure.
+export type Bill = {
+  id: string;
+  customerName: string;
+  inCarat: number;
+  outCarat: number;
+  totalCarat: number;
+  smallCarat?: number;
+  bigCarat?: number;
+  caratType: string;
+  totalAmount: number;
+  paidAmount: number;
+  dueAmount: number;
+  paidTo: string;
+  paymentMode: string;
+  createdAt: Date;
+};

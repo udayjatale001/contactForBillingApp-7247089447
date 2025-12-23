@@ -17,8 +17,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { mockBills } from '@/lib/mock-data';
-import type { Bill } from '@/lib/mock-data';
+import type { Bill } from '@/lib/types';
 import {
   Dialog,
   DialogContent,
@@ -29,8 +28,11 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useAppContext } from '@/components/root-state-provider';
+import { FileText } from 'lucide-react';
 
 export default function HistoryPage() {
+  const { bills } = useAppContext();
   const [selectedBill, setSelectedBill] = React.useState<Bill | null>(null);
 
   const handleBillClick = (bill: Bill) => {
@@ -75,41 +77,51 @@ export default function HistoryPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Customer</TableHead>
-                <TableHead>Total Amount</TableHead>
-                <TableHead>Due Amount</TableHead>
-                <TableHead>Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockBills.map((bill) => (
-                <TableRow
-                  key={bill.id}
-                  onClick={() => handleBillClick(bill)}
-                  className="cursor-pointer"
-                >
-                  <TableCell>{bill.customerName}</TableCell>
-                  <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}
-                    >
-                      {bill.dueAmount.toLocaleString()}rs
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{bill.createdAt.toLocaleDateString()}</TableCell>
+          {bills.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Total Amount</TableHead>
+                  <TableHead>Due Amount</TableHead>
+                  <TableHead>Date</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {bills.map((bill) => (
+                  <TableRow
+                    key={bill.id}
+                    onClick={() => handleBillClick(bill)}
+                    className="cursor-pointer"
+                  >
+                    <TableCell>{bill.customerName}</TableCell>
+                    <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}
+                      >
+                        {bill.dueAmount.toLocaleString()}rs
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{new Date(bill.createdAt).toLocaleDateString()}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center py-16">
+                <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-4 text-lg font-semibold">No Bills Found</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                    Generate a new bill to see its history here.
+                </p>
+            </div>
+          )}
         </CardContent>
       </Card>
       {selectedBill && (
         <Dialog open={!!selectedBill} onOpenChange={handleCloseDialog}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md printable-area">
             <DialogHeader>
               <DialogTitle>Bill Details</DialogTitle>
               <DialogDescription>
@@ -122,7 +134,7 @@ export default function HistoryPage() {
                   Bill for {selectedBill.customerName}
                 </h3>
                 <Separator />
-                <DetailItem
+                 <DetailItem
                   label="Total Carat"
                   value={selectedBill.totalCarat}
                 />
@@ -130,7 +142,8 @@ export default function HistoryPage() {
                   label="Carat Type"
                   value={selectedBill.caratType}
                 />
-                <DetailItem label="Rate" value={`${selectedBill.rate}rs`} />
+                <DetailItem label="Rate" value={`${(selectedBill.totalAmount/selectedBill.totalCarat).toFixed(2)}rs`} />
+                <Separator />
                 <DetailItem
                   label="Total Amount"
                   value={`${selectedBill.totalAmount.toLocaleString()}rs`}
@@ -164,7 +177,7 @@ export default function HistoryPage() {
                 />
               </div>
             </div>
-            <DialogFooter className="sm:justify-between">
+            <DialogFooter className="sm:justify-between non-printable">
               <Button variant="outline" onClick={handlePrint}>
                 Print
               </Button>
