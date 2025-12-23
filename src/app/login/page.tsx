@@ -30,6 +30,7 @@ export default function LoginPage() {
     if (!isUserLoading && user) {
       // User is already logged in, check role and redirect
       const checkRoleAndRedirect = async () => {
+        if (!firestore) return;
         const ownerDocRef = doc(firestore, 'roles_owner', user.uid);
         const ownerDoc = await getDoc(ownerDocRef);
         if (ownerDoc.exists()) {
@@ -44,6 +45,7 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth || !firestore) return;
     setIsLoading(true);
 
     try {
