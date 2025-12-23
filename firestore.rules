@@ -1,157 +1,141 @@
-/**
- * @file firestore.rules
- * @description Firestore Security Rules for the business management application.
- *
- * ## Core Philosophy
- * This ruleset implements a strict role-based access control model with two primary roles: Owners and Managers.
- * - **Owners** are granted global read access to all business data (manager profiles, bills) for auditing and reporting purposes.
- * - **Managers** are restricted to a strict ownership model, where they can only create, read, update, and delete their own profile and the bills they have generated.
- *
- * ## Data Structure
- * - `/owners/{ownerId}`: Stores Owner user profiles.
- * - `/managers/{managerId}`: Stores Manager user profiles.
- * - `/managers/{managerId}/bills/{billId}`: Bills are nested under the Manager who created them, enforcing a clear and secure data hierarchy.
- *
- * ## Key Security Decisions
- * - **Global Read for Owners**: An `isBusinessOwner()` function checks for a user's document in the `/owners` collection to grant privileged read access across the database.
- * - **Manager Sandbox**: Managers are strictly confined to their own data tree (`/managers/{managerId}/...`). They cannot see or modify data created by other managers.
- * - **No User Enumeration**: Listing of top-level `owners` and `managers` is restricted to prevent scraping of user information. Only Owners can list all managers.
- * - **Default Deny**: All paths not explicitly matched are denied access by default. Operations not explicitly allowed are also denied.
- *
- * ## Denormalization for Authorization
- * The ruleset relies on denormalization for efficient security. The `managerId` field is required on every `Bill` document. This allows a fast check on `create` and prevents the `managerId` from being changed on `update`, securing the bill's ownership without costly `get()` calls to parent documents.
- *
- * ## Structural Segregation
- * `owners` and `managers` are stored in separate top-level collections. This cleanly separates users with different roles and permissions, simplifying the security logic for each.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // =====================================================================
+    // -------------------------------------------------------------------------
     // Helper Functions
-    // =====================================================================
+    // -------------------------------------------------------------------------
 
     /**
-     * Returns true if the user is authenticated.
+     * Checks if the user is authenticated.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * Returns true if the requesting user's UID matches the provided userId.
-     * This is the foundation of the document ownership model.
+     * Checks if the authenticated user's UID matches the provided userId.
+     * This is the primary function for enforcing document ownership.
      */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
     /**
-     * Returns true if the document exists.
-     * CRITICAL: Used for all update and delete operations to prevent acting on non-existent data.
+     * Checks if the authenticated user has the "Owner" role by verifying
+     * the existence of a corresponding document in the roles_owner collection.
      */
-    function isExistingDoc() {
-      return resource != null;
+    function isOwnerRole() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_owner/$(request.auth.uid));
     }
 
     /**
-     * Returns true if the requesting user is a business owner.
-     * Checks for the existence of an owner profile document for the current user.
-     * This is used to grant global read-only privileges.
+     * Validates that the ID within a new Manager document matches the document's path ID.
+     * Enforces relational integrity on creation.
      */
-    function isBusinessOwner() {
-      return isSignedIn() && exists(/databases/$(database)/documents/owners/$(request.auth.uid));
-    }
-
-    // =====================================================================
-    // Authorization-Critical Data Validation Functions
-    // =====================================================================
-
-    /**
-     * Validates that the `id` field within a new document matches the document's ID from the path.
-     * Enforces relational integrity on create.
-     */
-    function hasValidIdOnCreate(docId) {
-      return request.resource.data.id == docId;
+    function isValidManagerCreate(managerId) {
+      return request.resource.data.id == managerId;
     }
 
     /**
-     * Validates that the `id` field is immutable on update.
-     * Prevents re-assigning the ownership link of a user profile.
+     * Ensures the manager's unique ID field is immutable upon update.
      */
-    function isIdImmutable() {
+    function isImmutableManagerId() {
       return request.resource.data.id == resource.data.id;
     }
-
+    
     /**
-     * On bill creation, validates that the `managerId` in the new bill's data
-     * matches the manager's ID from the path.
+     * Validates that the managerId within a new Bill document matches the managerId from the path.
+     * Enforces relational integrity for user-scoped subcollections.
      */
-    function isBillManagerIdValidOnCreate(managerId) {
+    function isValidSubcollectionBillCreate(managerId) {
       return request.resource.data.managerId == managerId;
     }
-
+    
     /**
-     * Validates that the `managerId` field on a bill is immutable on update.
-     * Prevents a bill from being reassigned to a different manager.
+     * Validates that the managerId of an incoming bill being created in the global
+     * collection matches the UID of the user creating it.
      */
-    function isBillManagerIdImmutable() {
+    function isValidGlobalBillCreate() {
+      return request.resource.data.managerId == request.auth.uid;
+    }
+    
+    /**
+     * Ensures the managerId field on any Bill document is immutable.
+     */
+    function isImmutableBillManagerId() {
       return request.resource.data.managerId == resource.data.managerId;
     }
 
-    // =====================================================================
+    // -------------------------------------------------------------------------
     // Collection Rules
-    // =====================================================================
+    // -------------------------------------------------------------------------
 
     /**
-     * @description Defines access control for owner profile documents.
-     * @path /owners/{ownerId}
-     * @allow (create, update, delete) A user can manage their own owner profile document.
-     * @deny (list) Another user cannot list all owners in the system.
-     * @deny (update) A user cannot modify another user's owner profile.
-     * @principle Enforces self-management of user profile data.
-     */
-    match /owners/{ownerId} {
-      allow get: if isOwner(ownerId) || isBusinessOwner();
-      allow list: if false;
-      allow create: if isOwner(ownerId) && hasValidIdOnCreate(ownerId);
-      allow update: if isOwner(ownerId) && isExistingDoc() && isIdImmutable();
-      allow delete: if isOwner(ownerId) && isExistingDoc();
-    }
-
-    /**
-     * @description Defines access control for manager profile documents.
+     * @description Rules for manager profile documents. Only the manager themselves can create, view, or edit their own profile.
      * @path /managers/{managerId}
-     * @allow (get) An Owner can view any manager's profile for auditing.
-     * @allow (create, update) A manager can create and update their own profile.
-     * @deny (update) A manager cannot update another manager's profile.
-     * @deny (list) A manager cannot list all other managers.
-     * @principle Restricts managers to their own data while allowing owner oversight.
+     * @allow (create) An authenticated user creating their own manager profile: auth.uid === managerId.
+     * @deny (get) A manager trying to read another manager's profile: auth.uid !== managerId.
+     * @deny (list) Any user trying to list all managers in the system.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
      */
     match /managers/{managerId} {
-      allow get: if isOwner(managerId) || isBusinessOwner();
-      allow list: if isBusinessOwner();
-      allow create: if isOwner(managerId) && hasValidIdOnCreate(managerId);
-      allow update: if isOwner(managerId) && isExistingDoc() && isIdImmutable();
-      allow delete: if isOwner(managerId) && isExistingDoc();
+      allow get: if isOwner(managerId);
+      allow list: if false;
+      allow create: if isOwner(managerId) && isValidManagerCreate(managerId);
+      allow update: if isOwner(managerId) && isImmutableManagerId();
+      allow delete: if isOwner(managerId);
+
+      /**
+       * @description Rules for a manager's private bills subcollection. Access is granted if the user is the owner of the parent manager document.
+       * @path /managers/{managerId}/bills/{billId}
+       * @allow (list) A manager listing their own created bills.
+       * @deny (get) A manager trying to read a bill from another manager's subcollection.
+       * @principle Enforces hierarchical ownership; permissions are inherited from the parent document.
+       */
+      match /bills/{billId} {
+        allow get: if isOwner(managerId);
+        allow list: if isOwner(managerId);
+        allow create: if isOwner(managerId) && isValidSubcollectionBillCreate(managerId);
+        allow update: if isOwner(managerId) && isImmutableBillManagerId();
+        allow delete: if isOwner(managerId);
+      }
     }
 
     /**
-     * @description Defines access control for bills, which are subcollections of managers.
-     * @path /managers/{managerId}/bills/{billId}
-     * @allow (create) The manager specified in the path can create a new bill for themselves.
-     * @allow (get, list) An Owner can read any manager's bills.
-     * @deny (create) A manager cannot create a bill under another manager's collection.
-     * @deny (update) A manager cannot modify a bill created by another manager.
-     * @principle Enforces document ownership within a user's data tree.
+     * @description Defines user roles. The existence of a document here grants owner privileges.
+     * @path /roles_owner/{ownerId}
+     * @allow (create) A user creating their own owner role document.
+     * @deny (get) Another user trying to read someone else's owner role document.
+     * @deny (list) Any user trying to list all owners.
+     * @principle Secures role-granting documents and prevents user enumeration.
      */
-    match /managers/{managerId}/bills/{billId} {
-      allow get: if isOwner(managerId) || isBusinessOwner();
-      allow list: if isOwner(managerId) || isBusinessOwner();
-      allow create: if isOwner(managerId) && isBillManagerIdValidOnCreate(managerId);
-      allow update: if isOwner(managerId) && isExistingDoc() && isBillManagerIdImmutable();
-      allow delete: if isOwner(managerId) && isExistingDoc();
+    match /roles_owner/{ownerId} {
+      allow get: if isOwner(ownerId);
+      allow list: if false;
+      // In production, creation might be restricted to an admin role or Cloud Function.
+      // For prototyping, self-creation is permitted.
+      allow create: if isOwner(ownerId) && request.resource.data.id == ownerId;
+      allow update: if isOwner(ownerId) && request.resource.data.id == resource.data.id;
+      allow delete: if isOwner(ownerId);
+    }
+    
+    /**
+     * @description A global collection of all bills, designed for owner oversight.
+     *              Owners have full read access. Managers can only create bills, or update/delete their own specific bills.
+     * @path /bills/{billId}
+     * @allow (list) An Owner listing all bills in the system for reporting.
+     * @deny (list) A Manager attempting to list all bills.
+     * @allow (update) A Manager updating a bill they previously created (resource.data.managerId === auth.uid).
+     * @deny (update) An Owner trying to modify a manager's bill.
+     * @principle Segregates access patterns: global read for roles, specific write for owners.
+     */
+    match /bills/{billId} {
+      allow get: if isOwnerRole();
+      allow list: if isOwnerRole();
+      allow create: if isSignedIn() && isValidGlobalBillCreate();
+      allow update: if isOwner(resource.data.managerId) && isImmutableBillManagerId();
+      allow delete: if isOwner(resource.data.managerId);
     }
   }
 }
