@@ -102,7 +102,7 @@ export function BillingForm() {
 
 
   const handleSaveBill = async () => {
-    if (generatedBill && user) {
+    if (generatedBill && user && firestore) {
       try {
         const managerBillsColRef = collection(firestore, 'managers', user.uid, 'bills');
         const globalBillsColRef = collection(firestore, 'bills');
@@ -156,6 +156,17 @@ export function BillingForm() {
         const finalPaidAmount = data.paymentMode === 'Due' ? 0 : data.paidAmount || 0;
         const finalDueAmount = totalAmount - finalPaidAmount;
 
+        const hasSmallCarat = (data.smallCarat || 0) > 0;
+        const hasBigCarat = (data.bigCarat || 0) > 0;
+        let caratType = 'N/A';
+        if (hasSmallCarat && hasBigCarat) {
+          caratType = 'Mixed';
+        } else if (hasSmallCarat) {
+          caratType = 'Small Carat';
+        } else if (hasBigCarat) {
+          caratType = 'Big Carat';
+        }
+
         const fullBillDetails: Omit<Bill, 'id'> & { id?: string } = {
             managerId: user.uid,
             ...data,
@@ -168,7 +179,7 @@ export function BillingForm() {
             paidAmount: finalPaidAmount,
             dueAmount: finalDueAmount < 0 ? 0 : finalDueAmount,
             createdAt: new Date().toISOString(),
-            caratType: data.smallCarat ? 'Small Carat' : 'Big Carat',
+            caratType: caratType,
         };
         
       const newBillId = uuidv4();
