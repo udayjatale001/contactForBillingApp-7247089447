@@ -35,7 +35,7 @@ export default function MakeOwnerPage() {
     }
   }, [user, isUserLoading, firestore, router, toast]);
 
-  const handleMakeOwner = async () => {
+  const handleMakeOwner = () => {
     if (!user || !firestore) {
       toast({
         variant: 'destructive',
@@ -48,31 +48,20 @@ export default function MakeOwnerPage() {
     setIsLoading(true);
     const ownerDocRef = doc(firestore, 'roles_owner', user.uid);
 
-    try {
-      // Use the non-blocking function to create the role document
-      await setDocumentNonBlocking(ownerDocRef, { id: user.uid }, {});
-      
-      toast({
-        title: 'Success!',
-        description: 'You have been granted owner privileges.',
-      });
-      setIsOwner(true); // Update state to reflect new role
-      
-      // Redirect to dashboard after a short delay
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1500);
-
-    } catch (error) {
-      console.error('Error granting owner role:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Operation Failed',
-        description: 'Could not grant owner privileges. See console for details.',
-      });
-    } finally {
+    // Use the non-blocking function to create the role document
+    setDocumentNonBlocking(ownerDocRef, { id: user.uid, email: user.email, name: user.displayName || 'Owner' }, { merge: true });
+    
+    toast({
+      title: 'Success!',
+      description: 'You have been granted owner privileges. You will be redirected.',
+    });
+    setIsOwner(true); // Update state to reflect new role
+    
+    // Redirect to dashboard after a short delay
+    setTimeout(() => {
+      router.push('/dashboard');
       setIsLoading(false);
-    }
+    }, 2000);
   };
   
   if (isUserLoading || isOwner === null) {
