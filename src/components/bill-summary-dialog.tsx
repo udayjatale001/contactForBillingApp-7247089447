@@ -69,7 +69,7 @@ export function BillSummaryDialog({ result, open, onOpenChange, onSave }: BillSu
             </div>
         </div>
 
-        <DialogFooter className="px-6 pb-6">
+        <DialogFooter className="px-6 pb-6 sm:justify-between">
           <Button variant="outline" onClick={onSave}>Save</Button>
           <Button onClick={() => onOpenChange(false)}>Close</Button>
         </DialogFooter>

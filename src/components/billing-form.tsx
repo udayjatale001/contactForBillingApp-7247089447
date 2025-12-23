@@ -42,12 +42,20 @@ export function BillingForm() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [billResult, setBillResult] = React.useState<BillResult | null>(null);
 
-  const form = useForm<BillingFormValues>({
-    resolver: zodResolver(billingSchema),
-    defaultValues: {
+  const defaultFormValues = {
+      customerName: '',
+      inCarat: undefined,
+      outCarat: undefined,
+      smallCarat: undefined,
+      bigCarat: undefined,
+      paidAmount: undefined,
       paymentMode: 'Cash',
       paidTo: 'Gopal Dada',
-    },
+  };
+
+  const form = useForm<BillingFormValues>({
+    resolver: zodResolver(billingSchema),
+    defaultValues: defaultFormValues,
   });
 
   const { watch, trigger, formState: { errors } } = form;
@@ -85,7 +93,13 @@ export function BillingForm() {
       description: 'The bill has been saved successfully.',
     });
     setBillResult(null);
+    form.reset(defaultFormValues);
   };
+
+  const handleCloseDialog = () => {
+    setBillResult(null);
+    form.reset(defaultFormValues);
+  }
 
   async function onSubmit(data: BillingFormValues) {
     setIsSubmitting(true);
@@ -115,8 +129,6 @@ export function BillingForm() {
       const result = await createBill(fullBillDetails as any); // Adjust type as needed
       if (result.success) {
         setBillResult(result);
-        // We don't show the toast immediately, but after the user saves the bill.
-        form.reset();
       } else {
         throw new Error(result.error || 'Failed to create bill.');
       }
@@ -163,7 +175,7 @@ export function BillingForm() {
                             <FormItem>
                                 <FormLabel>In Carat</FormLabel>
                                 <FormControl>
-                                <Input type="number" placeholder="e.g., 500" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                <Input type="number" placeholder="e.g., 500" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -176,7 +188,7 @@ export function BillingForm() {
                             <FormItem>
                                 <FormLabel>Out Carat</FormLabel>
                                 <FormControl>
-                                <Input type="number" placeholder="e.g., 100" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                <Input type="number" placeholder="e.g., 100" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -198,7 +210,7 @@ export function BillingForm() {
                                 <FormItem>
                                     <FormLabel>Small Carat (Rate: 17rs)</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder="e.g., 10" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    <Input type="number" placeholder="e.g., 10" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -211,7 +223,7 @@ export function BillingForm() {
                                 <FormItem>
                                     <FormLabel>Big Carat (Rate: 20rs)</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder="e.g., 5" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    <Input type="number" placeholder="e.g., 5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -233,7 +245,7 @@ export function BillingForm() {
                             <FormItem>
                                 <FormLabel>Paid Amount</FormLabel>
                                 <FormControl>
-                                <Input type="number" placeholder="Enter paid amount" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}/>
+                                <Input type="number" placeholder="Enter paid amount" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -333,7 +345,7 @@ export function BillingForm() {
         <BillSummaryDialog
           result={billResult}
           open={!!billResult}
-          onOpenChange={() => setBillResult(null)}
+          onOpenChange={handleCloseDialog}
           onSave={handleSaveBill}
         />
       )}

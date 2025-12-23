@@ -6,21 +6,21 @@ export const billingSchema = z.object({
     .min(2, { message: 'Customer name must be at least 2 characters.' }),
   inCarat: z.coerce
     .number({ required_error: 'In Carat value is required.' })
-    .positive({ message: 'In Carat must be a positive number.' }),
+    .positive({ message: 'In Carat must be a positive number.' }).optional(),
   outCarat: z.coerce
     .number({ required_error: 'Out Carat value is required.' })
-    .nonnegative({ message: 'Out Carat cannot be negative.' }),
+    .nonnegative({ message: 'Out Carat cannot be negative.' }).optional(),
   smallCarat: z.coerce
     .number()
-    .positive({ message: 'Small Carat must be a positive number.' })
+    .gt(0, { message: 'Small Carat must be a positive number.' })
     .optional(),
   bigCarat: z.coerce
     .number()
-    .positive({ message: 'Big Carat must be a positive number.' })
+    .gt(0, { message: 'Big Carat must be a positive number.' })
     .optional(),
   paidAmount: z.coerce
     .number({ required_error: 'Paid amount is required.' })
-    .nonnegative({ message: 'Paid amount cannot be negative.' }),
+    .nonnegative({ message: 'Paid amount cannot be negative.' }).optional(),
   paidTo: z.enum(['Gopal Dada', 'Yuvraj Dada', 'Suyash Dada', 'Gaju Dada'], {
     required_error: 'You need to select who was paid.',
   }),
