@@ -36,7 +36,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import type { Bill } from '@/lib/types';
 import { format, subMonths, startOfMonth, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -62,21 +62,37 @@ export function OwnerDashboard() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSendingReminders, setIsSendingReminders] = React.useState(false);
+  const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
 
+  React.useEffect(() => {
+    if(user && firestore) {
+      const checkRole = async () => {
+        const ownerDocRef = doc(firestore, 'roles_owner', user.uid);
+        const ownerDoc = await getDoc(ownerDocRef);
+        setIsOwner(ownerDoc.exists());
+      }
+      checkRole();
+    }
+  }, [user, firestore]);
+
+  const collectionPath = React.useMemo(() => {
+    if (isOwner === null || !user) return null;
+    return isOwner ? 'bills' : `managers/${user.uid}/bills`;
+  }, [isOwner, user]);
 
   // Query for all bills, ordered by creation date
   const billsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !collectionPath) return null;
     // Owners should see all bills from the global collection
-    return query(collection(firestore, 'bills'), orderBy('createdAt', 'desc'));
-  }, [firestore]);
+    return query(collection(firestore, collectionPath), orderBy('createdAt', 'desc'));
+  }, [firestore, collectionPath]);
 
   const { data: bills, isLoading: isLoadingBills, error: billsError } = useCollection<Bill>(billsQuery);
 
   const recentBillsQuery = useMemoFirebase(() => {
-      if(!firestore) return null;
-      return query(collection(firestore, 'bills'), orderBy('createdAt', 'desc'), limit(5));
-  }, [firestore]);
+      if(!firestore || !collectionPath) return null;
+      return query(collection(firestore, collectionPath), orderBy('createdAt', 'desc'), limit(5));
+  }, [firestore, collectionPath]);
 
   const { data: recentBills, isLoading: isLoadingRecent } = useCollection<Bill>(recentBillsQuery);
 
@@ -170,7 +186,7 @@ export function OwnerDashboard() {
     }
 };
 
-  const isLoading = isUserLoading || isLoadingBills;
+  const isLoading = isUserLoading || isLoadingBills || isOwner === null;
 
   if (isLoading) {
     return (
@@ -321,7 +337,7 @@ export function OwnerDashboard() {
                                 {bill.dueAmount.toLocaleString()}rs
                             </Badge>
                             </TableCell>
-                            <TableCell>{format(new Date(bill.createdAt), 'dd MMM')}</TableCell>
+                            <TableCell>{format(new Date(bill.createdAt), 'dd MMM, p')}</TableCell>
                         </TableRow>
                         ))}
                     </TableBody>
@@ -372,7 +388,7 @@ export function OwnerDashboard() {
                             </Table>
                         </div>
                         <div className="flex items-center justify-center p-6 bg-secondary/30 rounded-lg">
-                            <Button size="lg" onClick={handleSendReminders} disabled={isSendingReminders}>
+                            <Button size="lg" onClick={handleSendReminders} disabled={!isOwner || isSendingReminders}>
                                 {isSendingReminders ? (
                                     <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -397,3 +413,5 @@ export function OwnerDashboard() {
     </div>
   );
 }
+
+    

@@ -30,24 +30,37 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { FileText, Loader2 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDoc, doc } from 'firebase/firestore';
 
 export default function HistoryPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [selectedBill, setSelectedBill] = React.useState<Bill | null>(null);
+  const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    if(user && firestore) {
+      const checkRole = async () => {
+        const ownerDocRef = doc(firestore, 'roles_owner', user.uid);
+        const ownerDoc = await getDoc(ownerDocRef);
+        setIsOwner(ownerDoc.exists());
+      }
+      checkRole();
+    }
+  }, [user, firestore]);
+
+  const collectionPath = React.useMemo(() => {
+    if (isOwner === null || !user) return null;
+    return isOwner ? 'bills' : `managers/${user.uid}/bills`;
+  }, [isOwner, user]);
 
   const billsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    // Querying the global 'bills' collection for an owner might be desired,
-    // but for a manager, we query their specific subcollection.
-    // The logic below assumes a manager is viewing their own bills.
-    // For an owner, you might use a different query.
+    if (!firestore || !collectionPath) return null;
     return query(
-      collection(firestore, 'managers', user.uid, 'bills'),
+      collection(firestore, collectionPath),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, user]);
+  }, [firestore, collectionPath]);
 
   const { data: bills, isLoading } = useCollection<Bill>(billsQuery);
 
@@ -93,7 +106,7 @@ export default function HistoryPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isLoading || isOwner === null ? (
              <div className="flex justify-center items-center py-16">
                 <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
             </div>
@@ -122,7 +135,7 @@ export default function HistoryPage() {
                       <Badge
                         variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}
                       >
-                        {bill.dueAmount.toLocaleString()}rs
+                        {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
                       </Badge>
                     </TableCell>
                     <TableCell>{new Date(bill.createdAt).toLocaleString()}</TableCell>
@@ -158,7 +171,7 @@ export default function HistoryPage() {
                 <Separator />
                 <DetailItem
                   label="Total Carat"
-                  value={selectedBill.totalCarat}
+                  value={`${selectedBill.totalCarat} `}
                 />
                 <Separator />
                 <div>
@@ -190,7 +203,7 @@ export default function HistoryPage() {
                         selectedBill.dueAmount > 0 ? 'destructive' : 'default'
                       }
                     >
-                     {selectedBill.dueAmount.toLocaleString()}rs
+                     {selectedBill.dueAmount > 0 ? `${selectedBill.dueAmount.toLocaleString()}rs` : 'Paid'}
                     </Badge>
                   }
                 />
@@ -218,3 +231,5 @@ export default function HistoryPage() {
     </div>
   );
 }
+
+    
