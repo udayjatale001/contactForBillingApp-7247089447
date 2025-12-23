@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 
 export function OwnerDashboard() {
   const { toast } = useToast();
@@ -41,7 +41,7 @@ export function OwnerDashboard() {
   
   const billsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'bills'));
+    return query(collection(firestore, 'bills'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
   const { data: bills, isLoading } = useCollection<Bill>(billsQuery);
@@ -65,7 +65,7 @@ export function OwnerDashboard() {
     const totalRevenue = bills.reduce((sum, bill) => sum + bill.paidAmount, 0);
     const totalDue = bills.reduce((sum, bill) => sum + bill.dueAmount, 0);
     const dueBills = bills.filter((bill) => bill.dueAmount > 0).sort((a, b) => b.dueAmount - a.dueAmount);
-    const recentBills = [...bills].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+    const recentBills = bills.slice(0, 5);
     
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
