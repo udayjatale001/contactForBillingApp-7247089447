@@ -38,6 +38,7 @@ export type BillingFormValues = z.infer<typeof billingSchema>;
 // This will represent the final, saved bill structure.
 export type Bill = {
   id: string;
+  managerId: string;
   customerName: string;
   inCarat: number;
   outCarat: number;
@@ -50,7 +51,5 @@ export type Bill = {
   dueAmount: number;
   paidTo: string;
   paymentMode: string;
-  createdAt: Date;
+  createdAt: string; // Storing as ISO string for Firestore compatibility
 };
-
-    

@@ -22,7 +22,6 @@ import { Button } from './ui/button';
 import { BellRing, Send, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
-import { useAppContext } from './root-state-provider';
 import type { Bill } from '@/lib/types';
 import {
   Dialog,
@@ -33,26 +32,39 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 export function OwnerDashboard() {
-  const { bills } = useAppContext();
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user } = useUser();
+  
+  const billsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'bills');
+  }, [firestore]);
+
+  const { data: bills, isLoading } = useCollection<Bill>(billsQuery);
+
   const [isSendingReminders, setIsSendingReminders] = React.useState(false);
   const [selectedBill, setSelectedBill] = React.useState<Bill | null>(null);
 
-  const totalRevenue = React.useMemo(() => bills.reduce((sum, bill) => sum + bill.paidAmount, 0), [bills]);
-  const totalDue = React.useMemo(() => bills.reduce((sum, bill) => sum + bill.dueAmount, 0), [bills]);
-  const dueBills = React.useMemo(() => bills.filter((bill) => bill.dueAmount > 0).sort((a, b) => b.dueAmount - a.dueAmount), [bills]);
-  const recentBills = React.useMemo(() => [...bills].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5), [bills]);
+  const totalRevenue = React.useMemo(() => (bills || []).reduce((sum, bill) => sum + bill.paidAmount, 0), [bills]);
+  const totalDue = React.useMemo(() => (bills || []).reduce((sum, bill) => sum + bill.dueAmount, 0), [bills]);
+  const dueBills = React.useMemo(() => (bills || []).filter((bill) => bill.dueAmount > 0).sort((a, b) => b.dueAmount - a.dueAmount), [bills]);
+  const recentBills = React.useMemo(() => [...(bills || [])].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5), [bills]);
 
   const inactiveCustomers = React.useMemo(() => {
+    if (!bills) return [];
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     
     const customerLastActivity: { [key: string]: Date } = {};
     bills.forEach(bill => {
-        if (!customerLastActivity[bill.customerName] || new Date(bill.createdAt) > customerLastActivity[bill.customerName]) {
-            customerLastActivity[bill.customerName] = new Date(bill.createdAt);
+        const createdAtDate = new Date(bill.createdAt);
+        if (!customerLastActivity[bill.customerName] || createdAtDate > customerLastActivity[bill.customerName]) {
+            customerLastActivity[bill.customerName] = createdAtDate;
         }
     });
 
@@ -62,12 +74,14 @@ export function OwnerDashboard() {
   }, [bills]);
 
   const salesData = React.useMemo(() => {
+    if (!bills) return [];
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const monthlyTotals: { [key: string]: number } = {};
 
     bills.forEach(bill => {
-      const month = new Date(bill.createdAt).getMonth();
-      const year = new Date(bill.createdAt).getFullYear();
+      const createdAtDate = new Date(bill.createdAt);
+      const month = createdAtDate.getMonth();
+      const year = createdAtDate.getFullYear();
       const key = `${monthNames[month]} ${year}`;
       if (!monthlyTotals[key]) {
         monthlyTotals[key] = 0;
@@ -146,7 +160,7 @@ export function OwnerDashboard() {
             <CardTitle className="text-sm font-medium">Sales</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{bills.length}</div>
+            <div className="text-2xl font-bold">+{bills?.length || 0}</div>
             <p className="text-xs text-muted-foreground">total bills generated</p>
           </CardContent>
         </Card>

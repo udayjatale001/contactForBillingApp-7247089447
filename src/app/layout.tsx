@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { RootStateProvider } from '@/components/root-state-provider';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
   title: 'Aanand Sagar Billing App',
@@ -31,7 +32,9 @@ export default function RootLayout({
         />
       </head>
       <body className={cn('font-body antialiased', fontSans.variable)}>
-        <RootStateProvider>{children}</RootStateProvider>
+        <FirebaseClientProvider>
+          <RootStateProvider>{children}</RootStateProvider>
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>

@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import * as React from 'react';
 import { Gem, Loader2, User, ChevronsUpDown, Banknote } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { collection, doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -33,12 +34,13 @@ import { BillingFormValues, billingSchema, Bill } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { BillSummaryDialog } from './bill-summary-dialog';
 import { cn } from '@/lib/utils';
-import { useAppContext } from './root-state-provider';
+import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
 
 
 export function BillingForm() {
   const { toast } = useToast();
-  const { addBill } = useAppContext();
+  const { user } = useUser();
+  const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [generatedBill, setGeneratedBill] = React.useState<Bill | null>(null);
 
@@ -49,8 +51,8 @@ export function BillingForm() {
       smallCarat: undefined,
       bigCarat: undefined,
       paidAmount: undefined,
-      paymentMode: 'Cash',
-      paidTo: 'Gopal Dada',
+      paymentMode: 'Cash' as 'Cash' | 'Online Payment' | 'Due',
+      paidTo: 'Gopal Dada' as 'Gopal Dada' | 'Yuvraj Dada' | 'Suyash Dada' | 'Gaju Dada',
   };
 
   const form = useForm<BillingFormValues>({
@@ -99,14 +101,27 @@ export function BillingForm() {
   }, [paymentMode, form]);
 
 
-  const handleSaveBill = () => {
-    if (generatedBill) {
-      addBill(generatedBill);
-      toast({
-        title: 'Bill Saved!',
-        description: 'The bill has been successfully added to the history.',
-      });
-      handleCloseDialog();
+  const handleSaveBill = async () => {
+    if (generatedBill && user) {
+      try {
+        const managerBillsColRef = collection(firestore, 'managers', user.uid, 'bills');
+        const globalBillsColRef = collection(firestore, 'bills');
+        
+        await addDocumentNonBlocking(managerBillsColRef, generatedBill);
+        await addDocumentNonBlocking(globalBillsColRef, generatedBill);
+
+        toast({
+          title: 'Bill Saved!',
+          description: 'The bill has been successfully saved to Firestore.',
+        });
+        handleCloseDialog();
+      } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Error Saving Bill',
+            description: 'Could not save the bill to the database.',
+        });
+      }
     }
   };
 
@@ -117,6 +132,15 @@ export function BillingForm() {
 
   async function onSubmit(data: BillingFormValues) {
     setIsSubmitting(true);
+     if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'You must be logged in to create a bill.',
+      });
+      setIsSubmitting(false);
+      return;
+    }
     const isValid = await trigger();
     if (!isValid || (data.paidAmount && totalAmount > 0 && data.paidAmount > totalAmount)) {
         setIsSubmitting(false);
@@ -132,8 +156,8 @@ export function BillingForm() {
         const finalPaidAmount = data.paymentMode === 'Due' ? 0 : data.paidAmount || 0;
         const finalDueAmount = totalAmount - finalPaidAmount;
 
-        const fullBillDetails: Bill = {
-            id: uuidv4(),
+        const fullBillDetails: Omit<Bill, 'id'> & { id?: string } = {
+            managerId: user.uid,
             ...data,
             inCarat: data.inCarat || 0,
             outCarat: data.outCarat || 0,
@@ -143,11 +167,13 @@ export function BillingForm() {
             totalAmount,
             paidAmount: finalPaidAmount,
             dueAmount: finalDueAmount < 0 ? 0 : finalDueAmount,
-            createdAt: new Date(),
+            createdAt: new Date().toISOString(),
             caratType: data.smallCarat ? 'Small Carat' : 'Big Carat',
         };
+        
+      const newBillId = uuidv4();
+      setGeneratedBill({ ...fullBillDetails, id: newBillId });
 
-      setGeneratedBill(fullBillDetails);
 
     } catch (error) {
       toast({
@@ -384,5 +410,3 @@ export function BillingForm() {
     </>
   );
 }
-
-    

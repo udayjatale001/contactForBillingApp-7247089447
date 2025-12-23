@@ -28,12 +28,24 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { useAppContext } from '@/components/root-state-provider';
-import { FileText } from 'lucide-react';
+import { FileText, Loader2 } from 'lucide-react';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 
 export default function HistoryPage() {
-  const { bills } = useAppContext();
+  const { user } = useUser();
+  const firestore = useFirestore();
   const [selectedBill, setSelectedBill] = React.useState<Bill | null>(null);
+
+  const billsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return query(
+      collection(firestore, 'managers', user.uid, 'bills'),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore, user]);
+
+  const { data: bills, isLoading } = useCollection<Bill>(billsQuery);
 
   const handleBillClick = (bill: Bill) => {
     setSelectedBill(bill);
@@ -77,7 +89,11 @@ export default function HistoryPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {bills.length > 0 ? (
+          {isLoading ? (
+             <div className="flex justify-center items-center py-16">
+                <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
+            </div>
+          ) : bills && bills.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>

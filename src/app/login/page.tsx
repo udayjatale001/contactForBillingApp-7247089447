@@ -1,7 +1,6 @@
-// src/app/login/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,6 +9,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
+import { useAuth, useUser } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
+import { doc, getDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 
 export default function LoginPage() {
   const [role, setRole] = useState<'manager' | 'owner'>('manager');
@@ -17,20 +21,94 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
 
-  const handleLogin = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      // User is already logged in, check role and redirect
+      const checkRoleAndRedirect = async () => {
+        const ownerDocRef = doc(firestore, 'roles_owner', user.uid);
+        const ownerDoc = await getDoc(ownerDocRef);
+        if (ownerDoc.exists()) {
+          router.push('/dashboard');
+        } else {
+          router.push('/');
+        }
+      };
+      checkRoleAndRedirect();
+    }
+  }, [user, isUserLoading, router, firestore]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate a network request
-    setTimeout(() => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const loggedInUser = userCredential.user;
+
+      const ownerDocRef = doc(firestore, 'roles_owner', loggedInUser.uid);
+      const ownerDoc = await getDoc(ownerDocRef);
+
       if (role === 'owner') {
-        router.push('/dashboard');
-      } else {
-        router.push('/');
+        if (ownerDoc.exists()) {
+          router.push('/dashboard');
+        } else {
+          await auth.signOut();
+          toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: 'You do not have owner privileges.',
+          });
+        }
+      } else { // role is 'manager'
+        if (ownerDoc.exists()) {
+          // An owner is trying to log in as a manager
+          await auth.signOut();
+           toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: 'Owners must log in using the "Owner" role.',
+          });
+        } else {
+          router.push('/');
+        }
       }
-    }, 1000);
+    } catch (error: any) {
+      let errorMessage = 'An unknown error occurred.';
+      switch (error.code) {
+        case 'auth/user-not-found':
+        case 'auth/wrong-password':
+        case 'auth/invalid-credential':
+          errorMessage = 'Invalid email or password.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Please enter a valid email address.';
+          break;
+        default:
+          errorMessage = 'Failed to log in. Please try again later.';
+          break;
+      }
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (isUserLoading || user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">

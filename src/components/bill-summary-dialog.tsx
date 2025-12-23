@@ -11,19 +11,30 @@ import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { Logo } from './icons/logo';
 import type { Bill } from '@/lib/types';
+import { Loader2 } from 'lucide-react';
+import * as React from 'react';
+
 
 interface BillSummaryDialogProps {
   bill: Bill;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: () => void;
+  onSave: () => Promise<void>;
 }
 
 export function BillSummaryDialog({ bill, open, onOpenChange, onSave }: BillSummaryDialogProps) {
+  const [isSaving, setIsSaving] = React.useState(false);
+
   if (!bill) {
     return null;
   }
   
+  const handleSaveClick = async () => {
+    setIsSaving(true);
+    await onSave();
+    setIsSaving(false);
+  }
+
   const DetailItem = ({ label, value, className }: { label: string, value: React.ReactNode, className?: string}) => (
     <div className={`flex justify-between items-baseline ${className}`}>
       <p className="text-sm text-muted-foreground">{label}</p>
@@ -64,8 +75,11 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave }: BillSumm
         </div>
 
         <DialogFooter className="px-6 pb-6 sm:justify-between bg-secondary/20 pt-4">
-          <Button variant="default" onClick={onSave} className='flex-1'>Save</Button>
-          <Button variant="outline" onClick={() => onOpenChange(false)} className='flex-1'>Close</Button>
+          <Button variant="default" onClick={handleSaveClick} className='flex-1' disabled={isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save
+          </Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className='flex-1' disabled={isSaving}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

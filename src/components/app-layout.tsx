@@ -8,8 +8,9 @@ import {
   LogOut,
   FileText,
   Info,
+  Loader2,
+  Home,
 } from 'lucide-react';
-
 import { cn } from '@/lib/utils';
 import {
   SidebarProvider,
@@ -26,39 +27,85 @@ import {
 import { Button } from './ui/button';
 import { Logo } from './icons/logo';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth, useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
+  const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    } else if (user) {
+      const checkRole = async () => {
+        const ownerDocRef = doc(firestore, 'roles_owner', user.uid);
+        const ownerDoc = await getDoc(ownerDocRef);
+        setIsOwner(ownerDoc.exists());
+      };
+      checkRole();
+    }
+  }, [user, isUserLoading, router, firestore]);
 
   const handleLogout = async () => {
-    toast({ title: 'Logged out successfully.' });
-    router.push('/login');
+    try {
+      await signOut(auth);
+      toast({ title: 'Logged out successfully.' });
+      router.push('/login');
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Logout Failed',
+        description: 'An error occurred while logging out.',
+      });
+    }
   };
-
-  const menuItems = [
+  
+  const baseMenuItems = [
     {
       href: '/',
       label: 'Billing',
-      icon: LayoutDashboard,
-    },
-    {
-      href: '/dashboard',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
+      icon: Home,
+      ownerOnly: false,
     },
     {
       href: '/history',
       label: 'History',
       icon: FileText,
+      ownerOnly: false,
+    },
+     {
+      href: '/dashboard',
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+      ownerOnly: true,
     },
     {
       href: '/about',
       label: 'About',
       icon: Info,
+      ownerOnly: false,
     },
   ];
+
+  const menuItems = React.useMemo(() => {
+     if (isOwner === null) return []; // Still loading role
+    return baseMenuItems.filter(item => !item.ownerOnly || isOwner);
+  }, [isOwner]);
+
+  if (isUserLoading || user === null || isOwner === null) {
+     return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
