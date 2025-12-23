@@ -193,7 +193,7 @@ export function OwnerDashboard() {
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{stats.totalRevenue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">from all saved bills</p>
           </CardContent>
         </Card>
@@ -202,7 +202,7 @@ export function OwnerDashboard() {
             <CardTitle className="text-sm font-medium">Total Due</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">₹{stats.totalDue.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-destructive">{stats.totalDue.toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">{stats.dueBills.length} active dues</p>
           </CardContent>
         </Card>
@@ -236,14 +236,14 @@ export function OwnerDashboard() {
                 <ResponsiveContainer width="100%" height={350}>
                   <BarChart data={stats.salesData}>
                     <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₹${value / 1000}k`} />
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value / 1000}k rs`} />
                     <Tooltip
                       contentStyle={{
                         background: 'hsl(var(--background))',
                         border: '1px solid hsl(var(--border))',
                         borderRadius: 'var(--radius)',
                       }}
-                      formatter={(value: number) => `₹${value.toLocaleString()}`}
+                      formatter={(value: number) => `${value.toLocaleString()}rs`}
                     />
                     <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   </BarChart>
@@ -280,7 +280,7 @@ export function OwnerDashboard() {
                     <TableRow key={bill.id}>
                         <TableCell>{bill.customerName}</TableCell>
                         <TableCell className="text-right font-medium text-destructive">
-                        ₹{bill.dueAmount.toLocaleString()}
+                        {bill.dueAmount.toLocaleString()}rs
                         </TableCell>
                     </TableRow>
                     ))}
@@ -320,11 +320,11 @@ export function OwnerDashboard() {
                         {stats.recentBills.map((bill) => (
                         <TableRow key={bill.id} onClick={() => handleBillClick(bill)} className="cursor-pointer">
                             <TableCell>{bill.customerName}</TableCell>
-                            <TableCell>₹{bill.totalAmount.toLocaleString()}</TableCell>
-                            <TableCell>₹{bill.paidAmount.toLocaleString()}</TableCell>
+                            <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
+                            <TableCell>{bill.paidAmount.toLocaleString()}rs</TableCell>
                             <TableCell>
                             <Badge variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}>
-                                ₹{bill.dueAmount.toLocaleString()}
+                                {bill.dueAmount.toLocaleString()}rs
                             </Badge>
                             </TableCell>
                             <TableCell>{new Date(bill.createdAt).toLocaleString()}</TableCell>
@@ -396,24 +396,24 @@ export function OwnerDashboard() {
                  <Separator />
                  <div>
                     <p className="text-sm text-muted-foreground mb-2">Rate</p>
-                    {(selectedBill.bigCarat || 0) > 0 && <DetailItem label="Big" value="₹20 per carat"/>}
-                    {(selectedBill.smallCarat || 0) > 0 && <DetailItem label="Small" value="₹17 per carat"/>}
+                    {(selectedBill.bigCarat || 0) > 0 && <DetailItem label="Big" value="20rs per carat"/>}
+                    {(selectedBill.smallCarat || 0) > 0 && <DetailItem label="Small" value="17rs per carat"/>}
                 </div>
                 <Separator />
                 <DetailItem
                   label="Total Amount"
-                  value={`₹${selectedBill.totalAmount.toLocaleString()}`}
+                  value={`${selectedBill.totalAmount.toLocaleString()}rs`}
                   className="font-bold text-base"
                 />
                 <DetailItem
                   label="Paid Amount"
-                  value={`₹${selectedBill.paidAmount.toLocaleString()}`}
+                  value={`${selectedBill.paidAmount.toLocaleString()}rs`}
                 />
                 <DetailItem
                   label="Due Amount"
                   value={
                     <Badge variant={selectedBill.dueAmount > 0 ? 'destructive' : 'default'}>
-                      ₹{selectedBill.dueAmount.toLocaleString()}
+                      {selectedBill.dueAmount.toLocaleString()}rs
                     </Badge>
                   }
                 />

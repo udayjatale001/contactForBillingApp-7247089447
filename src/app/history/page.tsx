@@ -116,13 +116,13 @@ export default function HistoryPage() {
                     className="cursor-pointer"
                   >
                     <TableCell>{bill.customerName}</TableCell>
-                    <TableCell>₹{bill.totalAmount.toLocaleString()}</TableCell>
-                    <TableCell>₹{bill.paidAmount.toLocaleString()}</TableCell>
+                    <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
+                    <TableCell>{bill.paidAmount.toLocaleString()}rs</TableCell>
                     <TableCell>
                       <Badge
                         variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}
                       >
-                        ₹{bill.dueAmount.toLocaleString()}
+                        {bill.dueAmount.toLocaleString()}rs
                       </Badge>
                     </TableCell>
                     <TableCell>{new Date(bill.createdAt).toLocaleString()}</TableCell>
@@ -169,18 +169,18 @@ export default function HistoryPage() {
                  <Separator />
                  <div>
                     <p className="text-sm text-muted-foreground mb-2">Rate</p>
-                    {(selectedBill.bigCarat || 0) > 0 && <DetailItem label="Big" value="₹20 per carat"/>}
-                    {(selectedBill.smallCarat || 0) > 0 && <DetailItem label="Small" value="₹17 per carat"/>}
+                    {(selectedBill.bigCarat || 0) > 0 && <DetailItem label="Big" value="20rs per carat"/>}
+                    {(selectedBill.smallCarat || 0) > 0 && <DetailItem label="Small" value="17rs per carat"/>}
                 </div>
                 <Separator />
                 <DetailItem
                   label="Total Amount"
-                  value={`₹${selectedBill.totalAmount.toLocaleString()}`}
+                  value={`${selectedBill.totalAmount.toLocaleString()}rs`}
                   className="font-bold text-base"
                 />
                 <DetailItem
                   label="Paid Amount"
-                  value={`₹${selectedBill.paidAmount.toLocaleString()}`}
+                  value={`${selectedBill.paidAmount.toLocaleString()}rs`}
                 />
                 <DetailItem
                   label="Due Amount"
@@ -190,7 +190,7 @@ export default function HistoryPage() {
                         selectedBill.dueAmount > 0 ? 'destructive' : 'default'
                       }
                     >
-                     ₹{selectedBill.dueAmount.toLocaleString()}
+                     {selectedBill.dueAmount.toLocaleString()}rs
                     </Badge>
                   }
                 />

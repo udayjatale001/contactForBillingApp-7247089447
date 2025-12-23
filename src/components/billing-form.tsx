@@ -367,10 +367,10 @@ export function BillingForm() {
                         <div className="md:col-span-2">
                             <FormLabel>Due Amount</FormLabel>
                             <div className={cn("flex items-center justify-between rounded-md border border-input bg-muted px-3 py-2 text-sm mt-2", dueAmount > 0 ? 'text-destructive' : 'text-primary')}>
-                                <span>₹{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}</span>
+                                <span>{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}rs</span>
                             </div>
                             {dueAmount < 0 && (
-                                <p className="text-sm text-green-600 font-medium mt-2">Change to return: ₹{(-dueAmount).toLocaleString()}</p>
+                                <p className="text-sm text-green-600 font-medium mt-2">Change to return: {(-dueAmount).toLocaleString()}rs</p>
                             )}
                         </div>
                     </CardContent>
@@ -387,20 +387,20 @@ export function BillingForm() {
               <CardContent className="space-y-4 text-base">
                 <div className="flex justify-between font-bold text-lg">
                   <span className="text-muted-foreground">Total Amount:</span>
-                  <span>₹{totalAmount.toLocaleString()}</span>
+                  <span>{totalAmount.toLocaleString()}rs</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Paid Amount:</span>
-                  <span>₹{(paymentMode === 'Due' ? 0 : Number(paidAmount) || 0).toLocaleString()}</span>
+                  <span>{(paymentMode === 'Due' ? 0 : Number(paidAmount) || 0).toLocaleString()}rs</span>
                 </div>
                 <Separator />
                 <div className={cn("flex justify-between font-bold text-xl", dueAmount > 0 ? 'text-destructive' : 'text-primary')}>
                   <span className="text-muted-foreground">Due Amount:</span>
-                  <span>₹{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}</span>
+                  <span>{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}rs</span>
                 </div>
                  {dueAmount < 0 && (
-                     <p className="text-sm text-green-600 font-medium">Change to return: ₹{(-dueAmount).toLocaleString()}</p>
+                     <p className="text-sm text-green-600 font-medium">Change to return: {(-dueAmount).toLocaleString()}rs</p>
                  )}
               </CardContent>
               <Button type="submit" className="w-full h-12 rounded-t-none text-lg" disabled={isSubmitting}>
