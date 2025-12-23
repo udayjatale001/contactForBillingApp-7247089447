@@ -76,7 +76,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       ownerOnly: false,
     },
     {
-      href: '/owner',
+      href: '/make-owner',
       label: 'Owner',
       icon: User,
       ownerOnly: true,
@@ -104,7 +104,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const menuItems = React.useMemo(() => {
      if (isOwner === null) return []; // Still loading role
     return baseMenuItems.filter(item => !item.ownerOnly || isOwner);
-  }, [isOwner, baseMenuItems]);
+  }, [isOwner]);
 
   if (isUserLoading || user === null || isOwner === null) {
      return (
