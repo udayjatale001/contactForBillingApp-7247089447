@@ -88,12 +88,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       ownerOnly: false,
     },
     {
-      href: '/dashboard',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
-      ownerOnly: true,
-    },
-    {
       href: '/about',
       label: 'About',
       icon: Info,
@@ -103,7 +97,24 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const menuItems = React.useMemo(() => {
      if (isOwner === null) return []; // Still loading role
-    return baseMenuItems.filter(item => !item.ownerOnly || isOwner);
+    // Show dashboard link only if user is an owner
+    const items = baseMenuItems.filter(item => !item.ownerOnly || isOwner);
+    if (isOwner) {
+        items.splice(1, 0, {
+            href: '/dashboard',
+            label: 'Dashboard',
+            icon: LayoutDashboard,
+            ownerOnly: true,
+        });
+        // re-order owner link
+        const ownerIndex = items.findIndex(item => item.label === 'Owner');
+        if(ownerIndex > -1){
+          const ownerItem = items.splice(ownerIndex, 1)[0];
+          const historyIndex = items.findIndex(item => item.label === 'History');
+          items.splice(historyIndex, 0, ownerItem);
+        }
+    }
+    return items;
   }, [isOwner]);
 
   if (isUserLoading || user === null || isOwner === null) {
