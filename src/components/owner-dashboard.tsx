@@ -260,6 +260,7 @@ export function OwnerDashboard() {
                         <TableRow>
                         <TableHead>Customer</TableHead>
                         <TableHead>Total</TableHead>
+                        <TableHead>Paid</TableHead>
                         <TableHead>Due</TableHead>
                         <TableHead>Date</TableHead>
                         </TableRow>
@@ -269,6 +270,7 @@ export function OwnerDashboard() {
                         <TableRow key={bill.id} onClick={() => handleBillClick(bill)} className="cursor-pointer">
                             <TableCell>{bill.customerName}</TableCell>
                             <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
+                            <TableCell>{bill.paidAmount.toLocaleString()}rs</TableCell>
                             <TableCell>
                             <Badge variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}>
                                 {bill.dueAmount.toLocaleString()}rs

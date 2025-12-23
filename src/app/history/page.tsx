@@ -99,6 +99,7 @@ export default function HistoryPage() {
                 <TableRow>
                   <TableHead>Customer</TableHead>
                   <TableHead>Total Amount</TableHead>
+                  <TableHead>Paid Amount</TableHead>
                   <TableHead>Due Amount</TableHead>
                   <TableHead>Date</TableHead>
                 </TableRow>
@@ -112,6 +113,7 @@ export default function HistoryPage() {
                   >
                     <TableCell>{bill.customerName}</TableCell>
                     <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
+                    <TableCell>{bill.paidAmount.toLocaleString()}rs</TableCell>
                     <TableCell>
                       <Badge
                         variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}
