@@ -41,6 +41,7 @@ export function OwnerDashboard() {
   
   const billsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    // Querying the global 'bills' collection for owner access
     return query(collection(firestore, 'bills'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
@@ -112,14 +113,40 @@ export function OwnerDashboard() {
     };
   }, [bills]);
 
+  const customersToRemind = React.useMemo(() => {
+    if (!bills) return [];
+    
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    const customerData: { [name: string]: { due: number, lastActivity: Date } } = {};
+
+    bills.forEach(bill => {
+      const createdAt = new Date(bill.createdAt);
+      if (!customerData[bill.customerName]) {
+        customerData[bill.customerName] = { due: 0, lastActivity: createdAt };
+      }
+      customerData[bill.customerName].due += bill.dueAmount;
+      if (createdAt > customerData[bill.customerName].lastActivity) {
+        customerData[bill.customerName].lastActivity = createdAt;
+      }
+    });
+
+    return Object.entries(customerData)
+      .filter(([name, data]) => data.due > 0 || data.lastActivity < oneMonthAgo)
+      .map(([customerName, data]) => ({ customerName, lastActivityDate: data.lastActivity }));
+
+  }, [bills]);
+
+
   const handleSendReminders = async () => {
-    if (stats.inactiveCustomers.length === 0) {
-      toast({ title: 'No inactive customers to remind.' });
+    if (customersToRemind.length === 0) {
+      toast({ title: 'No customers to remind.' });
       return;
     }
     setIsSendingReminders(true);
     try {
-      for (const customer of stats.inactiveCustomers) {
+      for (const customer of customersToRemind) {
         await composeReminderMessage({
           customerName: customer.customerName,
           lastActivityDate: customer.lastActivityDate.toISOString().split('T')[0],
@@ -127,7 +154,7 @@ export function OwnerDashboard() {
       }
       toast({
         title: 'Reminders Sent!',
-        description: `Sent reminder messages to ${stats.inactiveCustomers.length} inactive customer(s).`,
+        description: `Sent reminder messages to ${customersToRemind.length} customer(s).`,
       });
     } catch (error) {
       toast({
@@ -320,20 +347,20 @@ export function OwnerDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><BellRing /> Customer Reminders</CardTitle>
             <CardDescription>
-              Send a friendly reminder message to customers who haven't visited in over a month.
+              Send a friendly reminder to customers with due bills or who have been inactive.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="p-4 border rounded-lg bg-secondary/50">
-              <p className="font-semibold">{stats.inactiveCustomers.length} inactive customer(s) found.</p>
+              <p className="font-semibold">{customersToRemind.length} customer(s) to remind.</p>
               <ul className="text-sm text-muted-foreground list-disc pl-5 mt-2 max-h-24 overflow-y-auto">
-                {stats.inactiveCustomers.map(c => <li key={c.customerName}>{c.customerName} (Last visit: {c.lastActivityDate.toLocaleDateString()})</li>)}
-                {stats.inactiveCustomers.length === 0 && <li>All customers have been active recently!</li>}
+                {customersToRemind.map(c => <li key={c.customerName}>{c.customerName} (Last visit: {c.lastActivityDate.toLocaleDateString()})</li>)}
+                {customersToRemind.length === 0 && <li>All customers are up to date and active!</li>}
               </ul>
             </div>
           </CardContent>
           <CardContent>
-            <Button onClick={handleSendReminders} disabled={isSendingReminders || stats.inactiveCustomers.length === 0} className="w-full">
+            <Button onClick={handleSendReminders} disabled={isSendingReminders || customersToRemind.length === 0} className="w-full">
               {isSendingReminders ? 'Sending...' : 'Send Reminder(s)'}
               <Send className="ml-2 h-4 w-4" />
             </Button>
@@ -385,3 +412,5 @@ export function OwnerDashboard() {
     </div>
   );
 }
+
+    
