@@ -30,11 +30,11 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { BillingFormValues, billingSchema, Bill } from '@/lib/types';
+import { BillingFormValues, billingSchema, Bill, AppSettings } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { BillSummaryDialog } from './bill-summary-dialog';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 
 
 export function BillingForm() {
@@ -43,6 +43,13 @@ export function BillingForm() {
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [generatedBill, setGeneratedBill] = React.useState<Bill | null>(null);
+
+  const settingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'app_settings', 'rates');
+  }, [firestore]);
+
+  const { data: appSettings, isLoading: isLoadingRates } = useDoc<AppSettings>(settingsDocRef);
 
   const defaultFormValues = {
       customerName: '',
@@ -68,10 +75,12 @@ export function BillingForm() {
   const paymentMode = watch('paymentMode');
 
   const totalAmount = React.useMemo(() => {
-    const smallCaratAmount = (Number(smallCarat) || 0) * 17;
-    const bigCaratAmount = (Number(bigCarat) || 0) * 20;
+    const smallRate = appSettings?.smallCaratRate ?? 0;
+    const bigRate = appSettings?.bigCaratRate ?? 0;
+    const smallCaratAmount = (Number(smallCarat) || 0) * smallRate;
+    const bigCaratAmount = (Number(bigCarat) || 0) * bigRate;
     return smallCaratAmount + bigCaratAmount;
-  }, [smallCarat, bigCarat]);
+  }, [smallCarat, bigCarat, appSettings]);
 
   const dueAmount = React.useMemo(() => {
     let effectivePaidAmount = Number(paidAmount) || 0;
@@ -144,6 +153,15 @@ export function BillingForm() {
       setIsSubmitting(false);
       return;
     }
+    if (isLoadingRates || !appSettings) {
+       toast({
+        variant: 'destructive',
+        title: 'Rates Not Loaded',
+        description: 'Billing rates are not available. Please wait or check settings.',
+      });
+      setIsSubmitting(false);
+      return;
+    }
     const isValid = await trigger();
     if (!isValid || (data.paidAmount && totalAmount > 0 && data.paidAmount > totalAmount)) {
         setIsSubmitting(false);
@@ -184,6 +202,8 @@ export function BillingForm() {
             dueAmount: finalDueAmount < 0 ? 0 : finalDueAmount,
             createdAt: new Date().toISOString(),
             caratType: caratType,
+            smallCaratRate: appSettings.smallCaratRate,
+            bigCaratRate: appSettings.bigCaratRate,
         };
         
       setGeneratedBill(fullBillDetails);
@@ -278,7 +298,7 @@ export function BillingForm() {
                             name="smallCarat"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>17kg Carat (Rate: 17)</FormLabel>
+                                    <FormLabel>Small Carat (Rate: {appSettings?.smallCaratRate ?? 0})</FormLabel>
                                     <FormControl>
                                     <Input type="number" placeholder="e.g., 10" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
@@ -291,7 +311,7 @@ export function BillingForm() {
                             name="bigCarat"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>20kg Carat (Rate: 20)</FormLabel>
+                                    <FormLabel>Big Carat (Rate: {appSettings?.bigCaratRate ?? 0})</FormLabel>
                                     <FormControl>
                                     <Input type="number" placeholder="e.g., 5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
@@ -419,8 +439,8 @@ export function BillingForm() {
                      <p className="text-sm text-green-600 font-medium">Change to return: {(-dueAmount).toLocaleString()}rs</p>
                  )}
               </CardContent>
-              <Button type="submit" className="w-full h-12 rounded-t-none text-lg" disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="animate-spin" /> : 'Generate Bill'}
+              <Button type="submit" className="w-full h-12 rounded-t-none text-lg" disabled={isSubmitting || isLoadingRates}>
+                {isSubmitting || isLoadingRates ? <Loader2 className="animate-spin" /> : 'Generate Bill'}
               </Button>
             </Card>
           </div>
@@ -437,3 +457,5 @@ export function BillingForm() {
     </>
   );
 }
+
+    

@@ -43,13 +43,16 @@ import {
   AlertCircle,
   FileText,
   Calendar,
+  Settings,
+  Save,
 } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
-import type { Bill } from '@/lib/types';
+import type { Bill, AppSettings } from '@/lib/types';
 import { format, getYear, getMonth } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
+import { Input } from './ui/input';
 
 const ALL_MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -62,6 +65,105 @@ type AggregatedDueCustomer = {
   lastBillDate: string; // Storing as ISO string
   lastBillIsoDate: string;
 };
+
+function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
+  const { toast } = useToast();
+  const firestore = useFirestore();
+
+  const settingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'app_settings', 'rates');
+  }, [firestore]);
+
+  const { data: appSettings, isLoading } = useDoc<AppSettings>(settingsDocRef);
+
+  const [smallCaratRate, setSmallCaratRate] = React.useState<number | string>('');
+  const [bigCaratRate, setBigCaratRate] = React.useState<number | string>('');
+  const [labourRate, setLabourRate] = React.useState<number | string>('');
+  const [isSaving, setIsSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    if (appSettings) {
+      setSmallCaratRate(appSettings.smallCaratRate ?? '');
+      setBigCaratRate(appSettings.bigCaratRate ?? '');
+      setLabourRate(appSettings.labourRate ?? '');
+    }
+  }, [appSettings]);
+
+  const handleSaveRates = async () => {
+    if (!firestore || !settingsDocRef) return;
+
+    setIsSaving(true);
+    const newRates: AppSettings = {
+      smallCaratRate: Number(smallCaratRate) || 0,
+      bigCaratRate: Number(bigCaratRate) || 0,
+      labourRate: Number(labourRate) || 0,
+    };
+
+    setDocumentNonBlocking(settingsDocRef, newRates, { merge: true });
+
+    // The operation is non-blocking, so we can give immediate feedback.
+    // The `useDoc` hook will update the UI automatically on success.
+    // Error handling is managed globally by the FirestorePermissionError system.
+    toast({
+      title: 'Rates Updated',
+      description: 'The new rates have been saved and will apply to new bills.',
+    });
+    setIsSaving(false);
+  };
+
+  return (
+    <Card className="lg:col-span-3">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Settings />
+          Manage Rates
+        </CardTitle>
+        <CardDescription>
+          Update the billing rates. Changes apply to all new bills.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Small Carat Rate</label>
+          <Input
+            type="number"
+            placeholder="e.g., 17"
+            value={smallCaratRate}
+            onChange={(e) => setSmallCaratRate(e.target.value)}
+            disabled={!isOwner || isLoading || isSaving}
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Big Carat Rate</label>
+          <Input
+            type="number"
+            placeholder="e.g., 20"
+            value={bigCaratRate}
+            onChange={(e) => setBigCaratRate(e.target.value)}
+            disabled={!isOwner || isLoading || isSaving}
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Labour Rate</label>
+          <Input
+            type="number"
+            placeholder="e.g., 5"
+            value={labourRate}
+            onChange={(e) => setLabourRate(e.target.value)}
+            disabled={!isOwner || isLoading || isSaving}
+          />
+        </div>
+      </CardContent>
+      <CardContent>
+        <Button onClick={handleSaveRates} disabled={!isOwner || isLoading || isSaving} className="w-full">
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Save Rates
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 
 export function OwnerDashboard() {
@@ -387,8 +489,11 @@ export function OwnerDashboard() {
 
       {/* Main Grid */}
       <div className="grid gap-4 lg:grid-cols-7">
+        
+        {isOwner && <ManageRatesCard isOwner={isOwner} />}
+
         {/* Sales Report */}
-        <Card className="lg:col-span-4">
+        <Card className={isOwner ? "lg:col-span-4" : "lg:col-span-7"}>
             <Tabs defaultValue="monthly">
                 <CardHeader>
                     <div className="flex justify-between items-start">
@@ -481,7 +586,7 @@ export function OwnerDashboard() {
         </Card>
 
         {/* Recent Bills */}
-        <Card className="lg:col-span-3">
+        <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Recent Bills</CardTitle>
             <CardDescription>
@@ -527,7 +632,7 @@ export function OwnerDashboard() {
         </Card>
 
          {/* Due Amounts & Reminders */}
-        <Card className="lg:col-span-7">
+        <Card className="lg:col-span-3">
             <CardHeader>
                 <CardTitle>Customer Reminders</CardTitle>
                 <CardDescription>
@@ -536,14 +641,14 @@ export function OwnerDashboard() {
             </CardHeader>
             <CardContent>
                 {dueBills.length > 0 ? (
-                    <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                        <div className="md:col-span-2">
+                    <div className='grid grid-cols-1'>
+                        <div>
                              <Table>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Customer</TableHead>
-                                        <TableHead>Total Due Amount</TableHead>
-                                        <TableHead>Last Bill Date</TableHead>
+                                        <TableHead>Total Due</TableHead>
+                                        <TableHead>Last Bill</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -553,13 +658,13 @@ export function OwnerDashboard() {
                                         <TableCell>
                                             <Badge variant="destructive">{dueCustomer.totalDueAmount.toLocaleString()}rs</Badge>
                                         </TableCell>
-                                        <TableCell>{format(new Date(dueCustomer.lastBillDate), 'dd MMM yyyy')}</TableCell>
+                                        <TableCell>{format(new Date(dueCustomer.lastBillDate), 'dd MMM')}</TableCell>
                                     </TableRow>
                                     ))}
                                 </TableBody>
                             </Table>
                         </div>
-                        <div className="flex items-center justify-center p-6 bg-secondary/30 rounded-lg">
+                        <div className="flex items-center justify-center p-6 bg-secondary/30 rounded-lg mt-4">
                             <Button size="lg" onClick={handleSendReminders} disabled={!isOwner || isSendingReminders}>
                                 {isSendingReminders ? (
                                     <>
@@ -571,7 +676,7 @@ export function OwnerDashboard() {
                         </div>
                     </div>
                 ): (
-                    <div className="text-center py-16">
+                    <div className="text-center py-12">
                         <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
                         <h3 className="mt-4 text-lg font-semibold">No Due Amounts</h3>
                         <p className="mt-1 text-sm text-muted-foreground">
@@ -585,3 +690,5 @@ export function OwnerDashboard() {
     </div>
   );
 }
+
+    

@@ -18,6 +18,10 @@
           "type": "string",
           "description": "Name of the customer."
         },
+        "roomNumber": {
+          "type": "string",
+          "description": "Room number of the customer."
+        },
         "inCarat": {
           "type": "number",
           "description": "The amount of carat that came in."
@@ -28,15 +32,19 @@
         },
         "totalCarat": {
           "type": "number",
-          "description": "Total carat (In Carat - Out Carat)."
+          "description": "Total carat (Small Carat + Big Carat)."
         },
         "caratType": {
           "type": "string",
-          "description": "Type of carat (Small Carat or Big Carat)."
+          "description": "Type of carat (Small Carat, Big Carat, or Mixed)."
         },
-        "rate": {
+        "smallCaratRate": {
           "type": "number",
-          "description": "Rate per carat based on the carat type (17 for Small Carat, 20 for Big Carat)."
+          "description": "The rate applied for small carats at the time of billing."
+        },
+        "bigCaratRate": {
+          "type": "number",
+          "description": "The rate applied for big carats at the time of billing."
         },
         "totalAmount": {
           "type": "number",
@@ -56,21 +64,9 @@
         },
         "paymentMode": {
           "type": "string",
-          "description": "Mode of payment (PhonePe or Cash)."
+          "description": "Mode of payment (Online Payment, Cash, or Due)."
         },
-        "kharch": {
-          "type": "number",
-          "description": "Expense amount."
-        },
-        "ethiliumGas": {
-          "type": "number",
-          "description": "Ethilium gas expense."
-        },
-        "otherBill": {
-          "type": "number",
-          "description": "Other bill amount."
-        },
-        "dateTime": {
+        "createdAt": {
           "type": "string",
           "description": "Date and time when the bill was generated.",
           "format": "date-time"
@@ -84,16 +80,12 @@
         "outCarat",
         "totalCarat",
         "caratType",
-        "rate",
         "totalAmount",
         "paidAmount",
         "dueAmount",
         "paidTo",
         "paymentMode",
-        "kharch",
-        "ethiliumGas",
-        "otherBill",
-        "dateTime"
+        "createdAt"
       ]
     },
     "Manager": {
@@ -148,7 +140,7 @@
         "email"
       ]
     },
-     "AppSettings": {
+    "AppSettings": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Application Settings",
       "type": "object",
@@ -167,7 +159,11 @@
           "description": "The rate for labour."
         }
       },
-      "required": ["smallCaratRate", "bigCaratRate", "labourRate"]
+      "required": [
+        "smallCaratRate",
+        "bigCaratRate",
+        "labourRate"
+      ]
     }
   },
   "auth": {
@@ -246,7 +242,7 @@
           ]
         }
       },
-       {
+      {
         "path": "/app_settings/{settingsId}",
         "definition": {
           "entityName": "AppSettings",
@@ -266,3 +262,4 @@
     "reasoning": "This Firestore structure is designed to support the Aanand Sagar Billing App, focusing on security, scalability, and ease of debugging. The core principle is Authorization Independence, achieved through denormalization to avoid `get()` calls in security rules. This enhances the atomicity of operations and simplifies debugging. Segregation of data based on access control requirements is also prioritized.\n\nThe structure uses path-based ownership for manager-specific data. The bills are stored within the manager's document to leverage Firestore's hierarchical nature for simplified security rules and efficient data retrieval.\n\n**Authorization Independence:** The `managerId` is included in each bill document, enabling direct authorization checks without needing to query the `managers` collection. This ensures that access control decisions are self-contained within the bill document itself.\n\n**QAPs (Rules are not Filters):** The segregation of bills under each manager ensures that list operations can be secured effectively.  The owner can view all bills because of an additional collection `/bills`. The manager views his own bills because of the `/managers/{managerId}/bills/{billId}` collection.\n\n**Data Clarity and Predictability:** Consistent naming conventions are used throughout the structure, such as `managerId` and `billId`. The `dateTime` field provides explicit timestamp information for each bill."
   }
 }
+    

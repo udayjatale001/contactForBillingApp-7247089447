@@ -48,6 +48,8 @@ export type Bill = {
   smallCarat?: number;
   bigCarat?: number;
   caratType: string;
+  smallCaratRate: number; // Rate at time of transaction
+  bigCaratRate: number; // Rate at time of transaction
   totalAmount: number;
   paidAmount: number;
   dueAmount: number;
@@ -55,3 +57,12 @@ export type Bill = {
   paymentMode: string;
   createdAt: string; // Storing as ISO string for Firestore compatibility
 };
+
+// Represents the structure of the settings document in Firestore
+export type AppSettings = {
+  smallCaratRate: number;
+  bigCaratRate: number;
+  labourRate: number;
+};
+
+    
