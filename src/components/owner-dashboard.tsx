@@ -55,6 +55,13 @@ const ALL_MONTHS = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ];
 
+type AggregatedDueCustomer = {
+  customerName: string;
+  totalDueAmount: number;
+  lastBillDate: string; // Storing as ISO string
+  lastBillIsoDate: string;
+};
+
 export function OwnerDashboard() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -136,6 +143,8 @@ export function OwnerDashboard() {
         monthlySalesForYear[month] = (monthlySalesForYear[month] || 0) + bill.paidAmount;
     });
 
+    const aggregatedDueCustomers: { [key: string]: AggregatedDueCustomer } = {};
+
     bills.forEach(bill => {
       const billDate = new Date(bill.createdAt);
       const year = getYear(billDate).toString();
@@ -147,11 +156,30 @@ export function OwnerDashboard() {
 
       yearlySales[year] = (yearlySales[year] || 0) + bill.paidAmount;
 
-      const customerName = bill.customerName.toLowerCase();
-      if (!customerLastActivity[customerName] || billDate > customerLastActivity[customerName]) {
-          customerLastActivity[customerName] = billDate;
+      const customerNameKey = bill.customerName.trim().toLowerCase();
+      if (!customerLastActivity[customerNameKey] || billDate > customerLastActivity[customerNameKey]) {
+          customerLastActivity[customerNameKey] = billDate;
+      }
+        
+      if (bill.dueAmount > 0) {
+        if (aggregatedDueCustomers[customerNameKey]) {
+          aggregatedDueCustomers[customerNameKey].totalDueAmount += bill.dueAmount;
+          // Check if current bill is more recent
+          if (bill.createdAt > aggregatedDueCustomers[customerNameKey].lastBillIsoDate) {
+            aggregatedDueCustomers[customerNameKey].lastBillIsoDate = bill.createdAt;
+          }
+        } else {
+          aggregatedDueCustomers[customerNameKey] = {
+            customerName: bill.customerName,
+            totalDueAmount: bill.dueAmount,
+            lastBillDate: bill.createdAt,
+            lastBillIsoDate: bill.createdAt,
+          };
+        }
       }
     });
+
+    const customersWithDue = Object.values(aggregatedDueCustomers).sort((a, b) => b.totalDueAmount - a.totalDueAmount);
 
     const inactiveCount = Object.values(customerLastActivity).filter(
       lastDate => lastDate < oneMonthAgo
@@ -159,7 +187,7 @@ export function OwnerDashboard() {
 
     const endYear = 3000;
     const allYears = [];
-    const startYear = years.size > 0 ? earliestYear : new Date().getFullYear();
+    const startYear = years.size > 0 ? Math.min(...Array.from(years).map(Number)) : new Date().getFullYear();
     for (let y = endYear; y >= startYear; y--) {
         allYears.push(y.toString());
     }
@@ -174,8 +202,6 @@ export function OwnerDashboard() {
         year,
         total: yearlySales[year] || 0,
     }));
-
-    const customersWithDue = bills.filter(bill => bill.dueAmount > 0);
 
     return {
       totalRevenue: revenue,
@@ -201,7 +227,7 @@ export function OwnerDashboard() {
         const reminderPromises = dueBills.map(bill =>
             composeReminderMessage({
                 customerName: bill.customerName,
-                lastActivityDate: format(new Date(bill.createdAt), 'yyyy-MM-dd'),
+                lastActivityDate: format(new Date(bill.lastBillDate), 'yyyy-MM-dd'),
             })
         );
         
@@ -463,18 +489,18 @@ export function OwnerDashboard() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Customer</TableHead>
-                                        <TableHead>Due Amount</TableHead>
+                                        <TableHead>Total Due Amount</TableHead>
                                         <TableHead>Last Bill Date</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {dueBills.slice(0, 5).map(bill => (
-                                    <TableRow key={bill.id}>
-                                        <TableCell className="font-medium">{bill.customerName}</TableCell>
+                                    {dueBills.slice(0, 5).map(dueCustomer => (
+                                    <TableRow key={dueCustomer.customerName}>
+                                        <TableCell className="font-medium">{dueCustomer.customerName}</TableCell>
                                         <TableCell>
-                                            <Badge variant="destructive">{bill.dueAmount.toLocaleString()}rs</Badge>
+                                            <Badge variant="destructive">{dueCustomer.totalDueAmount.toLocaleString()}rs</Badge>
                                         </TableCell>
-                                        <TableCell>{format(new Date(bill.createdAt), 'dd MMM yyyy')}</TableCell>
+                                        <TableCell>{format(new Date(dueCustomer.lastBillDate), 'dd MMM yyyy')}</TableCell>
                                     </TableRow>
                                     ))}
                                 </TableBody>
