@@ -39,35 +39,29 @@ import {
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import type { Bill } from '@/lib/types';
-import { format, subMonths, startOfMonth, parseISO, getYear } from 'date-fns';
+import { format, subMonths, getYear, eachMonthOfInterval, startOfYear, endOfYear } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
 
-// Mock data for the chart until we have enough real data
-const getMockMonthlyData = () => {
-    const data = [];
-    const today = new Date();
-    for (let i = 5; i >= 0; i--) {
-        const date = subMonths(today, i);
-        data.push({
-        month: format(date, 'MMM'),
-        total: Math.floor(Math.random() * (5000 - 1000 + 1)) + 1000,
-        });
-    }
-    return data;
+// Helper to get last 6 months for chart labels
+const getLast6Months = () => {
+  const today = new Date();
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    months.push(format(subMonths(today, i), 'MMM'));
+  }
+  return months;
 };
 
-const getMockYearlyData = () => {
-    const data = [];
+// Helper to get last 5 years for chart labels
+const getLast5Years = () => {
     const currentYear = new Date().getFullYear();
+    const years = [];
     for (let i = 4; i >= 0; i--) {
-        data.push({
-        year: (currentYear - i).toString(),
-        total: Math.floor(Math.random() * (50000 - 10000 + 1)) + 10000,
-        });
+        years.push((currentYear - i).toString());
     }
-    return data;
-};
+    return years;
+}
 
 
 export function OwnerDashboard() {
@@ -124,8 +118,8 @@ export function OwnerDashboard() {
         totalDue: 0,
         totalSales: 0,
         inactiveCustomers: 0,
-        monthlyData: getMockMonthlyData(),
-        yearlyData: getMockYearlyData(),
+        monthlyData: [],
+        yearlyData: [],
         dueBills: [],
       };
     }
@@ -156,13 +150,17 @@ export function OwnerDashboard() {
       lastDate => lastDate < oneMonthAgo
     ).length;
 
-    const formattedMonthlyData = Object.entries(monthlySales)
-      .map(([month, total]) => ({ month, total }))
-      .slice(-6); // Get last 6 months
+    const last6Months = getLast6Months();
+    const formattedMonthlyData = last6Months.map(month => ({
+      month,
+      total: monthlySales[month] || 0,
+    }));
 
-    const formattedYearlyData = Object.entries(yearlySales)
-      .map(([year, total]) => ({ year, total }))
-      .slice(-5); // Get last 5 years
+    const last5Years = getLast5Years();
+    const formattedYearlyData = last5Years.map(year => ({
+        year,
+        total: yearlySales[year] || 0,
+    }));
 
     const customersWithDue = bills.filter(bill => bill.dueAmount > 0);
 
@@ -171,8 +169,8 @@ export function OwnerDashboard() {
       totalDue: due,
       totalSales: bills.length,
       inactiveCustomers: inactiveCount,
-      monthlyData: formattedMonthlyData.length > 0 ? formattedMonthlyData : getMockMonthlyData(),
-      yearlyData: formattedYearlyData.length > 0 ? formattedYearlyData : getMockYearlyData(),
+      monthlyData: formattedMonthlyData,
+      yearlyData: formattedYearlyData,
       dueBills: customersWithDue,
     };
   }, [bills]);
@@ -377,7 +375,7 @@ export function OwnerDashboard() {
           <CardHeader>
             <CardTitle>Recent Bills</CardTitle>
             <CardDescription>
-              .
+              Your 5 most recent transactions.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -402,7 +400,7 @@ export function OwnerDashboard() {
                             <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
                             <TableCell>
                             <Badge variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}>
-                                {bill.dueAmount.toLocaleString()}rs
+                                {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
                             </Badge>
                             </TableCell>
                             <TableCell>{format(new Date(bill.createdAt), 'dd MMM, p')}</TableCell>
