@@ -42,11 +42,12 @@ import {
   Loader2,
   AlertCircle,
   FileText,
+  Calendar,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import type { Bill } from '@/lib/types';
-import { format, getYear } from 'date-fns';
+import { format, getYear, getMonth, parse } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
 
@@ -68,7 +69,9 @@ export function OwnerDashboard() {
   const { toast } = useToast();
   const [isSendingReminders, setIsSendingReminders] = React.useState(false);
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
+  
   const [selectedYear, setSelectedYear] = React.useState<string>(new Date().getFullYear().toString());
+  const [selectedMonth, setSelectedMonth] = React.useState<string>((new Date().getMonth() + 1).toString().padStart(2, '0'));
 
   React.useEffect(() => {
     if(user && firestore) {
@@ -91,14 +94,7 @@ export function OwnerDashboard() {
     return query(collection(firestore, collectionPath), orderBy('createdAt', 'desc'));
   }, [firestore, collectionPath]);
 
-  const { data: bills, isLoading: isLoadingBills, error: billsError } = useCollection<Bill>(billsQuery);
-
-  const recentBillsQuery = useMemoFirebase(() => {
-      if(!firestore || !collectionPath) return null;
-      return query(collection(firestore, collectionPath), orderBy('createdAt', 'desc'), limit(5));
-  }, [firestore, collectionPath]);
-
-  const { data: recentBills, isLoading: isLoadingRecent } = useCollection<Bill>(recentBillsQuery);
+  const { data: allBills, isLoading: isLoadingBills, error: billsError } = useCollection<Bill>(billsQuery);
 
   const {
     totalRevenue,
@@ -108,55 +104,100 @@ export function OwnerDashboard() {
     monthlyData,
     yearlyData,
     dueBills,
+    recentBills,
     availableYears,
   } = React.useMemo(() => {
-    if (!bills) {
-      return {
-        totalRevenue: 0,
-        totalDue: 0,
-        totalSales: 0,
-        inactiveCustomers: 0,
-        monthlyData: [],
-        yearlyData: [],
-        dueBills: [],
-        availableYears: [new Date().getFullYear().toString()],
-      };
+    const initialResult = {
+      totalRevenue: 0,
+      totalDue: 0,
+      totalSales: 0,
+      inactiveCustomers: 0,
+      monthlyData: ALL_MONTHS.map(month => ({ month, total: 0 })),
+      yearlyData: [],
+      dueBills: [],
+      recentBills: [],
+      availableYears: [new Date().getFullYear().toString()],
+    };
+
+    if (!allBills) {
+      return initialResult;
     }
 
-    const yearlySales: { [key: string]: number } = {};
-    const customerLastActivity: { [key: string]: Date } = {};
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     const years = new Set<string>();
-    
-    const revenue = bills.reduce((acc, bill) => acc + bill.paidAmount, 0);
-    const due = bills.reduce((acc, bill) => acc + bill.dueAmount, 0);
+    allBills.forEach(bill => years.add(getYear(new Date(bill.createdAt)).toString()));
+    const allAvailableYears = Array.from(years).sort((a,b) => Number(b) - Number(a));
+    if (!allAvailableYears.includes(new Date().getFullYear().toString())) {
+      allAvailableYears.unshift(new Date().getFullYear().toString());
+    }
 
-    const filteredBillsForYear = bills.filter(bill => getYear(new Date(bill.createdAt)).toString() === selectedYear);
-
-    const monthlySalesForYear: { [key: string]: number } = Object.fromEntries(ALL_MONTHS.map(m => [m, 0]));
-    
-    filteredBillsForYear.forEach(bill => {
-        const billDate = new Date(bill.createdAt);
-        const month = format(billDate, 'MMM');
-        monthlySalesForYear[month] = (monthlySalesForYear[month] || 0) + bill.paidAmount;
+    // Filter bills based on selected month and year
+    const filteredBills = allBills.filter(bill => {
+      const billDate = new Date(bill.createdAt);
+      const yearMatches = selectedYear === 'all' || getYear(billDate).toString() === selectedYear;
+      const monthMatches = selectedMonth === 'all' || (getMonth(billDate) + 1).toString().padStart(2, '0') === selectedMonth;
+      return yearMatches && monthMatches;
     });
 
-    const aggregatedDueCustomers: { [key: string]: AggregatedDueCustomer } = {};
-
-    bills.forEach(bill => {
+    const totalRevenue = filteredBills.reduce((acc, bill) => acc + bill.paidAmount, 0);
+    const totalDue = filteredBills.reduce((acc, bill) => acc + bill.dueAmount, 0);
+    const totalSales = filteredBills.length;
+    
+    // Inactive customers for the selected period
+    const customerLastActivity: { [key: string]: Date } = {};
+    filteredBills.forEach(bill => {
       const billDate = new Date(bill.createdAt);
-      const year = getYear(billDate).toString();
-      years.add(year);
-
-      yearlySales[year] = (yearlySales[year] || 0) + bill.paidAmount;
-
       const customerNameKey = bill.customerName.trim().toLowerCase();
-      if (!customerLastActivity[customerNameKey] || billDate > customerLastActivity[customerNameKey]) {
+       if (!customerLastActivity[customerNameKey] || billDate > customerLastActivity[customerNameKey]) {
           customerLastActivity[customerNameKey] = billDate;
       }
-        
-      if (bill.dueAmount > 0) {
+    });
+
+    let periodStart: Date;
+    if (selectedYear !== 'all' && selectedMonth !== 'all') {
+      periodStart = new Date(parseInt(selectedYear), parseInt(selectedMonth) - 1, 1);
+    } else if (selectedYear !== 'all') {
+       periodStart = new Date(parseInt(selectedYear), 0, 1);
+    } else {
+        periodStart = new Date(0); // Epoch for all time
+    }
+    
+    const uniqueCustomersInPeriod = Object.keys(customerLastActivity).length;
+    const activeCustomersInPeriod = Object.values(customerLastActivity).filter(d => d >= periodStart).length;
+    const inactiveCount = uniqueCustomersInPeriod - activeCustomersInPeriod;
+
+
+    // --- Chart Data Calculations ---
+    const yearlySales: { [key: string]: number } = {};
+    const monthlySalesForYear: { [key: string]: number } = Object.fromEntries(ALL_MONTHS.map(m => [m, 0]));
+    
+    // Use allBills for yearly chart, but only filtered bills from selectedYear for monthly chart
+    const billsForMonthlyChart = allBills.filter(bill => getYear(new Date(bill.createdAt)).toString() === selectedYear);
+
+    billsForMonthlyChart.forEach(bill => {
+        const month = format(new Date(bill.createdAt), 'MMM');
+        monthlySalesForYear[month] = (monthlySalesForYear[month] || 0) + bill.paidAmount;
+    });
+     allBills.forEach(bill => {
+        const year = getYear(new Date(bill.createdAt)).toString();
+        yearlySales[year] = (yearlySales[year] || 0) + bill.paidAmount;
+    });
+
+    const formattedMonthlyData = ALL_MONTHS.map(month => ({
+      month,
+      total: monthlySalesForYear[month] || 0,
+    }));
+
+    const sortedYearsForYearlyChart = Array.from(years).sort((a, b) => Number(a) - Number(b));
+    const formattedYearlyData = sortedYearsForYearlyChart.map(year => ({
+        year,
+        total: yearlySales[year] || 0,
+    }));
+    
+    // --- Due Bills Calculation ---
+    const aggregatedDueCustomers: { [key: string]: AggregatedDueCustomer } = {};
+     filteredBills.forEach(bill => {
+       if (bill.dueAmount > 0) {
+        const customerNameKey = bill.customerName.trim().toLowerCase();
         if (aggregatedDueCustomers[customerNameKey]) {
           aggregatedDueCustomers[customerNameKey].totalDueAmount += bill.dueAmount;
           if (bill.createdAt > aggregatedDueCustomers[customerNameKey].lastBillIsoDate) {
@@ -176,38 +217,18 @@ export function OwnerDashboard() {
 
     const customersWithDue = Object.values(aggregatedDueCustomers).sort((a, b) => b.totalDueAmount - a.totalDueAmount);
 
-    const inactiveCount = Object.values(customerLastActivity).filter(
-      lastDate => lastDate < oneMonthAgo
-    ).length;
-
-    const allYears = [];
-    const startYear = years.size > 0 ? Math.min(...Array.from(years).map(Number)) : new Date().getFullYear();
-    for (let y = 3000; y >= startYear; y--) {
-        allYears.push(y.toString());
-    }
-
-    const formattedMonthlyData = ALL_MONTHS.map(month => ({
-      month,
-      total: monthlySalesForYear[month] || 0,
-    }));
-
-    const sortedYearsForYearlyChart = Array.from(years).sort((a, b) => Number(a) - Number(b));
-    const formattedYearlyData = sortedYearsForYearlyChart.map(year => ({
-        year,
-        total: yearlySales[year] || 0,
-    }));
-
     return {
-      totalRevenue: revenue,
-      totalDue: due,
-      totalSales: bills.length,
+      totalRevenue,
+      totalDue,
+      totalSales,
       inactiveCustomers: inactiveCount,
       monthlyData: formattedMonthlyData,
       yearlyData: formattedYearlyData,
       dueBills: customersWithDue,
-      availableYears: allYears,
+      recentBills: filteredBills.slice(0, 5),
+      availableYears: allAvailableYears,
     };
-  }, [bills, selectedYear]);
+  }, [allBills, selectedYear, selectedMonth]);
 
 
   const handleSendReminders = async () => {
@@ -267,6 +288,49 @@ export function OwnerDashboard() {
 
   return (
     <div className="space-y-4">
+      {/* Global Filters */}
+      <Card>
+        <CardHeader className='pb-2'>
+            <CardTitle className='flex items-center gap-2 text-base'>
+                <Calendar className='h-5 w-5' />
+                Filter by Period
+            </CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center gap-4">
+           <div className='flex-1'>
+                <p className='text-sm text-muted-foreground mb-1'>Year</p>
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Years</SelectItem>
+                        {availableYears.map(year => (
+                            <SelectItem key={year} value={year}>{year}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+           </div>
+            <div className='flex-1'>
+                 <p className='text-sm text-muted-foreground mb-1'>Month</p>
+                <Select value={selectedMonth} onValueChange={setSelectedMonth} disabled={selectedYear === 'all'}>
+                    <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Months</SelectItem>
+                         {ALL_MONTHS.map((month, index) => (
+                            <SelectItem key={month} value={(index + 1).toString().padStart(2, '0')}>
+                                {month}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        </CardContent>
+      </Card>
+
+
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -277,7 +341,7 @@ export function OwnerDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{totalRevenue.toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">
-              Total amount paid by customers
+              Paid amount in selected period
             </p>
           </CardContent>
         </Card>
@@ -289,7 +353,7 @@ export function OwnerDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{totalDue.toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">
-              Total outstanding amount
+              Outstanding amount in selected period
             </p>
           </CardContent>
         </Card>
@@ -300,7 +364,7 @@ export function OwnerDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+{totalSales}</div>
-            <p className="text-xs text-muted-foreground">Total bills generated</p>
+            <p className="text-xs text-muted-foreground">Bills in selected period</p>
           </CardContent>
         </Card>
         <Card>
@@ -313,7 +377,7 @@ export function OwnerDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{inactiveCustomers}</div>
             <p className="text-xs text-muted-foreground">
-              No activity in the last 30 days
+              No bills in the selected period
             </p>
           </CardContent>
         </Card>
@@ -329,29 +393,25 @@ export function OwnerDashboard() {
                         <div>
                             <CardTitle>Sales Report</CardTitle>
                             <CardDescription>
-                                A summary of revenue over time.
+                                Revenue summary for the selected period.
                             </CardDescription>
                         </div>
                          <div className="flex items-center gap-2">
                            <TabsList>
-                                <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                                <TabsTrigger value="monthly" disabled={selectedYear === 'all'}>Monthly</TabsTrigger>
                                 <TabsTrigger value="yearly">Yearly</TabsTrigger>
                             </TabsList>
-                            <Select value={selectedYear} onValueChange={setSelectedYear}>
-                                <SelectTrigger className="w-[120px]">
-                                    <SelectValue placeholder="Select Year" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {availableYears.map(year => (
-                                        <SelectItem key={year} value={year}>{year}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
                         </div>
                     </div>
                 </CardHeader>
                 <TabsContent value="monthly">
                     <CardContent className="pl-2">
+                         {selectedYear === 'all' ? (
+                            <div className="flex flex-col items-center justify-center h-[350px] text-center">
+                                <AlertCircle className="h-10 w-10 text-muted-foreground" />
+                                <p className="mt-4 text-sm text-muted-foreground">Please select a specific year to view the monthly report.</p>
+                            </div>
+                        ) : (
                         <ResponsiveContainer width="100%" height={350}>
                         <BarChart data={monthlyData}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false}/>
@@ -380,6 +440,7 @@ export function OwnerDashboard() {
                             <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                         </BarChart>
                         </ResponsiveContainer>
+                        )}
                     </CardContent>
                 </TabsContent>
                 <TabsContent value="yearly">
@@ -422,15 +483,11 @@ export function OwnerDashboard() {
           <CardHeader>
             <CardTitle>Recent Bills</CardTitle>
             <CardDescription>
-              Your 5 most recent transactions.
+              Latest 5 bills in the selected period.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoadingRecent ? (
-                <div className="flex justify-center items-center py-16">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-            ) : recentBills && recentBills.length > 0 ? (
+            {recentBills && recentBills.length > 0 ? (
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -460,7 +517,7 @@ export function OwnerDashboard() {
                     <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
                     <h3 className="mt-4 text-lg font-semibold">No Bills Found</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Generate a new bill to see recent activity here.
+                        No bills were generated in this period.
                     </p>
                 </div>
             )}
@@ -472,7 +529,7 @@ export function OwnerDashboard() {
             <CardHeader>
                 <CardTitle>Customer Reminders</CardTitle>
                 <CardDescription>
-                    A list of customers with outstanding payments. You can send them a friendly reminder.
+                    Customers with outstanding payments in the selected period.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -516,7 +573,7 @@ export function OwnerDashboard() {
                         <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
                         <h3 className="mt-4 text-lg font-semibold">No Due Amounts</h3>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            All customer accounts are settled.
+                            All accounts are settled for this period.
                         </p>
                     </div>
                 )}
@@ -526,5 +583,3 @@ export function OwnerDashboard() {
     </div>
   );
 }
-
-    
