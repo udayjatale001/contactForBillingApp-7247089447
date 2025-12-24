@@ -125,10 +125,11 @@ export function OwnerDashboard() {
 
     const years = new Set<string>();
     allBills.forEach(bill => years.add(getYear(new Date(bill.createdAt)).toString()));
-    const allAvailableYears = Array.from(years).sort((a,b) => Number(b) - Number(a));
-    if (!allAvailableYears.includes(new Date().getFullYear().toString())) {
-      allAvailableYears.unshift(new Date().getFullYear().toString());
-    }
+    const earliestYearInHistory = Array.from(years).sort((a,b) => Number(a) - Number(b))[0];
+    const earliestYear = earliestYearInHistory ? parseInt(earliestYearInHistory) : new Date().getFullYear();
+    
+    const allAvailableYears = Array.from({length: 3000 - earliestYear + 1}, (_, i) => (earliestYear + i).toString()).reverse();
+
 
     // Filter bills based on selected month and year
     const filteredBills = allBills.filter(bill => {
