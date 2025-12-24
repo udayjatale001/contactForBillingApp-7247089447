@@ -128,8 +128,7 @@ export function OwnerDashboard() {
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     const years = new Set<string>();
-    let earliestYear = new Date().getFullYear();
-
+    
     const revenue = bills.reduce((acc, bill) => acc + bill.paidAmount, 0);
     const due = bills.reduce((acc, bill) => acc + bill.dueAmount, 0);
 
@@ -150,10 +149,6 @@ export function OwnerDashboard() {
       const year = getYear(billDate).toString();
       years.add(year);
 
-      if (getYear(billDate) < earliestYear) {
-        earliestYear = getYear(billDate);
-      }
-
       yearlySales[year] = (yearlySales[year] || 0) + bill.paidAmount;
 
       const customerNameKey = bill.customerName.trim().toLowerCase();
@@ -164,9 +159,9 @@ export function OwnerDashboard() {
       if (bill.dueAmount > 0) {
         if (aggregatedDueCustomers[customerNameKey]) {
           aggregatedDueCustomers[customerNameKey].totalDueAmount += bill.dueAmount;
-          // Check if current bill is more recent
           if (bill.createdAt > aggregatedDueCustomers[customerNameKey].lastBillIsoDate) {
             aggregatedDueCustomers[customerNameKey].lastBillIsoDate = bill.createdAt;
+            aggregatedDueCustomers[customerNameKey].lastBillDate = bill.createdAt;
           }
         } else {
           aggregatedDueCustomers[customerNameKey] = {
@@ -185,10 +180,9 @@ export function OwnerDashboard() {
       lastDate => lastDate < oneMonthAgo
     ).length;
 
-    const endYear = 3000;
     const allYears = [];
     const startYear = years.size > 0 ? Math.min(...Array.from(years).map(Number)) : new Date().getFullYear();
-    for (let y = endYear; y >= startYear; y--) {
+    for (let y = 3000; y >= startYear; y--) {
         allYears.push(y.toString());
     }
 
@@ -197,7 +191,7 @@ export function OwnerDashboard() {
       total: monthlySalesForYear[month] || 0,
     }));
 
-    const sortedYearsForYearlyChart = Array.from(years).sort((a, b) => Number(b) - Number(a));
+    const sortedYearsForYearlyChart = Array.from(years).sort((a, b) => Number(a) - Number(b));
     const formattedYearlyData = sortedYearsForYearlyChart.map(year => ({
         year,
         total: yearlySales[year] || 0,
