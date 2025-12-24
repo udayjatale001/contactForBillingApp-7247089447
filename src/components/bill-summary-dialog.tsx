@@ -11,7 +11,7 @@ import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { Logo } from './icons/logo';
 import type { Bill } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import * as React from 'react';
 
 
@@ -47,7 +47,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md p-0">
         <div className="p-6" id="bill-receipt">
-            <DialogHeader className="mb-4 text-center">
+            <DialogHeader className="mb-4">
                 <div className='flex justify-center items-center flex-col gap-2'>
                     <Logo />
                     <h2 className="text-xl font-bold font-headline">Anand Sagar Fresh Fruits</h2>
@@ -58,25 +58,22 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
                     <span>{new Date(bill.createdAt).toLocaleDateString()}</span>
                 </div>
             </DialogHeader>
-            <div className="space-y-2">
-                <Separator />
+            <div className="space-y-1">
                 <DetailItem label="Customer Name" value={bill.customerName} />
-                <Separator />
-
-                <div className="grid grid-cols-2 gap-x-8">
-                    {bill.inCarat > 0 && <DetailItem label="In Carat" value={bill.inCarat} />}
-                    {bill.outCarat > 0 && <DetailItem label="Out Carat" value={bill.outCarat} />}
-                    {bill.smallCarat && bill.smallCarat > 0 && <DetailItem label="Small Carat" value={bill.smallCarat} />}
-                    {bill.bigCarat && bill.bigCarat > 0 && <DetailItem label="Big Carat" value={bill.bigCarat} />}
-                </div>
-                <Separator />
+                {bill.roomNumber && <DetailItem label="Room Number" value={bill.roomNumber} />}
+                <Separator className="my-2" />
+                {bill.inCarat > 0 && <DetailItem label="In Carat" value={bill.inCarat} />}
+                {bill.outCarat > 0 && <DetailItem label="Out Carat" value={bill.outCarat} />}
+                {bill.smallCarat && bill.smallCarat > 0 && <DetailItem label="17kg Carat" value={bill.smallCarat} />}
+                {bill.bigCarat && bill.bigCarat > 0 && <DetailItem label="20kg Carat" value={bill.bigCarat} />}
+                <Separator className="my-2" />
                 <DetailItem label="Total Amount" value={`₹${bill.totalAmount.toLocaleString()}`} className="font-bold text-lg"/>
                 <DetailItem label="Paid Amount" value={`₹${bill.paidAmount.toLocaleString()}`} />
                 <DetailItem label="Due Amount" value={<Badge variant={bill.dueAmount > 0 ? "destructive" : "default"}>₹{bill.dueAmount.toLocaleString()}</Badge>} />
-                <Separator />
+                <Separator className="my-2" />
                 <DetailItem label="Paid To" value={bill.paidTo} />
                 <DetailItem label="Date" value={new Date(bill.createdAt).toLocaleDateString()} />
-                <Separator />
+                <Separator className="my-2" />
                  <div className='text-center text-sm text-muted-foreground pt-2'>
                     Payment Method: {bill.paymentMode}
                 </div>
@@ -87,10 +84,10 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
             </div>
         </div>
 
-        <DialogFooter className="px-6 pb-6 sm:justify-between bg-secondary/20 pt-4 rounded-b-lg">
+        <DialogFooter className="px-6 pb-6 sm:justify-between bg-secondary/20 pt-4 rounded-b-lg border-t">
           {!isSavingDisabled && (
             <Button variant="default" onClick={handleSaveClick} className='flex-1' disabled={isSaving}>
-              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
               Save
             </Button>
           )}

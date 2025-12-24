@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as React from 'react';
-import { Gem, Loader2, User, ChevronsUpDown, Banknote } from 'lucide-react';
+import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { collection, doc } from 'firebase/firestore';
 
@@ -46,6 +46,7 @@ export function BillingForm() {
 
   const defaultFormValues = {
       customerName: '',
+      roomNumber: '',
       inCarat: undefined,
       outCarat: undefined,
       smallCarat: undefined,
@@ -107,15 +108,17 @@ export function BillingForm() {
         const managerBillsColRef = collection(firestore, 'managers', user.uid, 'bills');
         const globalBillsColRef = collection(firestore, 'bills');
         
-        await addDocumentNonBlocking(managerBillsColRef, generatedBill);
-        await addDocumentNonBlocking(globalBillsColRef, generatedBill);
+        // Use the non-blocking functions
+        addDocumentNonBlocking(managerBillsColRef, generatedBill);
+        addDocumentNonBlocking(globalBillsColRef, generatedBill);
 
         toast({
           title: 'Bill Saved!',
-          description: 'The bill has been successfully saved to Firestore.',
+          description: 'The bill has been successfully saved to your history.',
         });
         handleCloseDialog();
       } catch (error) {
+        console.error("Error saving bill: ", error);
         toast({
             variant: 'destructive',
             title: 'Error Saving Bill',
@@ -167,7 +170,8 @@ export function BillingForm() {
           caratType = 'Big Carat';
         }
 
-        const fullBillDetails: Omit<Bill, 'id'> & { id?: string } = {
+        const fullBillDetails: Bill = {
+            id: uuidv4(),
             managerId: user.uid,
             ...data,
             inCarat: data.inCarat || 0,
@@ -182,8 +186,7 @@ export function BillingForm() {
             caratType: caratType,
         };
         
-      const newBillId = uuidv4();
-      setGeneratedBill({ ...fullBillDetails, id: newBillId });
+      setGeneratedBill(fullBillDetails);
 
 
     } catch (error) {
@@ -208,15 +211,28 @@ export function BillingForm() {
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2'><User />Customer Details</CardTitle>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField
                             control={form.control}
                             name="customerName"
                             render={({ field }) => (
-                                <FormItem className="md:col-span-3">
+                                <FormItem>
                                 <FormLabel>Customer Name</FormLabel>
                                 <FormControl>
                                     <Input placeholder="Enter customer's name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="roomNumber"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Room Number</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g., 09" {...field} />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -262,7 +278,7 @@ export function BillingForm() {
                             name="smallCarat"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Small Carat (Rate: 17)</FormLabel>
+                                    <FormLabel>17kg Carat (Rate: 17)</FormLabel>
                                     <FormControl>
                                     <Input type="number" placeholder="e.g., 10" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
@@ -275,7 +291,7 @@ export function BillingForm() {
                             name="bigCarat"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Big Carat (Rate: 20)</FormLabel>
+                                    <FormLabel>20kg Carat (Rate: 20)</FormLabel>
                                     <FormControl>
                                     <Input type="number" placeholder="e.g., 5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
