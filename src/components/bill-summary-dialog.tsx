@@ -37,9 +37,9 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
   }
 
   const DetailItem = ({ label, value, className }: { label: string, value: React.ReactNode, className?: string}) => (
-    <div className={`flex justify-between items-baseline ${className}`}>
+    <div className={`flex justify-between items-baseline py-2 ${className}`}>
       <p className="text-sm text-muted-foreground">{label}</p>
-      <div className="text-sm font-medium text-right">{value}</div>
+      <div className="text-md font-semibold text-right">{value}</div>
     </div>
   );
 
@@ -47,35 +47,47 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md p-0">
         <div className="p-6" id="bill-receipt">
-            <DialogHeader className="mb-6">
+            <DialogHeader className="mb-4 text-center">
                 <div className='flex justify-center items-center flex-col gap-2'>
                     <Logo />
                     <h2 className="text-xl font-bold font-headline">Anand Sagar Fresh Fruits</h2>
+                    <p className="text-xs text-muted-foreground">Ichapur Road</p>
+                </div>
+                 <div className='flex justify-between text-xs text-muted-foreground mt-4'>
+                    <span>Bill No: A...{bill.id.slice(-4)}</span>
+                    <span>{new Date(bill.createdAt).toLocaleDateString()}</span>
                 </div>
             </DialogHeader>
-            <div className="space-y-4">
-                <div className="space-y-2 p-4 border rounded-lg bg-secondary/20">
-                    <DetailItem label="Customer Name" value={bill.customerName} />
-                    <Separator />
+            <div className="space-y-2">
+                <Separator />
+                <DetailItem label="Customer Name" value={bill.customerName} />
+                <Separator />
+
+                <div className="grid grid-cols-2 gap-x-8">
                     {bill.inCarat > 0 && <DetailItem label="In Carat" value={bill.inCarat} />}
                     {bill.outCarat > 0 && <DetailItem label="Out Carat" value={bill.outCarat} />}
                     {bill.smallCarat && bill.smallCarat > 0 && <DetailItem label="Small Carat" value={bill.smallCarat} />}
                     {bill.bigCarat && bill.bigCarat > 0 && <DetailItem label="Big Carat" value={bill.bigCarat} />}
-                    <Separator className="my-2"/>
-                    <DetailItem label="Total Amount" value={`₹${bill.totalAmount.toLocaleString()}`} className="font-bold text-base"/>
-                    <DetailItem label="Paid Amount" value={`₹${bill.paidAmount.toLocaleString()}`} />
-                    <DetailItem label="Due Amount" value={<Badge variant={bill.dueAmount > 0 ? "destructive" : "default"}>₹{bill.dueAmount.toLocaleString()}</Badge>} />
-                    <Separator className="my-2"/>
-                    <DetailItem label="Paid To" value={bill.paidTo} />
-                    <DetailItem label="Date" value={new Date(bill.createdAt).toLocaleDateString()} />
                 </div>
-                <div className='text-center text-sm text-muted-foreground'>
+                <Separator />
+                <DetailItem label="Total Amount" value={`₹${bill.totalAmount.toLocaleString()}`} className="font-bold text-lg"/>
+                <DetailItem label="Paid Amount" value={`₹${bill.paidAmount.toLocaleString()}`} />
+                <DetailItem label="Due Amount" value={<Badge variant={bill.dueAmount > 0 ? "destructive" : "default"}>₹{bill.dueAmount.toLocaleString()}</Badge>} />
+                <Separator />
+                <DetailItem label="Paid To" value={bill.paidTo} />
+                <DetailItem label="Date" value={new Date(bill.createdAt).toLocaleDateString()} />
+                <Separator />
+                 <div className='text-center text-sm text-muted-foreground pt-2'>
                     Payment Method: {bill.paymentMode}
+                </div>
+                <div className="pt-12 pb-4 text-center">
+                    <div className="border-t border-dashed w-1/2 mx-auto"></div>
+                    <p className="text-xs text-muted-foreground mt-2">Seal / Signature</p>
                 </div>
             </div>
         </div>
 
-        <DialogFooter className="px-6 pb-6 sm:justify-between bg-secondary/20 pt-4">
+        <DialogFooter className="px-6 pb-6 sm:justify-between bg-secondary/20 pt-4 rounded-b-lg">
           {!isSavingDisabled && (
             <Button variant="default" onClick={handleSaveClick} className='flex-1' disabled={isSaving}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
