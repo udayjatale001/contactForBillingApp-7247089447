@@ -18,24 +18,15 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import type { Bill } from '@/lib/types';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { FileText, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { FileText, Loader2, Search } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, getDoc, doc } from 'firebase/firestore';
 
 export default function HistoryPage() {
   const { user } = useUser();
   const firestore = useFirestore();
-  const [selectedBill, setSelectedBill] = React.useState<Bill | null>(null);
+  const [searchTerm, setSearchTerm] = React.useState('');
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
 
   React.useEffect(() => {
@@ -64,32 +55,12 @@ export default function HistoryPage() {
 
   const { data: bills, isLoading } = useCollection<Bill>(billsQuery);
 
-  const handleBillClick = (bill: Bill) => {
-    setSelectedBill(bill);
-  };
-
-  const handleCloseDialog = () => {
-    setSelectedBill(null);
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const DetailItem = ({
-    label,
-    value,
-    className,
-  }: {
-    label: string;
-    value: React.ReactNode;
-    className?: string;
-  }) => (
-    <div className={`flex justify-between items-center ${className}`}>
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="text-sm font-medium">{value}</p>
-    </div>
-  );
+  const filteredBills = React.useMemo(() => {
+    if (!bills) return [];
+    return bills.filter(bill =>
+      bill.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [bills, searchTerm]);
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -104,13 +75,22 @@ export default function HistoryPage() {
           <CardDescription>
             A complete record of all generated bills.
           </CardDescription>
+          <div className="relative pt-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder="Search by customer name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading || isOwner === null ? (
              <div className="flex justify-center items-center py-16">
                 <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
             </div>
-          ) : bills && bills.length > 0 ? (
+          ) : filteredBills && filteredBills.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -122,11 +102,9 @@ export default function HistoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {bills.map((bill) => (
+                {filteredBills.map((bill) => (
                   <TableRow
                     key={bill.id}
-                    onClick={() => handleBillClick(bill)}
-                    className="cursor-pointer"
                   >
                     <TableCell>{bill.customerName}</TableCell>
                     <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
@@ -148,88 +126,12 @@ export default function HistoryPage() {
                 <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-semibold">No Bills Found</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                    Generate a new bill to see its history here.
+                    Your search for "{searchTerm}" did not return any results.
                 </p>
             </div>
           )}
         </CardContent>
       </Card>
-      {selectedBill && (
-        <Dialog open={!!selectedBill} onOpenChange={handleCloseDialog}>
-          <DialogContent className="sm:max-w-md printable-area">
-            <DialogHeader>
-              <DialogTitle>Bill Details</DialogTitle>
-              <DialogDescription>
-                Detailed information for bill ID: {selectedBill.id}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-3 p-4 border rounded-lg">
-                <h3 className="font-semibold text-center mb-2">
-                  Bill for: {selectedBill.customerName}
-                </h3>
-                <Separator />
-                <DetailItem
-                  label="Total Carat"
-                  value={`${selectedBill.totalCarat} `}
-                />
-                <Separator />
-                <div>
-                    <p className="text-sm text-muted-foreground mb-2">Carat Type</p>
-                    {selectedBill.smallCarat && selectedBill.smallCarat > 0 && <DetailItem label="Small" value={selectedBill.smallCarat}/>}
-                    {selectedBill.bigCarat && selectedBill.bigCarat > 0 && <DetailItem label="Big" value={selectedBill.bigCarat}/>}
-                </div>
-                 <Separator />
-                 <div>
-                    <p className="text-sm text-muted-foreground mb-2">Rate</p>
-                    {(selectedBill.bigCarat || 0) > 0 && <DetailItem label="Big" value="20rs per carat"/>}
-                    {(selectedBill.smallCarat || 0) > 0 && <DetailItem label="Small" value="17rs per carat"/>}
-                </div>
-                <Separator />
-                <DetailItem
-                  label="Total Amount"
-                  value={`${selectedBill.totalAmount.toLocaleString()}rs`}
-                  className="font-bold text-base"
-                />
-                <DetailItem
-                  label="Paid Amount"
-                  value={`${selectedBill.paidAmount.toLocaleString()}rs`}
-                />
-                <DetailItem
-                  label="Due Amount"
-                  value={
-                    <Badge
-                      variant={
-                        selectedBill.dueAmount > 0 ? 'destructive' : 'default'
-                      }
-                    >
-                     {selectedBill.dueAmount > 0 ? `${selectedBill.dueAmount.toLocaleString()}rs` : 'Paid'}
-                    </Badge>
-                  }
-                />
-                <Separator />
-                <DetailItem label="Paid To" value={selectedBill.paidTo} />
-                <DetailItem
-                  label="Payment Mode"
-                  value={selectedBill.paymentMode}
-                />
-                <DetailItem
-                  label="Date & Time"
-                  value={new Date(selectedBill.createdAt).toLocaleString()}
-                />
-              </div>
-            </div>
-            <DialogFooter className="sm:justify-between non-printable px-6 pb-4">
-              <Button variant="outline" onClick={handlePrint}>
-                Print
-              </Button>
-              <Button onClick={handleCloseDialog}>Close</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 }
-
-    
