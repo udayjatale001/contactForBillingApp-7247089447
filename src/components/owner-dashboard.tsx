@@ -102,9 +102,6 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
 
     setDocumentNonBlocking(settingsDocRef, newRates, { merge: true });
 
-    // The operation is non-blocking, so we can give immediate feedback.
-    // The `useDoc` hook will update the UI automatically on success.
-    // Error handling is managed globally by the FirestorePermissionError system.
     toast({
       title: 'Rates Updated',
       description: 'The new rates have been saved and will apply to new bills.',
