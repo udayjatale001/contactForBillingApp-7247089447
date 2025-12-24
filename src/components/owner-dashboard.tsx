@@ -112,7 +112,7 @@ export function OwnerDashboard() {
         monthlyData: [],
         yearlyData: [],
         dueBills: [],
-        availableYears: [],
+        availableYears: [new Date().getFullYear().toString()],
       };
     }
 
@@ -126,30 +126,31 @@ export function OwnerDashboard() {
     const revenue = bills.reduce((acc, bill) => acc + bill.paidAmount, 0);
     const due = bills.reduce((acc, bill) => acc + bill.dueAmount, 0);
 
-    // Monthly data for the selected year
+    const filteredBillsForYear = bills.filter(bill => getYear(new Date(bill.createdAt)).toString() === selectedYear);
+
     const monthlySalesForYear: { [key: string]: number } = Object.fromEntries(ALL_MONTHS.map(m => [m, 0]));
+    
+    filteredBillsForYear.forEach(bill => {
+        const billDate = new Date(bill.createdAt);
+        const month = format(billDate, 'MMM');
+        monthlySalesForYear[month] = (monthlySalesForYear[month] || 0) + bill.paidAmount;
+    });
 
     bills.forEach(bill => {
-        const billDate = new Date(bill.createdAt);
-        const billYear = getYear(billDate);
-        const year = billYear.toString();
-        years.add(year);
-        
-        if (billYear < earliestYear) {
-            earliestYear = billYear;
-        }
+      const billDate = new Date(bill.createdAt);
+      const year = getYear(billDate).toString();
+      years.add(year);
 
-        if(year === selectedYear) {
-            const month = format(billDate, 'MMM');
-            monthlySalesForYear[month] = (monthlySalesForYear[month] || 0) + bill.paidAmount;
-        }
+      if (getYear(billDate) < earliestYear) {
+        earliestYear = getYear(billDate);
+      }
 
-        yearlySales[year] = (yearlySales[year] || 0) + bill.paidAmount;
+      yearlySales[year] = (yearlySales[year] || 0) + bill.paidAmount;
 
-        const customerName = bill.customerName.toLowerCase();
-        if (!customerLastActivity[customerName] || billDate > customerLastActivity[customerName]) {
-            customerLastActivity[customerName] = billDate;
-        }
+      const customerName = bill.customerName.toLowerCase();
+      if (!customerLastActivity[customerName] || billDate > customerLastActivity[customerName]) {
+          customerLastActivity[customerName] = billDate;
+      }
     });
 
     const inactiveCount = Object.values(customerLastActivity).filter(
@@ -187,18 +188,6 @@ export function OwnerDashboard() {
       availableYears: allYears,
     };
   }, [bills, selectedYear]);
-
-  React.useEffect(() => {
-    // Set the selected year to the most recent year when data loads, if available
-    if (bills && bills.length > 0) {
-        const mostRecentYear = getYear(new Date(bills[0].createdAt)).toString();
-        if(selectedYear !== mostRecentYear) {
-             // setSelectedYear(mostRecentYear); // This can cause a loop if not careful.
-        }
-    } else {
-        setSelectedYear(new Date().getFullYear().toString());
-    }
-  }, [bills]);
 
 
   const handleSendReminders = async () => {
@@ -441,7 +430,7 @@ export function OwnerDashboard() {
                                 {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
                             </Badge>
                             </TableCell>
-                            <TableCell>{format(new Date(bill.createdAt), 'dd MMM, p')}</TableCell>
+                            <TableCell>{format(new Date(bill.createdAt), 'dd MMM, p')}</TableCell>                        
                         </TableRow>
                         ))}
                     </TableBody>
@@ -517,3 +506,5 @@ export function OwnerDashboard() {
     </div>
   );
 }
+
+    
