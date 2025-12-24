@@ -16,20 +16,37 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import type { Bill } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import { FileText, Loader2, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FileText, Loader2, Search, Trash2 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, getDoc, doc } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDoc, doc, writeBatch } from 'firebase/firestore';
 import { BillSummaryDialog } from '@/components/bill-summary-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 export default function HistoryPage() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
   const [selectedBill, setSelectedBill] = React.useState<Bill | null>(null);
+  const [billToDelete, setBillToDelete] = React.useState<Bill | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   React.useEffect(() => {
     if(user && firestore) {
@@ -71,6 +88,54 @@ export default function HistoryPage() {
   const handleCloseDialog = () => {
     setSelectedBill(null);
   };
+  
+  const openDeleteDialog = (e: React.MouseEvent, bill: Bill) => {
+      e.stopPropagation(); // Prevent the row click from firing
+      setBillToDelete(bill);
+  };
+
+  const handleDeleteBill = async () => {
+    if (!firestore || !billToDelete) return;
+
+    setIsDeleting(true);
+    
+    // Create a batch to delete from both locations
+    const batch = writeBatch(firestore);
+
+    // Ref to the document in the global 'bills' collection
+    const globalBillRef = doc(firestore, 'bills', billToDelete.id);
+    batch.delete(globalBillRef);
+
+    // Ref to the document in the manager's subcollection
+    const managerBillRef = doc(firestore, 'managers', billToDelete.managerId, 'bills', billToDelete.id);
+    batch.delete(managerBillRef);
+    
+    // Commit the batch
+    batch.commit()
+      .then(() => {
+        toast({
+          title: 'Bill Deleted',
+          description: `The bill for ${billToDelete.customerName} has been successfully deleted.`,
+        });
+      })
+      .catch((error) => {
+        console.error("Error deleting bill: ", error);
+         const permissionError = new FirestorePermissionError({
+          path: `Batched delete for bill ID: ${billToDelete.id}`,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({
+          variant: 'destructive',
+          title: 'Deletion Failed',
+          description: 'You do not have sufficient permissions to delete this bill.',
+        });
+      })
+      .finally(() => {
+        setIsDeleting(false);
+        setBillToDelete(null); // Close the dialog
+      });
+  };
 
   return (
     <>
@@ -110,6 +175,7 @@ export default function HistoryPage() {
                     <TableHead>Paid Amount</TableHead>
                     <TableHead>Due Amount</TableHead>
                     <TableHead>Date & Time</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -130,6 +196,18 @@ export default function HistoryPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>{new Date(bill.createdAt).toLocaleString()}</TableCell>
+                       <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => openDeleteDialog(e, bill)}
+                          disabled={!isOwner}
+                          title={isOwner ? "Delete Bill" : "Only owners can delete bills"}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Delete</span>
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -153,12 +231,33 @@ export default function HistoryPage() {
           onOpenChange={handleCloseDialog}
           onSave={async () => {
             // "onSave" is required, but we don't need to save from history view.
-            // We can add delete functionality here later if needed.
             handleCloseDialog();
           }}
           isSavingDisabled={true}
         />
       )}
+      <AlertDialog open={!!billToDelete} onOpenChange={() => setBillToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the bill
+                for <span className="font-semibold">{billToDelete?.customerName}</span> from the servers.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+                onClick={handleDeleteBill}
+                disabled={isDeleting}
+                className="bg-destructive hover:bg-destructive/90"
+            >
+                {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Delete
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
