@@ -20,9 +20,10 @@ interface BillSummaryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: () => Promise<void>;
+  isSavingDisabled?: boolean;
 }
 
-export function BillSummaryDialog({ bill, open, onOpenChange, onSave }: BillSummaryDialogProps) {
+export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDisabled = false }: BillSummaryDialogProps) {
   const [isSaving, setIsSaving] = React.useState(false);
 
   if (!bill) {
@@ -38,7 +39,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave }: BillSumm
   const DetailItem = ({ label, value, className }: { label: string, value: React.ReactNode, className?: string}) => (
     <div className={`flex justify-between items-baseline ${className}`}>
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="text-sm font-medium text-right">{value}</p>
+      <div className="text-sm font-medium text-right">{value}</div>
     </div>
   );
 
@@ -56,8 +57,8 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave }: BillSumm
                 <div className="space-y-2 p-4 border rounded-lg bg-secondary/20">
                     <DetailItem label="Customer Name" value={bill.customerName} />
                     <Separator />
-                    <DetailItem label="In Carat" value={bill.inCarat} />
-                    <DetailItem label="Out Carat" value={bill.outCarat} />
+                    {bill.inCarat > 0 && <DetailItem label="In Carat" value={bill.inCarat} />}
+                    {bill.outCarat > 0 && <DetailItem label="Out Carat" value={bill.outCarat} />}
                     {bill.smallCarat && bill.smallCarat > 0 && <DetailItem label="Small Carat" value={bill.smallCarat} />}
                     {bill.bigCarat && bill.bigCarat > 0 && <DetailItem label="Big Carat" value={bill.bigCarat} />}
                     <Separator className="my-2"/>
@@ -75,10 +76,12 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave }: BillSumm
         </div>
 
         <DialogFooter className="px-6 pb-6 sm:justify-between bg-secondary/20 pt-4">
-          <Button variant="default" onClick={handleSaveClick} className='flex-1' disabled={isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save
-          </Button>
+          {!isSavingDisabled && (
+            <Button variant="default" onClick={handleSaveClick} className='flex-1' disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save
+            </Button>
+          )}
           <Button variant="outline" onClick={() => onOpenChange(false)} className='flex-1' disabled={isSaving}>Close</Button>
         </DialogFooter>
       </DialogContent>
