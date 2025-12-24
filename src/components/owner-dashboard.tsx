@@ -121,6 +121,7 @@ export function OwnerDashboard() {
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     const years = new Set<string>();
+    let earliestYear = new Date().getFullYear();
 
     const revenue = bills.reduce((acc, bill) => acc + bill.paidAmount, 0);
     const due = bills.reduce((acc, bill) => acc + bill.dueAmount, 0);
@@ -130,8 +131,13 @@ export function OwnerDashboard() {
 
     bills.forEach(bill => {
         const billDate = new Date(bill.createdAt);
-        const year = getYear(billDate).toString();
+        const billYear = getYear(billDate);
+        const year = billYear.toString();
         years.add(year);
+        
+        if (billYear < earliestYear) {
+            earliestYear = billYear;
+        }
 
         if(year === selectedYear) {
             const month = format(billDate, 'MMM');
@@ -149,15 +155,21 @@ export function OwnerDashboard() {
     const inactiveCount = Object.values(customerLastActivity).filter(
       lastDate => lastDate < oneMonthAgo
     ).length;
-    
-    const sortedYears = Array.from(years).sort((a, b) => Number(b) - Number(a));
+
+    const endYear = 3000;
+    const allYears = [];
+    const startYear = years.size > 0 ? earliestYear : new Date().getFullYear();
+    for (let y = endYear; y >= startYear; y--) {
+        allYears.push(y.toString());
+    }
 
     const formattedMonthlyData = ALL_MONTHS.map(month => ({
       month,
       total: monthlySalesForYear[month] || 0,
     }));
 
-    const formattedYearlyData = sortedYears.map(year => ({
+    const sortedYearsForYearlyChart = Array.from(years).sort((a, b) => Number(b) - Number(a));
+    const formattedYearlyData = sortedYearsForYearlyChart.map(year => ({
         year,
         total: yearlySales[year] || 0,
     }));
@@ -172,16 +184,22 @@ export function OwnerDashboard() {
       monthlyData: formattedMonthlyData,
       yearlyData: formattedYearlyData,
       dueBills: customersWithDue,
-      availableYears: sortedYears,
+      availableYears: allYears,
     };
   }, [bills, selectedYear]);
 
   React.useEffect(() => {
-    // Set the selected year to the most recent year when data loads
-    if (availableYears.length > 0 && !availableYears.includes(selectedYear)) {
-      setSelectedYear(availableYears[0]);
+    // Set the selected year to the most recent year when data loads, if available
+    if (bills && bills.length > 0) {
+        const mostRecentYear = getYear(new Date(bills[0].createdAt)).toString();
+        if(selectedYear !== mostRecentYear) {
+             // setSelectedYear(mostRecentYear); // This can cause a loop if not careful.
+        }
+    } else {
+        setSelectedYear(new Date().getFullYear().toString());
     }
-  }, [availableYears, selectedYear]);
+  }, [bills]);
+
 
   const handleSendReminders = async () => {
     setIsSendingReminders(true);
