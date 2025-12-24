@@ -489,9 +489,6 @@ export function OwnerDashboard() {
 
       {/* Main Grid */}
       <div className="grid gap-4 lg:grid-cols-7">
-        
-        {isOwner && <ManageRatesCard isOwner={isOwner} />}
-
         {/* Sales Report */}
         <Card className={isOwner ? "lg:col-span-4" : "lg:col-span-7"}>
             <Tabs defaultValue="monthly">
@@ -584,6 +581,8 @@ export function OwnerDashboard() {
                 </TabsContent>
             </Tabs>
         </Card>
+
+        {isOwner && <ManageRatesCard isOwner={isOwner} />}
 
         {/* Recent Bills */}
         <Card className="lg:col-span-4">
