@@ -16,6 +16,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,30 +46,14 @@ import {
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import type { Bill } from '@/lib/types';
-import { format, subMonths, getYear, eachMonthOfInterval, startOfYear, endOfYear } from 'date-fns';
+import { format, getYear } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
 
-// Helper to get last 6 months for chart labels
-const getLast6Months = () => {
-  const today = new Date();
-  const months = [];
-  for (let i = 5; i >= 0; i--) {
-    months.push(format(subMonths(today, i), 'MMM'));
-  }
-  return months;
-};
-
-// Helper to get last 5 years for chart labels
-const getLast5Years = () => {
-    const currentYear = new Date().getFullYear();
-    const years = [];
-    for (let i = 4; i >= 0; i--) {
-        years.push((currentYear - i).toString());
-    }
-    return years;
-}
-
+const ALL_MONTHS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+];
 
 export function OwnerDashboard() {
   const { user, isUserLoading } = useUser();
@@ -70,6 +61,7 @@ export function OwnerDashboard() {
   const { toast } = useToast();
   const [isSendingReminders, setIsSendingReminders] = React.useState(false);
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
+  const [selectedYear, setSelectedYear] = React.useState<string>(new Date().getFullYear().toString());
 
   React.useEffect(() => {
     if(user && firestore) {
@@ -87,10 +79,8 @@ export function OwnerDashboard() {
     return isOwner ? 'bills' : `managers/${user.uid}/bills`;
   }, [isOwner, user]);
 
-  // Query for all bills, ordered by creation date
   const billsQuery = useMemoFirebase(() => {
     if (!firestore || !collectionPath) return null;
-    // Owners should see all bills from the global collection
     return query(collection(firestore, collectionPath), orderBy('createdAt', 'desc'));
   }, [firestore, collectionPath]);
 
@@ -111,6 +101,7 @@ export function OwnerDashboard() {
     monthlyData,
     yearlyData,
     dueBills,
+    availableYears,
   } = React.useMemo(() => {
     if (!bills) {
       return {
@@ -121,24 +112,33 @@ export function OwnerDashboard() {
         monthlyData: [],
         yearlyData: [],
         dueBills: [],
+        availableYears: [],
       };
     }
 
-    const monthlySales: { [key: string]: number } = {};
     const yearlySales: { [key: string]: number } = {};
     const customerLastActivity: { [key: string]: Date } = {};
-    const oneMonthAgo = subMonths(new Date(), 1);
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const years = new Set<string>();
 
     const revenue = bills.reduce((acc, bill) => acc + bill.paidAmount, 0);
     const due = bills.reduce((acc, bill) => acc + bill.dueAmount, 0);
 
+    // Monthly data for the selected year
+    const monthlySalesForYear: { [key: string]: number } = Object.fromEntries(ALL_MONTHS.map(m => [m, 0]));
+
     bills.forEach(bill => {
         const billDate = new Date(bill.createdAt);
-        const month = format(billDate, 'MMM');
         const year = getYear(billDate).toString();
-        
-        monthlySales[month] = (monthlySales[month] || 0) + bill.totalAmount;
-        yearlySales[year] = (yearlySales[year] || 0) + bill.totalAmount;
+        years.add(year);
+
+        if(year === selectedYear) {
+            const month = format(billDate, 'MMM');
+            monthlySalesForYear[month] = (monthlySalesForYear[month] || 0) + bill.paidAmount;
+        }
+
+        yearlySales[year] = (yearlySales[year] || 0) + bill.paidAmount;
 
         const customerName = bill.customerName.toLowerCase();
         if (!customerLastActivity[customerName] || billDate > customerLastActivity[customerName]) {
@@ -149,15 +149,15 @@ export function OwnerDashboard() {
     const inactiveCount = Object.values(customerLastActivity).filter(
       lastDate => lastDate < oneMonthAgo
     ).length;
+    
+    const sortedYears = Array.from(years).sort((a, b) => Number(b) - Number(a));
 
-    const last6Months = getLast6Months();
-    const formattedMonthlyData = last6Months.map(month => ({
+    const formattedMonthlyData = ALL_MONTHS.map(month => ({
       month,
-      total: monthlySales[month] || 0,
+      total: monthlySalesForYear[month] || 0,
     }));
 
-    const last5Years = getLast5Years();
-    const formattedYearlyData = last5Years.map(year => ({
+    const formattedYearlyData = sortedYears.map(year => ({
         year,
         total: yearlySales[year] || 0,
     }));
@@ -172,8 +172,16 @@ export function OwnerDashboard() {
       monthlyData: formattedMonthlyData,
       yearlyData: formattedYearlyData,
       dueBills: customersWithDue,
+      availableYears: sortedYears,
     };
-  }, [bills]);
+  }, [bills, selectedYear]);
+
+  React.useEffect(() => {
+    // Set the selected year to the most recent year when data loads
+    if (availableYears.length > 0 && !availableYears.includes(selectedYear)) {
+      setSelectedYear(availableYears[0]);
+    }
+  }, [availableYears, selectedYear]);
 
   const handleSendReminders = async () => {
     setIsSendingReminders(true);
@@ -294,13 +302,25 @@ export function OwnerDashboard() {
                         <div>
                             <CardTitle>Sales Report</CardTitle>
                             <CardDescription>
-                                A summary of sales over time.
+                                A summary of revenue over time.
                             </CardDescription>
                         </div>
-                        <TabsList>
-                            <TabsTrigger value="monthly">Monthly</TabsTrigger>
-                            <TabsTrigger value="yearly">Yearly</TabsTrigger>
-                        </TabsList>
+                         <div className="flex items-center gap-2">
+                           <TabsList>
+                                <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                                <TabsTrigger value="yearly">Yearly</TabsTrigger>
+                            </TabsList>
+                            <Select value={selectedYear} onValueChange={setSelectedYear}>
+                                <SelectTrigger className="w-[120px]">
+                                    <SelectValue placeholder="Select Year" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableYears.map(year => (
+                                        <SelectItem key={year} value={year}>{year}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </CardHeader>
                 <TabsContent value="monthly">
@@ -479,5 +499,3 @@ export function OwnerDashboard() {
     </div>
   );
 }
-
-    
