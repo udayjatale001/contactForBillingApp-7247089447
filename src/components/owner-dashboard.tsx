@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,7 +39,7 @@ import {
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import type { Bill } from '@/lib/types';
-import { format, subMonths, startOfMonth, parseISO } from 'date-fns';
+import { format, subMonths, startOfMonth, parseISO, getYear } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
 
@@ -51,6 +52,18 @@ const getMockMonthlyData = () => {
         data.push({
         month: format(date, 'MMM'),
         total: Math.floor(Math.random() * (5000 - 1000 + 1)) + 1000,
+        });
+    }
+    return data;
+};
+
+const getMockYearlyData = () => {
+    const data = [];
+    const currentYear = new Date().getFullYear();
+    for (let i = 4; i >= 0; i--) {
+        data.push({
+        year: (currentYear - i).toString(),
+        total: Math.floor(Math.random() * (50000 - 10000 + 1)) + 10000,
         });
     }
     return data;
@@ -102,6 +115,7 @@ export function OwnerDashboard() {
     totalSales,
     inactiveCustomers,
     monthlyData,
+    yearlyData,
     dueBills,
   } = React.useMemo(() => {
     if (!bills) {
@@ -111,11 +125,13 @@ export function OwnerDashboard() {
         totalSales: 0,
         inactiveCustomers: 0,
         monthlyData: getMockMonthlyData(),
+        yearlyData: getMockYearlyData(),
         dueBills: [],
       };
     }
 
     const monthlySales: { [key: string]: number } = {};
+    const yearlySales: { [key: string]: number } = {};
     const customerLastActivity: { [key: string]: Date } = {};
     const oneMonthAgo = subMonths(new Date(), 1);
 
@@ -125,7 +141,10 @@ export function OwnerDashboard() {
     bills.forEach(bill => {
         const billDate = new Date(bill.createdAt);
         const month = format(billDate, 'MMM');
+        const year = getYear(billDate).toString();
+        
         monthlySales[month] = (monthlySales[month] || 0) + bill.totalAmount;
+        yearlySales[year] = (yearlySales[year] || 0) + bill.totalAmount;
 
         const customerName = bill.customerName.toLowerCase();
         if (!customerLastActivity[customerName] || billDate > customerLastActivity[customerName]) {
@@ -141,6 +160,10 @@ export function OwnerDashboard() {
       .map(([month, total]) => ({ month, total }))
       .slice(-6); // Get last 6 months
 
+    const formattedYearlyData = Object.entries(yearlySales)
+      .map(([year, total]) => ({ year, total }))
+      .slice(-5); // Get last 5 years
+
     const customersWithDue = bills.filter(bill => bill.dueAmount > 0);
 
     return {
@@ -149,6 +172,7 @@ export function OwnerDashboard() {
       totalSales: bills.length,
       inactiveCustomers: inactiveCount,
       monthlyData: formattedMonthlyData.length > 0 ? formattedMonthlyData : getMockMonthlyData(),
+      yearlyData: formattedYearlyData.length > 0 ? formattedYearlyData : getMockYearlyData(),
       dueBills: customersWithDue,
     };
   }, [bills]);
@@ -264,44 +288,88 @@ export function OwnerDashboard() {
 
       {/* Main Grid */}
       <div className="grid gap-4 lg:grid-cols-7">
-        {/* Monthly Report */}
+        {/* Sales Report */}
         <Card className="lg:col-span-4">
-          <CardHeader>
-            <CardTitle>Monthly Report</CardTitle>
-            <CardDescription>
-                A summary of sales over the last 6 months.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false}/>
-                <XAxis
-                  dataKey="month"
-                  stroke="#888888"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="#888888"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={value => `${value.toLocaleString()}rs`}
-                />
-                <Tooltip
-                  cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }}
-                  contentStyle={{ 
-                      backgroundColor: 'hsl(var(--background))', 
-                      borderColor: 'hsl(var(--border))',
-                      borderRadius: 'var(--radius)'
-                    }}
-                />
-                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
+            <Tabs defaultValue="monthly">
+                <CardHeader>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <CardTitle>Sales Report</CardTitle>
+                            <CardDescription>
+                                A summary of sales over time.
+                            </CardDescription>
+                        </div>
+                        <TabsList>
+                            <TabsTrigger value="monthly">Monthly</TabsTrigger>
+                            <TabsTrigger value="yearly">Yearly</TabsTrigger>
+                        </TabsList>
+                    </div>
+                </CardHeader>
+                <TabsContent value="monthly">
+                    <CardContent className="pl-2">
+                        <ResponsiveContainer width="100%" height={350}>
+                        <BarChart data={monthlyData}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                            <XAxis
+                            dataKey="month"
+                            stroke="#888888"
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                            />
+                            <YAxis
+                            stroke="#888888"
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={value => `${value.toLocaleString()}rs`}
+                            />
+                            <Tooltip
+                            cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }}
+                            contentStyle={{ 
+                                backgroundColor: 'hsl(var(--background))', 
+                                borderColor: 'hsl(var(--border))',
+                                borderRadius: 'var(--radius)'
+                                }}
+                            />
+                            <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </TabsContent>
+                <TabsContent value="yearly">
+                     <CardContent className="pl-2">
+                        <ResponsiveContainer width="100%" height={350}>
+                        <BarChart data={yearlyData}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                            <XAxis
+                            dataKey="year"
+                            stroke="#888888"
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                            />
+                            <YAxis
+                            stroke="#888888"
+                            fontSize={12}
+                            tickLine={false}
+                            axisLine={false}
+                            tickFormatter={value => `${value.toLocaleString()}rs`}
+                            />
+                            <Tooltip
+                            cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }}
+                            contentStyle={{ 
+                                backgroundColor: 'hsl(var(--background))', 
+                                borderColor: 'hsl(var(--border))',
+                                borderRadius: 'var(--radius)'
+                                }}
+                            />
+                            <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </TabsContent>
+            </Tabs>
         </Card>
 
         {/* Recent Bills */}
