@@ -147,6 +147,27 @@
         "name",
         "email"
       ]
+    },
+     "AppSettings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Application Settings",
+      "type": "object",
+      "description": "Stores global application settings, such as billing rates, configurable by the owner.",
+      "properties": {
+        "smallCaratRate": {
+          "type": "number",
+          "description": "The billing rate for small carats."
+        },
+        "bigCaratRate": {
+          "type": "number",
+          "description": "The billing rate for big carats."
+        },
+        "labourRate": {
+          "type": "number",
+          "description": "The rate for labour."
+        }
+      },
+      "required": ["smallCaratRate", "bigCaratRate", "labourRate"]
     }
   },
   "auth": {
@@ -221,6 +242,22 @@
             {
               "name": "billId",
               "description": "The unique identifier for the bill."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/app_settings/{settingsId}",
+        "definition": {
+          "entityName": "AppSettings",
+          "schema": {
+            "$ref": "#/backend/entities/AppSettings"
+          },
+          "description": "Global application settings. There should only be one document with a known ID (e.g., 'rates').",
+          "params": [
+            {
+              "name": "settingsId",
+              "description": "The fixed identifier for the settings document, e.g., 'rates'."
             }
           ]
         }

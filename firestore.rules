@@ -98,7 +98,7 @@ service cloud.firestore {
         allow list: if isOwner(managerId);
         allow create: if isOwner(managerId) && isValidSubcollectionBillCreate(managerId);
         allow update: if isOwner(managerId) && isImmutableBillManagerId();
-        allow delete: if isOwner(managerId);
+        allow delete: if isOwner(managerId) || isOwnerRole();
       }
     }
 
@@ -135,7 +135,19 @@ service cloud.firestore {
       allow list: if isOwnerRole();
       allow create: if isSignedIn() && isValidGlobalBillCreate();
       allow update: if isOwner(resource.data.managerId) && isImmutableBillManagerId();
-      allow delete: if isOwner(resource.data.managerId);
+      allow delete: if isOwner(resource.data.managerId) || isOwnerRole();
+    }
+
+    /**
+     * @description Global application settings, such as billing rates.
+     * @path /app_settings/{settingsId}
+     * @allow (get, list) All authenticated users can read the settings.
+     * @allow (create, update, delete) Only users with the 'Owner' role can modify the settings.
+     * @principle Allows public read access for application configuration while restricting write access to administrators.
+     */
+    match /app_settings/{settingsId} {
+      allow read: if isSignedIn();
+      allow write: if isOwnerRole();
     }
   }
 }

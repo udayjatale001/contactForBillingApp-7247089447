@@ -55,3 +55,10 @@ export type Bill = {
   paymentMode: string;
   createdAt: string; // Storing as ISO string for Firestore compatibility
 };
+
+export type AppSettings = {
+  id?: string;
+  smallCaratRate: number;
+  bigCaratRate: number;
+  labourRate: number;
+};

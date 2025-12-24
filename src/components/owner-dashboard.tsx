@@ -43,13 +43,17 @@ import {
   AlertCircle,
   FileText,
   Calendar,
+  Settings,
+  Save,
 } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
-import type { Bill } from '@/lib/types';
+import type { Bill, AppSettings } from '@/lib/types';
 import { format, getYear, getMonth, parse } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 
 const ALL_MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -62,6 +66,96 @@ type AggregatedDueCustomer = {
   lastBillDate: string; // Storing as ISO string
   lastBillIsoDate: string;
 };
+
+const ManageRatesCard = ({ settings, settingsRef, isOwner }: { settings: AppSettings | null, settingsRef: any, isOwner: boolean | null }) => {
+    const { toast } = useToast();
+    const [rates, setRates] = React.useState<AppSettings>({ smallCaratRate: 0, bigCaratRate: 0, labourRate: 0 });
+    const [isSaving, setIsSaving] = React.useState(false);
+
+    React.useEffect(() => {
+        if (settings) {
+            setRates(settings);
+        }
+    }, [settings]);
+
+    const handleRateChange = (field: keyof AppSettings, value: string) => {
+        const numericValue = value === '' ? 0 : parseFloat(value);
+        if (!isNaN(numericValue)) {
+            setRates(prev => ({ ...prev, [field]: numericValue }));
+        }
+    };
+
+    const handleSaveRates = async () => {
+        if (!settingsRef || !isOwner) {
+            toast({ variant: "destructive", title: "Permission Denied", description: "You do not have permission to update rates." });
+            return;
+        }
+        setIsSaving(true);
+        
+        setDocumentNonBlocking(settingsRef, rates, { merge: true });
+
+        // Simulate optimistic update feedback
+        setTimeout(() => {
+          setIsSaving(false);
+          toast({ title: "Rates Updated", description: "The new rates have been saved successfully." });
+        }, 500); // Give a moment for the non-blocking write to be initiated
+    };
+    
+    return (
+        <Card className="lg:col-span-7">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Settings /> Manage Rates</CardTitle>
+                <CardDescription>
+                    Update the billing rates for carats and labour. Changes will apply to all new bills.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="smallCaratRate">Small Carat Rate</Label>
+                        <Input
+                            id="smallCaratRate"
+                            type="number"
+                            value={rates.smallCaratRate}
+                            onChange={(e) => handleRateChange('smallCaratRate', e.target.value)}
+                            placeholder="e.g., 17"
+                            disabled={!isOwner}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="bigCaratRate">Big Carat Rate</Label>
+                        <Input
+                            id="bigCaratRate"
+                            type="number"
+                            value={rates.bigCaratRate}
+                            onChange={(e) => handleRateChange('bigCaratRate', e.target.value)}
+                            placeholder="e.g., 20"
+                            disabled={!isOwner}
+                        />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="labourRate">Labour Rate</Label>
+                        <Input
+                            id="labourRate"
+                            type="number"
+                            value={rates.labourRate}
+                             onChange={(e) => handleRateChange('labourRate', e.target.value)}
+                            placeholder="e.g., 5"
+                             disabled={!isOwner}
+                        />
+                    </div>
+                </div>
+                <div className="flex justify-end">
+                    <Button onClick={handleSaveRates} disabled={!isOwner || isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Rates
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
 
 export function OwnerDashboard() {
   const { user, isUserLoading } = useUser();
@@ -83,6 +177,13 @@ export function OwnerDashboard() {
       checkRole();
     }
   }, [user, firestore]);
+  
+  const settingsRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'app_settings', 'rates');
+  }, [firestore]);
+
+  const { data: appSettings, isLoading: isLoadingSettings } = useDoc<AppSettings>(settingsRef);
 
   const collectionPath = React.useMemo(() => {
     if (isOwner === null || !user) return null;
@@ -265,7 +366,7 @@ export function OwnerDashboard() {
     }
 };
 
-  const isLoading = isUserLoading || isLoadingBills || isOwner === null;
+  const isLoading = isUserLoading || isLoadingBills || isOwner === null || isLoadingSettings;
 
   if (isLoading) {
     return (
@@ -386,6 +487,7 @@ export function OwnerDashboard() {
 
       {/* Main Grid */}
       <div className="grid gap-4 lg:grid-cols-7">
+        <ManageRatesCard settings={appSettings} settingsRef={settingsRef} isOwner={isOwner} />
         {/* Sales Report */}
         <Card className="lg:col-span-4">
             <Tabs defaultValue="monthly">
