@@ -48,6 +48,7 @@ import {
   Save,
   Wrench,
   ClipboardList,
+  Phone,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
@@ -65,6 +66,7 @@ const ALL_MONTHS = [
 
 type AggregatedDueCustomer = {
   customerName: string;
+  contactNumber?: string;
   totalDueAmount: number;
   lastBillDate: string; // Storing as ISO string
   lastBillIsoDate: string;
@@ -171,7 +173,7 @@ export function OwnerDashboard() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [isSendingReminders, setIsSendingReminders] = React.useState(false);
+  const [remindersState, setRemindersState] = React.useState<{ [key: string]: 'sending' | 'sent' | 'error' }>({});
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
   
   const [selectedYear, setSelectedYear] = React.useState<string>(new Date().getFullYear().toString());
@@ -330,6 +332,9 @@ export function OwnerDashboard() {
           if (bill.createdAt > aggregatedDueCustomers[customerNameKey].lastBillIsoDate) {
             aggregatedDueCustomers[customerNameKey].lastBillIsoDate = bill.createdAt;
             aggregatedDueCustomers[customerNameKey].lastBillDate = bill.createdAt;
+             if (bill.contactNumber) {
+              aggregatedDueCustomers[customerNameKey].contactNumber = bill.contactNumber;
+            }
           }
         } else {
           aggregatedDueCustomers[customerNameKey] = {
@@ -337,6 +342,7 @@ export function OwnerDashboard() {
             totalDueAmount: bill.dueAmount,
             lastBillDate: bill.createdAt,
             lastBillIsoDate: bill.createdAt,
+            contactNumber: bill.contactNumber,
           };
         }
       }
@@ -362,38 +368,34 @@ export function OwnerDashboard() {
   }, [allBills, selectedYear, selectedMonth]);
 
 
-  const handleSendReminders = async () => {
-    setIsSendingReminders(true);
+  const handleSendReminder = async (customer: AggregatedDueCustomer) => {
+    setRemindersState(prev => ({ ...prev, [customer.customerName]: 'sending' }));
     toast({
-        title: 'Sending Reminders...',
-        description: 'AI is composing and sending friendly reminders to customers with due amounts.',
+        title: 'Sending Reminder...',
+        description: `Composing and sending a reminder to ${customer.customerName}.`,
     });
 
     try {
-        const reminderPromises = dueBills.map(bill =>
-            composeReminderMessage({
-                customerName: bill.customerName,
-                lastActivityDate: format(new Date(bill.lastBillDate), 'yyyy-MM-dd'),
-            })
-        );
+        await composeReminderMessage({
+            customerName: customer.customerName,
+            lastActivityDate: format(new Date(customer.lastBillDate), 'yyyy-MM-dd'),
+        });
         
-        await Promise.all(reminderPromises);
-
+        setRemindersState(prev => ({ ...prev, [customer.customerName]: 'sent' }));
         toast({
-            title: 'Reminders Sent!',
-            description: 'All reminders have been successfully sent.',
+            title: 'Reminder Sent!',
+            description: `A reminder has been successfully sent to ${customer.customerName}.`,
         });
     } catch (error) {
+        setRemindersState(prev => ({ ...prev, [customer.customerName]: 'error' }));
         toast({
             variant: 'destructive',
-            title: 'Failed to Send Reminders',
-            description: 'An error occurred while sending reminders.',
+            title: 'Failed to Send Reminder',
+            description: 'An error occurred while sending the reminder.',
         });
-        console.error("Failed to send reminders:", error);
-    } finally {
-        setIsSendingReminders(false);
+        console.error(`Failed to send reminder to ${customer.customerName}:`, error);
     }
-};
+  };
 
   const isLoading = isUserLoading || isLoadingBills || isOwner === null;
 
@@ -539,44 +541,58 @@ export function OwnerDashboard() {
             </CardHeader>
             <CardContent>
                 {dueBills.length > 0 ? (
-                    <div className='grid grid-cols-1'>
-                        <div>
-                             <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Customer</TableHead>
-                                        <TableHead>Total Due</TableHead>
-                                        <TableHead>Last Bill</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {dueBills.slice(0, 5).map(dueCustomer => (
-                                    <TableRow key={dueCustomer.customerName}>
-                                        <TableCell className="font-medium">{dueCustomer.customerName}</TableCell>
-                                        <TableCell>
-                                            <Badge variant="destructive">{dueCustomer.totalDueAmount.toLocaleString()}rs</Badge>
-                                        </TableCell>
-                                        <TableCell>{format(new Date(dueCustomer.lastBillDate), 'dd MMM')}</TableCell>
-                                    </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                        <div className="flex items-center justify-center p-6 bg-secondary/30 rounded-lg mt-4">
-                            <Button size="lg" onClick={handleSendReminders} disabled={!isOwner || isSendingReminders}>
-                                {isSendingReminders ? (
-                                    <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Sending...
-                                    </>
-                                ) : 'Send Reminders'}
-                            </Button>
-                        </div>
-                    </div>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Customer</TableHead>
+                                <TableHead>Total Due</TableHead>
+                                <TableHead>Contact</TableHead>
+                                <TableHead className="text-right">Action</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {dueBills.map(customer => (
+                            <TableRow key={customer.customerName}>
+                                <TableCell>
+                                    <div className="font-medium">{customer.customerName}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                        Last Bill: {format(new Date(customer.lastBillDate), 'dd MMM, yyyy')}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <Badge variant="destructive">{customer.totalDueAmount.toLocaleString()}rs</Badge>
+                                </TableCell>
+                                <TableCell>
+                                    {customer.contactNumber ? (
+                                        <Button asChild variant="ghost" size="sm" className="flex items-center gap-2">
+                                            <a href={`tel:${customer.contactNumber}`}>
+                                                <Phone className="h-4 w-4" />
+                                                {customer.contactNumber}
+                                            </a>
+                                        </Button>
+                                    ) : (
+                                        <span className="text-xs text-muted-foreground">No contact</span>
+                                    )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                     <Button 
+                                        size="sm"
+                                        onClick={() => handleSendReminder(customer)}
+                                        disabled={!isOwner || remindersState[customer.customerName] === 'sending'}
+                                     >
+                                         {remindersState[customer.customerName] === 'sending' ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                         ) : 'Send Reminder'}
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 ): (
                     <div className="text-center py-12">
                         <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-lg font-semibold">No Due Amounts</h3>
+                        <h3 className="mt-4 text-lg font-semibold">No pending customer payments</h3>
                         <p className="mt-1 text-sm text-muted-foreground">
                             All accounts are settled for this period.
                         </p>
