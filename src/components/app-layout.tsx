@@ -12,6 +12,7 @@ import {
   Home,
   User,
   Bell,
+  Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -86,6 +87,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       href: '/history',
       label: 'History',
       icon: FileText,
+      ownerOnly: false,
+    },
+    {
+      href: '/labours',
+      label: 'Labours',
+      icon: Wrench,
       ownerOnly: false,
     },
     {
