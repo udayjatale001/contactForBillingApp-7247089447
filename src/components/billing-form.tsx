@@ -1,9 +1,10 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as React from 'react';
-import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home } from 'lucide-react';
+import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home, Wrench } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { collection, doc } from 'firebase/firestore';
 
@@ -51,7 +52,7 @@ export function BillingForm() {
 
   const { data: appSettings, isLoading: isLoadingRates } = useDoc<AppSettings>(settingsDocRef);
 
-  const defaultFormValues = {
+  const defaultFormValues: Partial<BillingFormValues> = {
       customerName: '',
       roomNumber: '',
       inCarat: undefined,
@@ -63,6 +64,10 @@ export function BillingForm() {
       paidAmount: undefined,
       paymentMode: 'Cash' as 'Cash' | 'Online Payment' | 'Due',
       paidTo: 'Gopal Dada' as 'Gopal Dada' | 'Yuvraj Dada' | 'Suyash Dada' | 'Gaju Dada',
+      inCaratLabour: undefined,
+      inCaratLabourRate: 1.5,
+      outCaratLabour: undefined,
+      outCaratLabourRate: 1.5,
   };
 
   const form = useForm<BillingFormValues>({
@@ -70,21 +75,55 @@ export function BillingForm() {
     defaultValues: defaultFormValues,
   });
 
-  const { watch, trigger, formState: { errors } } = form;
-  const smallCarat = watch('smallCarat');
-  const smallCaratRate = watch('smallCaratRate');
-  const bigCarat = watch('bigCarat');
-  const bigCaratRate = watch('bigCaratRate');
-  const paidAmount = watch('paidAmount');
-  const paymentMode = watch('paymentMode');
+  const { watch, trigger, setValue, formState: { errors } } = form;
+  
+  // Watch all relevant fields
+  const watchedValues = watch();
+  const {
+      inCarat,
+      outCarat,
+      smallCarat,
+      smallCaratRate,
+      bigCarat,
+      bigCaratRate,
+      paidAmount,
+      paymentMode,
+      inCaratLabour,
+      inCaratLabourRate,
+      outCaratLabour,
+      outCaratLabourRate
+  } = watchedValues;
 
-  const totalAmount = React.useMemo(() => {
+
+  // Sync labour quantities with main carat quantities
+  React.useEffect(() => {
+    setValue('inCaratLabour', inCarat);
+  }, [inCarat, setValue]);
+
+  React.useEffect(() => {
+    setValue('outCaratLabour', outCarat);
+  }, [outCarat, setValue]);
+
+  const totalCaratAmount = React.useMemo(() => {
     const smallRate = Number(smallCaratRate) || 0;
     const bigRate = Number(bigCaratRate) || 0;
     const smallCaratAmount = (Number(smallCarat) || 0) * smallRate;
     const bigCaratAmount = (Number(bigCarat) || 0) * bigRate;
     return smallCaratAmount + bigCaratAmount;
   }, [smallCarat, smallCaratRate, bigCarat, bigCaratRate]);
+  
+  const totalLabourAmount = React.useMemo(() => {
+    const inLabourQty = Number(inCaratLabour) || 0;
+    const inLabourRate = Number(inCaratLabourRate) || 0;
+    const outLabourQty = Number(outCaratLabour) || 0;
+    const outLabourRate = Number(outCaratLabourRate) || 0;
+    return (inLabourQty * inLabourRate) + (outLabourQty * outLabourRate);
+  }, [inCaratLabour, inCaratLabourRate, outCaratLabour, outCaratLabourRate]);
+
+  const totalAmount = React.useMemo(() => {
+    return totalCaratAmount + totalLabourAmount;
+  }, [totalCaratAmount, totalLabourAmount]);
+
 
   const dueAmount = React.useMemo(() => {
     let effectivePaidAmount = Number(paidAmount) || 0;
@@ -201,6 +240,12 @@ export function BillingForm() {
             caratType: caratType,
             smallCaratRate: data.smallCaratRate ?? 0,
             bigCaratRate: data.bigCaratRate ?? 0,
+            // Labour details
+            inCaratLabour: data.inCaratLabour,
+            inCaratLabourRate: data.inCaratLabourRate,
+            outCaratLabour: data.outCaratLabour,
+            outCaratLabourRate: data.outCaratLabourRate,
+            totalLabourAmount: totalLabourAmount,
         };
         
       setGeneratedBill(fullBillDetails);
@@ -345,6 +390,67 @@ export function BillingForm() {
                     </CardContent>
                 </Card>
 
+                 {/* Labour Charges */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><Wrench />Labour Charges</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="inCaratLabour"
+                            render={({ field }) => (
+                                <FormItem className="col-span-2 md:col-span-2">
+                                    <FormLabel>In Carat Labour (Qty)</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" placeholder="In Qty" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="inCaratLabourRate"
+                            render={({ field }) => (
+                                <FormItem className="col-span-2 md:col-span-2">
+                                    <FormLabel>Rate</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" step="0.1" placeholder="e.g., 1.5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="outCaratLabour"
+                            render={({ field }) => (
+                                <FormItem className="col-span-2 md:col-span-2">
+                                    <FormLabel>Out Carat Labour (Qty)</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" placeholder="Out Qty" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="outCaratLabourRate"
+                            render={({ field }) => (
+                                <FormItem className="col-span-2 md:col-span-2">
+                                    <FormLabel>Rate</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" step="0.1" placeholder="e.g., 1.5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+
                 {/* Payment Details */}
                 <Card>
                     <CardHeader>
@@ -444,6 +550,15 @@ export function BillingForm() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 text-base">
+                 <div className="flex justify-between">
+                  <span className="text-muted-foreground">Carat Amount:</span>
+                  <span>{totalCaratAmount.toLocaleString()}rs</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Labour Amount:</span>
+                  <span>{totalLabourAmount.toLocaleString()}rs</span>
+                </div>
+                <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span className="text-muted-foreground">Total Amount:</span>
                   <span>{totalAmount.toLocaleString()}rs</span>

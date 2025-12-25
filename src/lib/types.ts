@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export const billingSchema = z.object({
@@ -36,6 +37,11 @@ export const billingSchema = z.object({
   paymentMode: z.enum(['Online Payment', 'Cash', 'Due'], {
     required_error: 'You need to select a payment mode.',
   }),
+  // Labour Fields
+  inCaratLabour: z.coerce.number().nonnegative().optional(),
+  inCaratLabourRate: z.coerce.number().nonnegative().optional(),
+  outCaratLabour: z.coerce.number().nonnegative().optional(),
+  outCaratLabourRate: z.coerce.number().nonnegative().optional(),
 }).refine(data => {
     // If smallCarat has a value, smallCaratRate must also have a value.
     if (data.smallCarat && !data.smallCaratRate) return false;
@@ -75,6 +81,12 @@ export type Bill = {
   paidTo: string;
   paymentMode: string;
   createdAt: string; // Storing as ISO string for Firestore compatibility
+  // Labour fields
+  inCaratLabour?: number;
+  inCaratLabourRate?: number;
+  outCaratLabour?: number;
+  outCaratLabourRate?: number;
+  totalLabourAmount?: number;
 };
 
 // Represents the structure of the settings document in Firestore

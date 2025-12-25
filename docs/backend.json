@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Bill": {
@@ -70,6 +71,26 @@
           "type": "string",
           "description": "Date and time when the bill was generated.",
           "format": "date-time"
+        },
+        "inCaratLabour": {
+          "type": "number",
+          "description": "The quantity for In Carat labour."
+        },
+        "inCaratLabourRate": {
+          "type": "number",
+          "description": "The rate for In Carat labour."
+        },
+        "outCaratLabour": {
+          "type": "number",
+          "description": "The quantity for Out Carat labour."
+        },
+        "outCaratLabourRate": {
+          "type": "number",
+          "description": "The rate for Out Carat labour."
+        },
+        "totalLabourAmount": {
+          "type": "number",
+          "description": "The total amount for labour charges."
         }
       },
       "required": [
@@ -262,4 +283,3 @@
     "reasoning": "This Firestore structure is designed to support the Aanand Sagar Billing App, focusing on security, scalability, and ease of debugging. The core principle is Authorization Independence, achieved through denormalization to avoid `get()` calls in security rules. This enhances the atomicity of operations and simplifies debugging. Segregation of data based on access control requirements is also prioritized.\n\nThe structure uses path-based ownership for manager-specific data. The bills are stored within the manager's document to leverage Firestore's hierarchical nature for simplified security rules and efficient data retrieval.\n\n**Authorization Independence:** The `managerId` is included in each bill document, enabling direct authorization checks without needing to query the `managers` collection. This ensures that access control decisions are self-contained within the bill document itself.\n\n**QAPs (Rules are not Filters):** The segregation of bills under each manager ensures that list operations can be secured effectively.  The owner can view all bills because of an additional collection `/bills`. The manager views his own bills because of the `/managers/{managerId}/bills/{billId}` collection.\n\n**Data Clarity and Predictability:** Consistent naming conventions are used throughout the structure, such as `managerId` and `billId`. The `dateTime` field provides explicit timestamp information for each bill."
   }
 }
-    

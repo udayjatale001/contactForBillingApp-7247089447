@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import {
@@ -45,6 +46,7 @@ import {
   Calendar,
   Settings,
   Save,
+  Wrench,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
@@ -200,9 +202,12 @@ export function OwnerDashboard() {
     totalRevenue,
     totalDue,
     totalSales,
+    totalLabour,
     inactiveCustomers,
     monthlyData,
     yearlyData,
+    monthlyLabourData,
+    yearlyLabourData,
     dueBills,
     recentBills,
     availableYears,
@@ -211,9 +216,12 @@ export function OwnerDashboard() {
       totalRevenue: 0,
       totalDue: 0,
       totalSales: 0,
+      totalLabour: 0,
       inactiveCustomers: 0,
       monthlyData: ALL_MONTHS.map(month => ({ month, total: 0 })),
       yearlyData: [],
+      monthlyLabourData: ALL_MONTHS.map(month => ({ month, total: 0 })),
+      yearlyLabourData: [],
       dueBills: [],
       recentBills: [],
       availableYears: [new Date().getFullYear().toString()],
@@ -242,6 +250,7 @@ export function OwnerDashboard() {
     const totalRevenue = filteredBills.reduce((acc, bill) => acc + bill.paidAmount, 0);
     const totalDue = filteredBills.reduce((acc, bill) => acc + bill.dueAmount, 0);
     const totalSales = filteredBills.length;
+    const totalLabour = filteredBills.reduce((acc, bill) => acc + (bill.totalLabourAmount || 0), 0);
     
     // Inactive customers for the selected period
     const customerLastActivity: { [key: string]: Date } = {};
@@ -269,29 +278,41 @@ export function OwnerDashboard() {
 
     // --- Chart Data Calculations ---
     const yearlySales: { [key: string]: number } = {};
+    const yearlyLabour: { [key: string]: number } = {};
     const monthlySalesForYear: { [key: string]: number } = Object.fromEntries(ALL_MONTHS.map(m => [m, 0]));
+    const monthlyLabourForYear: { [key: string]: number } = Object.fromEntries(ALL_MONTHS.map(m => [m, 0]));
     
-    // Use allBills for yearly chart, but only filtered bills from selectedYear for monthly chart
     const billsForMonthlyChart = allBills.filter(bill => getYear(new Date(bill.createdAt)).toString() === selectedYear);
 
     billsForMonthlyChart.forEach(bill => {
         const month = format(new Date(bill.createdAt), 'MMM');
         monthlySalesForYear[month] = (monthlySalesForYear[month] || 0) + bill.paidAmount;
+        monthlyLabourForYear[month] = (monthlyLabourForYear[month] || 0) + (bill.totalLabourAmount || 0);
     });
-     allBills.forEach(bill => {
+
+    allBills.forEach(bill => {
         const year = getYear(new Date(bill.createdAt)).toString();
         yearlySales[year] = (yearlySales[year] || 0) + bill.paidAmount;
+        yearlyLabour[year] = (yearlyLabour[year] || 0) + (bill.totalLabourAmount || 0);
     });
 
     const formattedMonthlyData = ALL_MONTHS.map(month => ({
       month,
       total: monthlySalesForYear[month] || 0,
     }));
+    const formattedMonthlyLabourData = ALL_MONTHS.map(month => ({
+      month,
+      total: monthlyLabourForYear[month] || 0,
+    }));
 
-    const sortedYearsForYearlyChart = Array.from(years).sort((a, b) => Number(a) - Number(b));
-    const formattedYearlyData = sortedYearsForYearlyChart.map(year => ({
+    const sortedYearsForChart = Array.from(years).sort((a, b) => Number(a) - Number(b));
+    const formattedYearlyData = sortedYearsForChart.map(year => ({
         year,
         total: yearlySales[year] || 0,
+    }));
+    const formattedYearlyLabourData = sortedYearsForChart.map(year => ({
+        year,
+        total: yearlyLabour[year] || 0,
     }));
     
     // --- Due Bills Calculation ---
@@ -322,9 +343,12 @@ export function OwnerDashboard() {
       totalRevenue,
       totalDue,
       totalSales,
+      totalLabour,
       inactiveCustomers: inactiveCount,
       monthlyData: formattedMonthlyData,
       yearlyData: formattedYearlyData,
+      monthlyLabourData: formattedMonthlyLabourData,
+      yearlyLabourData: formattedYearlyLabourData,
       dueBills: customersWithDue,
       recentBills: filteredBills.slice(0, 5),
       availableYears: allAvailableYears,
@@ -448,13 +472,13 @@ export function OwnerDashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Due</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Labour Paid</CardTitle>
+            <Wrench className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalDue.toLocaleString()}rs</div>
+            <div className="text-2xl font-bold">{totalLabour.toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">
-              Outstanding amount in selected period
+              Labour charges in selected period
             </p>
           </CardContent>
         </Card>
@@ -471,116 +495,132 @@ export function OwnerDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Inactive Customers
+              Total Due
             </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{inactiveCustomers}</div>
+            <div className="text-2xl font-bold">{totalDue.toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">
-              No bills in the selected period
+              Outstanding amount in selected period
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Main Grid */}
-      <div className="grid gap-4 lg:grid-cols-7">
-        {/* Sales Report */}
-        <Card className={isOwner ? "lg:col-span-4" : "lg:col-span-7"}>
-            <Tabs defaultValue="monthly">
-                <CardHeader>
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <CardTitle>Sales Report</CardTitle>
-                            <CardDescription>
-                                Revenue summary for the selected period.
-                            </CardDescription>
-                        </div>
-                         <div className="flex items-center gap-2">
+      <Tabs defaultValue="sales">
+        <Card>
+            <CardHeader>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle>Analytics</CardTitle>
+                        <CardDescription>
+                            Detailed reports for sales and labour.
+                        </CardDescription>
+                    </div>
+                     <div className="flex items-center gap-2">
+                       <TabsList>
+                            <TabsTrigger value="sales">Sales Report</TabsTrigger>
+                            <TabsTrigger value="labour">Labour Report</TabsTrigger>
+                        </TabsList>
+                    </div>
+                </div>
+            </CardHeader>
+            <TabsContent value="sales">
+                <Tabs defaultValue="monthly">
+                    <CardHeader className="pt-0">
+                         <div className="flex justify-end items-center gap-2">
                            <TabsList>
                                 <TabsTrigger value="monthly" disabled={selectedYear === 'all'}>Monthly</TabsTrigger>
                                 <TabsTrigger value="yearly">Yearly</TabsTrigger>
                             </TabsList>
                         </div>
-                    </div>
-                </CardHeader>
-                <TabsContent value="monthly">
-                    <CardContent className="pl-2">
-                         {selectedYear === 'all' ? (
-                            <div className="flex flex-col items-center justify-center h-[350px] text-center">
-                                <AlertCircle className="h-10 w-10 text-muted-foreground" />
-                                <p className="mt-4 text-sm text-muted-foreground">Please select a specific year to view the monthly report.</p>
-                            </div>
-                        ) : (
-                        <ResponsiveContainer width="100%" height={350}>
-                        <BarChart data={monthlyData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false}/>
-                            <XAxis
-                            dataKey="month"
-                            stroke="#888888"
-                            fontSize={12}
-                            tickLine={false}
-                            axisLine={false}
-                            />
-                            <YAxis
-                            stroke="#888888"
-                            fontSize={12}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={value => `${value.toLocaleString()}rs`}
-                            />
-                            <Tooltip
-                            cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }}
-                            contentStyle={{ 
-                                backgroundColor: 'hsl(var(--background))', 
-                                borderColor: 'hsl(var(--border))',
-                                borderRadius: 'var(--radius)'
-                                }}
-                            />
-                            <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                        </ResponsiveContainer>
-                        )}
-                    </CardContent>
-                </TabsContent>
-                <TabsContent value="yearly">
-                     <CardContent className="pl-2">
-                        <ResponsiveContainer width="100%" height={350}>
-                        <BarChart data={yearlyData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false}/>
-                            <XAxis
-                            dataKey="year"
-                            stroke="#888888"
-                            fontSize={12}
-                            tickLine={false}
-                            axisLine={false}
-                            />
-                            <YAxis
-                            stroke="#888888"
-                            fontSize={12}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={value => `${value.toLocaleString()}rs`}
-                            />
-                            <Tooltip
-                            cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }}
-                            contentStyle={{ 
-                                backgroundColor: 'hsl(var(--background))', 
-                                borderColor: 'hsl(var(--border))',
-                                borderRadius: 'var(--radius)'
-                                }}
-                            />
-                            <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </TabsContent>
-            </Tabs>
+                    </CardHeader>
+                    <TabsContent value="monthly">
+                        <CardContent className="pl-2">
+                            {selectedYear === 'all' ? (
+                                <div className="flex flex-col items-center justify-center h-[350px] text-center">
+                                    <AlertCircle className="h-10 w-10 text-muted-foreground" />
+                                    <p className="mt-4 text-sm text-muted-foreground">Please select a specific year to view the monthly report.</p>
+                                </div>
+                            ) : (
+                            <ResponsiveContainer width="100%" height={350}>
+                            <BarChart data={monthlyData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                                <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
+                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={value => `${value.toLocaleString()}rs`}/>
+                                <Tooltip cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }} contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }}/>
+                                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                            </ResponsiveContainer>
+                            )}
+                        </CardContent>
+                    </TabsContent>
+                    <TabsContent value="yearly">
+                        <CardContent className="pl-2">
+                            <ResponsiveContainer width="100%" height={350}>
+                            <BarChart data={yearlyData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                                <XAxis dataKey="year" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
+                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={value => `${value.toLocaleString()}rs`}/>
+                                <Tooltip cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }} contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }}/>
+                                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </TabsContent>
+                </Tabs>
+            </TabsContent>
+            <TabsContent value="labour">
+                 <Tabs defaultValue="monthly">
+                    <CardHeader className="pt-0">
+                         <div className="flex justify-end items-center gap-2">
+                           <TabsList>
+                                <TabsTrigger value="monthly" disabled={selectedYear === 'all'}>Monthly</TabsTrigger>
+                                <TabsTrigger value="yearly">Yearly</TabsTrigger>
+                            </TabsList>
+                        </div>
+                    </CardHeader>
+                    <TabsContent value="monthly">
+                        <CardContent className="pl-2">
+                            {selectedYear === 'all' ? (
+                                <div className="flex flex-col items-center justify-center h-[350px] text-center">
+                                    <AlertCircle className="h-10 w-10 text-muted-foreground" />
+                                    <p className="mt-4 text-sm text-muted-foreground">Please select a specific year to view the monthly report.</p>
+                                </div>
+                            ) : (
+                            <ResponsiveContainer width="100%" height={350}>
+                            <BarChart data={monthlyLabourData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                                <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
+                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={value => `${value.toLocaleString()}rs`}/>
+                                <Tooltip cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }} contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }}/>
+                                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                            </ResponsiveContainer>
+                            )}
+                        </CardContent>
+                    </TabsContent>
+                    <TabsContent value="yearly">
+                        <CardContent className="pl-2">
+                            <ResponsiveContainer width="100%" height={350}>
+                            <BarChart data={yearlyLabourData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false}/>
+                                <XAxis dataKey="year" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
+                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={value => `${value.toLocaleString()}rs`}/>
+                                <Tooltip cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }} contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }}/>
+                                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </TabsContent>
+                </Tabs>
+            </TabsContent>
         </Card>
-
-        {isOwner && <ManageRatesCard isOwner={isOwner} />}
-
+      </Tabs>
+      
+      <div className="grid gap-4 lg:grid-cols-7">
         {/* Recent Bills */}
         <Card className="lg:col-span-4">
           <CardHeader>
