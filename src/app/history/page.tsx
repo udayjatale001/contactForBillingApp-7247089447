@@ -38,6 +38,8 @@ import { BillSummaryDialog } from '@/components/bill-summary-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 export default function HistoryPage() {
   const { user } = useUser();
@@ -48,6 +50,9 @@ export default function HistoryPage() {
   const [selectedBill, setSelectedBill] = React.useState<Bill | null>(null);
   const [billToDelete, setBillToDelete] = React.useState<Bill | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = React.useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = React.useState(false);
 
   React.useEffect(() => {
     if(user && firestore) {
@@ -81,6 +86,39 @@ export default function HistoryPage() {
       bill.customerName.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [bills, searchTerm]);
+  
+  React.useEffect(() => {
+    const visibleIds = new Set(filteredBills.map(b => b.id));
+    setSelectedIds(currentIds => {
+      const newIds = new Set<string>();
+      currentIds.forEach(id => {
+        if (visibleIds.has(id)) {
+          newIds.add(id);
+        }
+      });
+      return newIds;
+    });
+  }, [filteredBills]);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(filteredBills.map(b => b.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(id);
+      } else {
+        newSet.delete(id);
+      }
+      return newSet;
+    });
+  };
 
   const handleRowClick = (bill: Bill) => {
     setSelectedBill(bill);
@@ -91,27 +129,19 @@ export default function HistoryPage() {
   };
   
   const openDeleteDialog = (e: React.MouseEvent, bill: Bill) => {
-      e.stopPropagation(); // Prevent the row click from firing
+      e.stopPropagation();
       setBillToDelete(bill);
   };
 
   const handleDeleteBill = async () => {
     if (!firestore || !billToDelete) return;
-
     setIsDeleting(true);
-    
-    // Create a batch to delete from both locations
     const batch = writeBatch(firestore);
-
-    // Ref to the document in the global 'bills' collection
     const globalBillRef = doc(firestore, 'bills', billToDelete.id);
     batch.delete(globalBillRef);
-
-    // Ref to the document in the manager's subcollection
     const managerBillRef = doc(firestore, 'managers', billToDelete.managerId, 'bills', billToDelete.id);
     batch.delete(managerBillRef);
     
-    // Commit the batch
     batch.commit()
       .then(() => {
         toast({
@@ -134,9 +164,46 @@ export default function HistoryPage() {
       })
       .finally(() => {
         setIsDeleting(false);
-        setBillToDelete(null); // Close the dialog
+        setBillToDelete(null);
       });
   };
+  
+  const handleBulkDelete = async () => {
+    if (!firestore || selectedIds.size === 0 || !bills) return;
+    
+    setIsBulkDeleting(true);
+    const batch = writeBatch(firestore);
+    const billsToDelete = bills.filter(bill => selectedIds.has(bill.id));
+
+    billsToDelete.forEach(bill => {
+        const globalBillRef = doc(firestore, 'bills', bill.id);
+        batch.delete(globalBillRef);
+        const managerBillRef = doc(firestore, 'managers', bill.managerId, 'bills', bill.id);
+        batch.delete(managerBillRef);
+    });
+
+    try {
+      await batch.commit();
+      toast({
+        title: 'Bills Deleted',
+        description: `${selectedIds.size} bills have been successfully removed.`
+      });
+      setSelectedIds(new Set());
+    } catch (error) {
+      console.error("Error bulk deleting bills: ", error);
+      toast({
+        variant: 'destructive',
+        title: 'Bulk Deletion Failed',
+        description: 'Could not delete the selected bills. You may not have permission.'
+      });
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteConfirm(false);
+    }
+  };
+
+  const isLoadingData = isLoading || isOwner === null;
+  const allFilteredSelected = filteredBills.length > 0 && selectedIds.size === filteredBills.length;
 
   return (
     <>
@@ -145,6 +212,16 @@ export default function HistoryPage() {
           <h2 className="text-3xl font-bold tracking-tight font-headline">
             Billing History
           </h2>
+          {selectedIds.size > 0 && isOwner && (
+             <Button 
+                variant="destructive" 
+                onClick={() => setShowBulkDeleteConfirm(true)}
+                disabled={isBulkDeleting}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete ({selectedIds.size})
+            </Button>
+           )}
         </div>
         <Card>
           <CardHeader>
@@ -163,7 +240,7 @@ export default function HistoryPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {isLoading || isOwner === null ? (
+            {isLoadingData ? (
               <div className="flex justify-center items-center py-16">
                   <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
               </div>
@@ -171,6 +248,15 @@ export default function HistoryPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                     <TableHead className="w-[50px]">
+                        {isOwner && (
+                            <Checkbox 
+                                checked={allFilteredSelected}
+                                onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                                aria-label="Select all"
+                            />
+                        )}
+                     </TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Total Amount</TableHead>
                     <TableHead>Paid Amount</TableHead>
@@ -184,8 +270,20 @@ export default function HistoryPage() {
                     <TableRow
                       key={bill.id}
                       onClick={() => handleRowClick(bill)}
-                      className="cursor-pointer"
+                      className={cn(
+                        "cursor-pointer",
+                         selectedIds.has(bill.id) && 'bg-primary/10'
+                      )}
                     >
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        {isOwner && (
+                            <Checkbox
+                                checked={selectedIds.has(bill.id)}
+                                onCheckedChange={(checked) => handleSelectOne(bill.id, !!checked)}
+                                aria-label={`Select bill ${bill.id}`}
+                            />
+                        )}
+                      </TableCell>
                       <TableCell>{bill.customerName}</TableCell>
                       <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
                       <TableCell>{bill.paidAmount.toLocaleString()}rs</TableCell>
@@ -231,7 +329,6 @@ export default function HistoryPage() {
           open={!!selectedBill}
           onOpenChange={handleCloseDialog}
           onSave={async () => {
-            // "onSave" is required, but we don't need to save from history view.
             handleCloseDialog();
           }}
           isSavingDisabled={true}
@@ -258,7 +355,33 @@ export default function HistoryPage() {
             </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
-    </AlertDialog>
+      </AlertDialog>
+       <AlertDialog
+        open={showBulkDeleteConfirm}
+        onOpenChange={setShowBulkDeleteConfirm}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the {selectedIds.size} selected bills.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isBulkDeleting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Delete Selected
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
