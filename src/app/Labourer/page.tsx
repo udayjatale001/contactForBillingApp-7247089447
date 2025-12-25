@@ -66,7 +66,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Checkbox } from '@/components/ui/checkbox';
 
-export default function UdayPage() {
+export default function LabourerPage() {
   const { isUserLoading, user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -339,12 +339,12 @@ export default function UdayPage() {
                       <TableCell>{record.customerName}</TableCell>
                       <TableCell>
                         {record.inCaratLabour && record.inCaratLabourRate
-                          ? `${record.inCaratLabour} @ ${record.inCaratLabourRate}rs`
+                          ? `${record.inCaratLabour} * ${record.inCaratLabourRate}rs`
                           : 'N/A'}
                       </TableCell>
                       <TableCell>
                         {record.outCaratLabour && record.outCaratLabourRate
-                          ? `${record.outCaratLabour} @ ${record.outCaratLabourRate}rs`
+                          ? `${record.outCaratLabour} * ${record.outCaratLabourRate}rs`
                           : 'N/A'}
                       </TableCell>
                       <TableCell>{record.totalLabourAmount.toLocaleString()}rs</TableCell>
