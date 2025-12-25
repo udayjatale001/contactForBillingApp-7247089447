@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -5,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Wrench, DollarSign } from 'lucide-react';
+import { Wrench, DollarSign, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 function LabourCalculator() {
+  const [customerName, setCustomerName] = React.useState('');
   const [inCaratQty, setInCaratQty] = React.useState<number | string>('');
   const [inCaratRate, setInCaratRate] = React.useState<number | string>('');
   const [outCaratQty, setOutCaratQty] = React.useState<number | string>('');
@@ -38,6 +40,18 @@ function LabourCalculator() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
       <div className="lg:col-span-2 space-y-6">
+        <Card>
+            <CardHeader>
+                <CardTitle className='flex items-center gap-2'><User />Customer Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    <Label htmlFor="customerName">Customer Name</Label>
+                    <Input id="customerName" placeholder="Enter customer's name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                </div>
+            </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -77,6 +91,15 @@ function LabourCalculator() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-base">
+           {customerName && (
+            <>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Customer:</span>
+                <span className='font-semibold'>{customerName}</span>
+              </div>
+              <Separator />
+            </>
+           )}
           <div className="flex justify-between">
             <span className="text-muted-foreground">In Carat Total:</span>
             <span>{inCaratTotal.toLocaleString()}rs</span>
