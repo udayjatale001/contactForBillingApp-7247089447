@@ -45,6 +45,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
         console.error("Failed to save or print bill:", error);
     } finally {
         setIsPrinting(false);
+        onOpenChange(false); // Close dialog after printing/saving
     }
   }
 
@@ -143,3 +144,5 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
     </Dialog>
   );
 }
+
+    

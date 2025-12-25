@@ -195,7 +195,7 @@ export function BillingForm() {
           title: 'Bill Saved!',
           description: 'The bill and associated records have been saved.',
         });
-        handleCloseDialog();
+        
       } catch (error) {
         console.error("Error saving records: ", error);
         toast({
@@ -256,8 +256,6 @@ export function BillingForm() {
             ...data,
             inCarat: data.inCarat || 0,
             outCarat: data.outCarat || 0,
-            smallCarat: data.smallCarat || undefined,
-            bigCarat: data.bigCarat || undefined,
             totalCarat: (data.smallCarat || 0) + (data.bigCarat || 0),
             totalAmount,
             paidAmount: finalPaidAmount,
@@ -266,11 +264,6 @@ export function BillingForm() {
             caratType: caratType,
             smallCaratRate: data.smallCaratRate ?? 0,
             bigCaratRate: data.bigCaratRate ?? 0,
-            // Labour details
-            inCaratLabour: data.inCaratLabour,
-            inCaratLabourRate: data.inCaratLabourRate,
-            outCaratLabour: data.outCaratLabour,
-            outCaratLabourRate: data.outCaratLabourRate,
             totalLabourAmount: totalLabourAmount,
         };
         
