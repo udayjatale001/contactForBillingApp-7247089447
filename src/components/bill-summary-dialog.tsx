@@ -69,20 +69,22 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
                 {bill.smallCarat && bill.smallCarat > 0 && <DetailItem label="17kg Carat" value={`${bill.smallCarat} @ ₹${bill.smallCaratRate}`} />}
                 {bill.bigCarat && bill.bigCarat > 0 && <DetailItem label="20kg Carat" value={`${bill.bigCarat} @ ₹${bill.bigCaratRate}`} />}
                 
-                {bill.totalLabourAmount && bill.totalLabourAmount > 0 && (
-                  <>
-                    <Separator className="my-2" />
-                    <p className="text-sm text-muted-foreground font-semibold pt-1">Labour Charges</p>
-                    {bill.inCaratLabour && bill.inCaratLabour > 0 && <DetailItem label="In Carat Labour" value={`${bill.inCaratLabour} @ ₹${bill.inCaratLabourRate}`} />}
-                    {bill.outCaratLabour && bill.outCaratLabour > 0 && <DetailItem label="Out Carat Labour" value={`${bill.outCaratLabour} @ ₹${bill.outCaratLabourRate}`} />}
-                  </>
-                )}
-
                 <Separator className="my-2" />
                 <DetailItem label="Total Amount" value={`₹${bill.totalAmount.toLocaleString()}`} className="font-bold text-lg"/>
                 <DetailItem label="Paid Amount" value={`₹${bill.paidAmount.toLocaleString()}`} />
                 <DetailItem label="Due Amount" value={<Badge variant={bill.dueAmount > 0 ? "destructive" : "default"}>₹{bill.dueAmount.toLocaleString()}</Badge>} />
                 <Separator className="my-2" />
+                
+                {/* Internal Labour Info */}
+                {bill.totalLabourAmount && bill.totalLabourAmount > 0 && (
+                  <>
+                    <div className='text-center text-xs text-muted-foreground pt-2'>
+                      (Internal Labour Cost: ₹{bill.totalLabourAmount.toLocaleString()})
+                    </div>
+                    <Separator className="my-2" />
+                  </>
+                )}
+
                 <DetailItem label="Paid To" value={bill.paidTo} />
                 <DetailItem label="Date" value={new Date(bill.createdAt).toLocaleDateString()} />
                 <Separator className="my-2" />

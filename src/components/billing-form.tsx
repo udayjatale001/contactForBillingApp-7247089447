@@ -121,9 +121,10 @@ export function BillingForm() {
     return (inLabourQty * inLabourRate) + (outLabourQty * outLabourRate);
   }, [inCaratLabour, inCaratLabourRate, outCaratLabour, outCaratLabourRate]);
 
+  // The customer-facing total amount should only be the carat amount.
   const totalAmount = React.useMemo(() => {
-    return totalCaratAmount + totalLabourAmount;
-  }, [totalCaratAmount, totalLabourAmount]);
+    return totalCaratAmount;
+  }, [totalCaratAmount]);
 
 
   const dueAmount = React.useMemo(() => {
@@ -411,7 +412,7 @@ export function BillingForm() {
                  {/* Labour Charges */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><Wrench />Labour Charges</CardTitle>
+                        <CardTitle className='flex items-center gap-2'><Wrench />Labour Charges (Internal)</CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <FormField
@@ -573,8 +574,8 @@ export function BillingForm() {
                   <span>{totalCaratAmount.toLocaleString()}rs</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Labour Amount:</span>
-                  <span>{totalLabourAmount.toLocaleString()}rs</span>
+                  <span className="text-muted-foreground">Internal Labour:</span>
+                  <span className='text-muted-foreground'>{totalLabourAmount.toLocaleString()}rs</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
