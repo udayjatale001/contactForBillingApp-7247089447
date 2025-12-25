@@ -97,12 +97,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       ownerOnly: false,
     },
     {
-      href: '/labours',
-      label: 'Labours',
-      icon: Wrench,
-      ownerOnly: false,
-    },
-    {
       href: '/Admin',
       label: 'Admin',
       icon: User,
