@@ -134,7 +134,7 @@ export default function HistoryPage() {
   };
 
   const handleDeleteBill = async () => {
-    if (!firestore || !billToDelete) return;
+    if (!firestore || !billToDelete || !user) return;
     setIsDeleting(true);
     const batch = writeBatch(firestore);
     const globalBillRef = doc(firestore, 'bills', billToDelete.id);
@@ -204,6 +204,8 @@ export default function HistoryPage() {
 
   const isLoadingData = isLoading || isOwner === null;
   const allFilteredSelected = filteredBills.length > 0 && selectedIds.size === filteredBills.length;
+  const canDelete = (bill: Bill) => isOwner || (user && user.uid === bill.managerId);
+
 
   return (
     <>
@@ -300,8 +302,8 @@ export default function HistoryPage() {
                           variant="ghost"
                           size="icon"
                           onClick={(e) => openDeleteDialog(e, bill)}
-                          disabled={!isOwner}
-                          title={isOwner ? "Delete Bill" : "Only owners can delete bills"}
+                          disabled={!canDelete(bill)}
+                          title={canDelete(bill) ? "Delete Bill" : "Only owners or the bill creator can delete this"}
                         >
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Delete</span>
