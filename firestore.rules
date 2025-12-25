@@ -170,13 +170,14 @@ service cloud.firestore {
      * @path /notifications/{notificationId}
      * @allow (read) Any authenticated user can read notifications.
      * @allow (create) Any authenticated manager can create a notification.
-     * @deny (update, delete) No one can update or delete notifications to maintain an immutable log.
+     * @deny (update) No one can update notifications to maintain an immutable log.
+     * @allow (delete) Any authenticated user can delete a notification.
      */
     match /notifications/{notificationId} {
         allow read: if isSignedIn();
         allow create: if isSignedIn() && isValidNotificationCreate();
         allow update: if false;
-        allow delete: if false;
+        allow delete: if isSignedIn();
     }
 
     /**
