@@ -146,7 +146,7 @@ service cloud.firestore {
      * @principle Segregates access patterns: global read for roles, specific write for owners.
      */
     match /bills/{billId} {
-      allow get: if isOwnerRole();
+      allow get: if isOwnerRole() || isOwner(resource.data.managerId);
       allow list: if isOwnerRole();
       allow create: if isSignedIn() && isValidGlobalBillCreate();
       allow update: if isOwner(resource.data.managerId) && isImmutableBillManagerId();
