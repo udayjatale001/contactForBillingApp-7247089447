@@ -50,7 +50,10 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
         <div className="p-6" id="bill-receipt">
             <DialogHeader className="mb-4">
                 <div className='flex justify-center items-center flex-col gap-2'>
-                    <Logo />
+                    <div className="flex items-center gap-2">
+                        <Logo />
+                        <span className="font-bold text-lg font-headline text-foreground leading-tight">at par carat</span>
+                    </div>
                     <h2 className="text-xl font-bold font-headline">Anand Sagar Fresh Fruits</h2>
                     <p className="text-xs text-muted-foreground">Ichapur Road</p>
                 </div>
