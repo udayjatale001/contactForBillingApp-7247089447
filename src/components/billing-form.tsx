@@ -74,9 +74,10 @@ export function BillingForm() {
   const form = useForm<BillingFormValues>({
     resolver: zodResolver(billingSchema),
     defaultValues: defaultFormValues,
+    mode: 'onBlur',
   });
 
-  const { watch, trigger, setValue, formState: { errors } } = form;
+  const { watch, setValue, formState: { errors } } = form;
   
   // Watch all relevant fields
   const watchedValues = watch();
@@ -158,13 +159,12 @@ export function BillingForm() {
 
   const handleSaveBill = async () => {
     if (generatedBill && user && firestore) {
-      try {
         // 1. Save the bill documents
         addDocumentNonBlocking(collection(firestore, 'managers', user.uid, 'bills'), generatedBill);
         addDocumentNonBlocking(collection(firestore, 'bills'), generatedBill);
 
         // 2. Create and save the notification
-        const notificationMessage = `${generatedBill.customerName} paid ${generatedBill.paidAmount}rs for ${generatedBill.inCarat} carats to ${generatedBill.paidTo} via ${generatedBill.paymentMode}. Due amount is ${generatedBill.dueAmount}rs.`;
+        const notificationMessage = `${generatedBill.customerName} paid ${generatedBill.paidAmount}rs for ${generatedBill.totalCarat} carats to ${generatedBill.paidTo} via ${generatedBill.paymentMode}. Due amount is ${generatedBill.dueAmount}rs.`;
         const newNotification: Notification = {
             id: uuidv4(),
             billId: generatedBill.id,
@@ -195,15 +195,6 @@ export function BillingForm() {
           title: 'Bill Saved!',
           description: 'The bill and associated records have been saved.',
         });
-        
-      } catch (error) {
-        console.error("Error saving records: ", error);
-        toast({
-            variant: 'destructive',
-            title: 'Error Saving Data',
-            description: 'Could not save the bill and related records.',
-        });
-      }
     }
   };
 
@@ -224,13 +215,13 @@ export function BillingForm() {
       return;
     }
     
-    const isValid = await trigger();
-    if (!isValid || (data.paidAmount && totalAmount > 0 && data.paidAmount > totalAmount)) {
+    // This check is sufficient. Zod resolver will prevent submission if there are errors.
+    if (data.paidAmount && totalAmount > 0 && data.paidAmount > totalAmount) {
         setIsSubmitting(false);
         toast({
             variant: 'destructive',
             title: 'Validation Error',
-            description: 'Please correct the errors before submitting.',
+            description: 'Paid amount cannot be greater than total amount.',
         });
         return;
     }
@@ -253,17 +244,27 @@ export function BillingForm() {
         const fullBillDetails: Bill = {
             id: uuidv4(),
             managerId: user.uid,
-            ...data,
-            inCarat: data.inCarat || 0,
-            outCarat: data.outCarat || 0,
+            customerName: data.customerName,
+            ...(data.roomNumber && { roomNumber: data.roomNumber }),
+            ...(data.contactNumber && { contactNumber: data.contactNumber }),
+            ...(data.inCarat && { inCarat: data.inCarat }),
+            ...(data.outCarat && { outCarat: data.outCarat }),
             totalCarat: (data.smallCarat || 0) + (data.bigCarat || 0),
+            ...(data.smallCarat && { smallCarat: data.smallCarat }),
+            ...(data.bigCarat && { bigCarat: data.bigCarat }),
+            caratType: caratType,
+            ...(data.smallCaratRate && { smallCaratRate: data.smallCaratRate }),
+            ...(data.bigCaratRate && { bigCaratRate: data.bigCaratRate }),
             totalAmount,
             paidAmount: finalPaidAmount,
             dueAmount: finalDueAmount < 0 ? 0 : finalDueAmount,
+            paidTo: data.paidTo,
+            paymentMode: data.paymentMode,
             createdAt: new Date().toISOString(),
-            caratType: caratType,
-            smallCaratRate: data.smallCaratRate ?? 0,
-            bigCaratRate: data.bigCaratRate ?? 0,
+            ...(data.inCaratLabour && { inCaratLabour: data.inCaratLabour }),
+            ...(data.inCaratLabourRate && { inCaratLabourRate: data.inCaratLabourRate }),
+            ...(data.outCaratLabour && { outCaratLabour: data.outCaratLabour }),
+            ...(data.outCaratLabourRate && { outCaratLabourRate: data.outCaratLabourRate }),
             totalLabourAmount: totalLabourAmount,
         };
         
@@ -633,5 +634,3 @@ export function BillingForm() {
     </>
   );
 }
-
-    

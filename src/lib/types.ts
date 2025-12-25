@@ -8,10 +8,10 @@ export const billingSchema = z.object({
   roomNumber: z.string().optional(),
   contactNumber: z.string().optional(),
   inCarat: z.coerce
-    .number({ required_error: 'In Carat value is required.' })
-    .positive({ message: 'In Carat must be a positive number.' }).optional(),
+    .number()
+    .nonnegative({ message: 'In Carat cannot be negative.' }).optional(),
   outCarat: z.coerce
-    .number({ required_error: 'Out Carat value is required.' })
+    .number()
     .nonnegative({ message: 'Out Carat cannot be negative.' }).optional(),
   smallCarat: z.coerce
     .number()
@@ -56,14 +56,14 @@ export type Bill = {
   customerName: string;
   roomNumber?: string;
   contactNumber?: string;
-  inCarat: number;
-  outCarat: number;
+  inCarat?: number;
+  outCarat?: number;
   totalCarat: number;
   smallCarat?: number;
   bigCarat?: number;
   caratType: string;
-  smallCaratRate: number; // Rate at time of transaction
-  bigCaratRate: number; // Rate at time of transaction
+  smallCaratRate?: number; // Rate at time of transaction
+  bigCaratRate?: number; // Rate at time of transaction
   totalAmount: number;
   paidAmount: number;
   dueAmount: number;
@@ -107,5 +107,3 @@ export type Labour = {
   totalLabourAmount: number;
   createdAt: string; // ISO string
 };
-
-    
