@@ -33,7 +33,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { FileText, Loader2, Search, Trash2 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, getDoc, doc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDoc, doc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { BillSummaryDialog } from '@/components/bill-summary-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -136,36 +136,37 @@ export default function HistoryPage() {
   const handleDeleteBill = async () => {
     if (!firestore || !billToDelete || !user) return;
     setIsDeleting(true);
-    const batch = writeBatch(firestore);
+
     const globalBillRef = doc(firestore, 'bills', billToDelete.id);
-    batch.delete(globalBillRef);
     const managerBillRef = doc(firestore, 'managers', billToDelete.managerId, 'bills', billToDelete.id);
-    batch.delete(managerBillRef);
-    
-    batch.commit()
-      .then(() => {
+
+    try {
+        // Perform deletes separately instead of in a batch
+        await deleteDoc(globalBillRef);
+        await deleteDoc(managerBillRef);
+        
         toast({
-          title: 'Bill Deleted',
-          description: `The bill for ${billToDelete.customerName} has been successfully deleted.`,
+            title: 'Bill Deleted',
+            description: `The bill for ${billToDelete.customerName} has been successfully deleted.`,
         });
-      })
-      .catch((error) => {
+    } catch (error: any) {
         console.error("Error deleting bill: ", error);
-         const permissionError = new FirestorePermissionError({
-          path: `Batched delete for bill ID: ${billToDelete.id}`,
+        
+        const permissionError = new FirestorePermissionError({
+          path: error.message.includes(globalBillRef.path) ? globalBillRef.path : managerBillRef.path,
           operation: 'delete',
         });
         errorEmitter.emit('permission-error', permissionError);
+
         toast({
-          variant: 'destructive',
-          title: 'Deletion Failed',
-          description: 'You do not have sufficient permissions to delete this bill.',
+            variant: 'destructive',
+            title: 'Deletion Failed',
+            description: 'You do not have sufficient permissions to delete this bill.',
         });
-      })
-      .finally(() => {
+    } finally {
         setIsDeleting(false);
         setBillToDelete(null);
-      });
+    }
   };
   
   const handleBulkDelete = async () => {
@@ -205,7 +206,7 @@ export default function HistoryPage() {
   const isLoadingData = isLoading || isOwner === null;
   const allFilteredSelected = filteredBills.length > 0 && selectedIds.size === filteredBills.length;
   const canDelete = (bill: Bill) => {
-    if (isOwner === null || !user) return false; // Don't allow deletion if role or user is not determined
+    if (isUserLoading || isOwner === null || !user) return false;
     return isOwner || user.uid === bill.managerId;
   };
 
