@@ -47,6 +47,7 @@ import {
   Settings,
   Save,
   Wrench,
+  ClipboardList,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
@@ -200,6 +201,7 @@ export function OwnerDashboard() {
   const { data: allBills, isLoading: isLoadingBills, error: billsError } = useCollection<Bill>(billsQuery);
 
   const {
+    totalAmount,
     totalRevenue,
     totalDue,
     totalSales,
@@ -214,6 +216,7 @@ export function OwnerDashboard() {
     availableYears,
   } = React.useMemo(() => {
     const initialResult = {
+      totalAmount: 0,
       totalRevenue: 0,
       totalDue: 0,
       totalSales: 0,
@@ -248,6 +251,7 @@ export function OwnerDashboard() {
       return yearMatches && monthMatches;
     });
 
+    const totalAmount = filteredBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
     const totalRevenue = filteredBills.reduce((acc, bill) => acc + bill.paidAmount, 0);
     const totalDue = filteredBills.reduce((acc, bill) => acc + bill.dueAmount, 0);
     const totalSales = filteredBills.length;
@@ -341,6 +345,7 @@ export function OwnerDashboard() {
     const customersWithDue = Object.values(aggregatedDueCustomers).sort((a, b) => b.totalDueAmount - a.totalDueAmount);
 
     return {
+      totalAmount,
       totalRevenue,
       totalDue,
       totalSales,
@@ -349,7 +354,7 @@ export function OwnerDashboard() {
       monthlyData: formattedMonthlyData,
       yearlyData: formattedYearlyData,
       monthlyLabourData: formattedMonthlyLabourData,
-      yearlyLabourData: formattedYearlyLabourData,
+      yearlyLabourData: formattedYearlyData,
       dueBills: customersWithDue,
       recentBills: filteredBills.slice(0, 5),
       availableYears: allAvailableYears,
@@ -458,7 +463,19 @@ export function OwnerDashboard() {
 
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Amount</CardTitle>
+            <ClipboardList className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalAmount.toLocaleString()}rs</div>
+            <p className="text-xs text-muted-foreground">
+              Total value of bills in period
+            </p>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -468,6 +485,18 @@ export function OwnerDashboard() {
             <div className="text-2xl font-bold">{totalRevenue.toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">
               Paid amount in selected period
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Due</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalDue.toLocaleString()}rs</div>
+            <p className="text-xs text-muted-foreground">
+              Outstanding amount in period
             </p>
           </CardContent>
         </Card>
@@ -493,20 +522,7 @@ export function OwnerDashboard() {
             <p className="text-xs text-muted-foreground">Bills in selected period</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Due
-            </CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalDue.toLocaleString()}rs</div>
-            <p className="text-xs text-muted-foreground">
-              Outstanding amount in selected period
-            </p>
-          </CardContent>
-        </Card>
+        
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
