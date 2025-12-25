@@ -109,7 +109,7 @@ service cloud.firestore {
        * @principle Enforces hierarchical ownership; permissions are inherited from the parent document.
        */
       match /bills/{billId} {
-        allow get: if isOwner(managerId);
+        allow get: if isOwner(managerId) || isOwnerRole();
         allow list: if isOwner(managerId);
         allow create: if isOwner(managerId) && isValidSubcollectionBillCreate(managerId);
         allow update: if isOwner(managerId) && isImmutableBillManagerId();
@@ -189,7 +189,7 @@ service cloud.firestore {
      */
     match /labours/{labourId} {
         allow get: if isOwner(resource.data.managerId) || isOwnerRole();
-        allow list: if isOwnerRole() || (isSignedIn() && request.query.where.get('managerId')[2] == request.auth.uid);
+        allow list: if isOwnerRole() || (isSignedIn() && request.query.get('managerId')[2] == request.auth.uid);
         allow create: if isSignedIn() && isValidLabourCreate();
         allow update, delete: if isOwner(resource.data.managerId) || isOwnerRole();
     }

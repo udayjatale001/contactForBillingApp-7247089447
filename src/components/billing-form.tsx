@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { BillingFormValues, billingSchema, Bill, AppSettings, Notification } from '@/lib/types';
+import { BillingFormValues, billingSchema, Bill, AppSettings, Notification, Labour } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { BillSummaryDialog } from './bill-summary-dialog';
 import { cn } from '@/lib/utils';
@@ -163,10 +163,8 @@ export function BillingForm() {
         addDocumentNonBlocking(collection(firestore, 'managers', user.uid, 'bills'), generatedBill);
         addDocumentNonBlocking(collection(firestore, 'bills'), generatedBill);
 
-        // 2. Create the notification message
+        // 2. Create and save the notification
         const notificationMessage = `${generatedBill.customerName} paid ${generatedBill.paidAmount}rs for ${generatedBill.inCarat} carats to ${generatedBill.paidTo} via ${generatedBill.paymentMode}. Due amount is ${generatedBill.dueAmount}rs.`;
-
-        // 3. Create the notification object
         const newNotification: Notification = {
             id: uuidv4(),
             billId: generatedBill.id,
@@ -174,21 +172,36 @@ export function BillingForm() {
             message: notificationMessage,
             createdAt: new Date().toISOString(),
         };
-
-        // 4. Save the notification
         addDocumentNonBlocking(collection(firestore, 'notifications'), newNotification);
+
+        // 3. Create and save the labour record if applicable
+        if (generatedBill.totalLabourAmount && generatedBill.totalLabourAmount > 0) {
+            const newLabourRecord: Labour = {
+                id: uuidv4(),
+                billId: generatedBill.id,
+                managerId: user.uid,
+                customerName: generatedBill.customerName,
+                inCaratLabour: generatedBill.inCaratLabour,
+                inCaratLabourRate: generatedBill.inCaratLabourRate,
+                outCaratLabour: generatedBill.outCaratLabour,
+                outCaratLabourRate: generatedBill.outCaratLabourRate,
+                totalLabourAmount: generatedBill.totalLabourAmount,
+                createdAt: generatedBill.createdAt,
+            };
+            addDocumentNonBlocking(collection(firestore, 'labours'), newLabourRecord);
+        }
 
         toast({
           title: 'Bill Saved!',
-          description: 'The bill and notification have been successfully saved.',
+          description: 'The bill and associated records have been saved.',
         });
         handleCloseDialog();
       } catch (error) {
-        console.error("Error saving bill and notification: ", error);
+        console.error("Error saving records: ", error);
         toast({
             variant: 'destructive',
             title: 'Error Saving Data',
-            description: 'Could not save the bill and notification to the database.',
+            description: 'Could not save the bill and related records.',
         });
       }
     }
@@ -480,9 +493,6 @@ export function BillingForm() {
                                 )}
                             />
                         </div>
-                        <Button variant="secondary" className="w-full">
-                            Save Labour Charges
-                        </Button>
                     </CardContent>
                 </Card>
 

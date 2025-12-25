@@ -106,3 +106,17 @@ export type Notification = {
     message: string;
     createdAt: string; // ISO string
 }
+
+// Represents a labour record in Firestore
+export type Labour = {
+  id: string;
+  billId: string;
+  managerId: string;
+  customerName: string;
+  inCaratLabour?: number;
+  inCaratLabourRate?: number;
+  outCaratLabour?: number;
+  outCaratLabourRate?: number;
+  totalLabourAmount: number;
+  createdAt: string; // ISO string
+};

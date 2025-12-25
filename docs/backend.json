@@ -225,6 +225,25 @@
         "message",
         "createdAt"
       ]
+    },
+    "Labour": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Labour",
+      "type": "object",
+      "description": "Represents a record of internal labour charges associated with a customer and a bill.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the labour record." },
+        "billId": { "type": "string", "description": "Reference to the Bill this labour charge is associated with." },
+        "managerId": { "type": "string", "description": "Reference to the Manager who created the entry." },
+        "customerName": { "type": "string", "description": "Name of the customer." },
+        "inCaratLabour": { "type": "number", "description": "The quantity for In Carat labour." },
+        "inCaratLabourRate": { "type": "number", "description": "The rate for In Carat labour." },
+        "outCaratLabour": { "type": "number", "description": "The quantity for Out Carat labour." },
+        "outCaratLabourRate": { "type": "number", "description": "The rate for Out Carat labour." },
+        "totalLabourAmount": { "type": "number", "description": "The total amount for labour charges." },
+        "createdAt": { "type": "string", "description": "Date and time when the record was created.", "format": "date-time" }
+      },
+      "required": [ "id", "billId", "managerId", "customerName", "totalLabourAmount", "createdAt" ]
     }
   },
   "auth": {
@@ -332,6 +351,17 @@
               "name": "notificationId",
               "description": "The unique identifier for the notification."
             }
+          ]
+        }
+      },
+      {
+        "path": "/labours/{labourId}",
+        "definition": {
+          "entityName": "Labour",
+          "schema": { "$ref": "#/backend/entities/Labour" },
+          "description": "A global collection of all internal labour charge records.",
+          "params": [
+            { "name": "labourId", "description": "The unique identifier for the labour record." }
           ]
         }
       }
