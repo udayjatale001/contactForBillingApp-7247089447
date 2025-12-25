@@ -82,7 +82,6 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
                 <div className='flex justify-center items-center flex-col gap-2'>
                     <div className="flex items-center gap-2">
                         <Logo />
-                        <span className="font-bold text-lg font-headline text-foreground leading-tight">at par carat</span>
                     </div>
                     <h2 className="text-xl font-bold font-headline">Anand Sagar Fresh Fruits</h2>
                     <p className="text-xs text-muted-foreground">Ichapur Road</p>
@@ -132,17 +131,15 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
         </div>
 
         <DialogFooter className="px-6 pb-6 sm:justify-between bg-secondary/20 pt-4 rounded-b-lg border-t print:hidden">
-          {!isSavingDisabled && (
+          
             <Button variant="default" onClick={handlePrintClick} className='flex-1' disabled={isPrinting}>
               {isPrinting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
               Print
             </Button>
-          )}
+          
           <Button variant="outline" onClick={() => onOpenChange(false)} className='flex-1' disabled={isPrinting}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-
-    
