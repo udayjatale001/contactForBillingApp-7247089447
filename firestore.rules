@@ -75,6 +75,13 @@ service cloud.firestore {
       return request.resource.data.managerId == request.auth.uid;
     }
 
+    /**
+     * Validates that the managerId of an incoming labour record matches the UID of the user creating it.
+     */
+    function isValidLabourCreate() {
+        return request.resource.data.managerId == request.auth.uid;
+    }
+
     // -------------------------------------------------------------------------
     // Collection Rules
     // -------------------------------------------------------------------------
@@ -159,18 +166,31 @@ service cloud.firestore {
     }
 
     /**
-     * @description A global collection of all notifications, designed for owner oversight.
+     * @description A global collection of all notifications.
      * @path /notifications/{notificationId}
-     * @allow (list, get) Owners have full read access.
+     * @allow (read) Any authenticated user can read notifications.
      * @allow (create) Any authenticated manager can create a notification.
      * @deny (update, delete) No one can update or delete notifications to maintain an immutable log.
      */
     match /notifications/{notificationId} {
-        allow get: if isOwnerRole();
-        allow list: if isOwnerRole();
+        allow read: if isSignedIn();
         allow create: if isSignedIn() && isValidNotificationCreate();
         allow update: if false;
         allow delete: if false;
+    }
+
+    /**
+     * @description Collection for storing individual labour charge records.
+     * @path /labours/{labourId}
+     * @allow (create) Any authenticated manager can create a labour record.
+     * @allow (list) Owners can list all records. Managers can list records they created.
+     * @allow (get, update, delete) Only the manager who created the record or an owner can access/modify it.
+     */
+    match /labours/{labourId} {
+        allow get: if isOwner(resource.data.managerId) || isOwnerRole();
+        allow list: if isOwnerRole() || (isSignedIn() && request.query.where.get('managerId')[2] == request.auth.uid);
+        allow create: if isSignedIn() && isValidLabourCreate();
+        allow update, delete: if isOwner(resource.data.managerId) || isOwnerRole();
     }
   }
 }
