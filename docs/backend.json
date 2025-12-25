@@ -23,6 +23,10 @@
           "type": "string",
           "description": "Room number of the customer."
         },
+        "contactNumber": {
+          "type": "string",
+          "description": "Contact number of the customer."
+        },
         "inCarat": {
           "type": "number",
           "description": "The amount of carat that came in."

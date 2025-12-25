@@ -6,6 +6,7 @@ export const billingSchema = z.object({
     .string({ required_error: 'Customer name is required.' })
     .min(2, { message: 'Customer name must be at least 2 characters.' }),
   roomNumber: z.string().optional(),
+  contactNumber: z.string().optional(),
   inCarat: z.coerce
     .number({ required_error: 'In Carat value is required.' })
     .positive({ message: 'In Carat must be a positive number.' }).optional(),
@@ -67,6 +68,7 @@ export type Bill = {
   managerId: string;
   customerName: string;
   roomNumber?: string;
+  contactNumber?: string;
   inCarat: number;
   outCarat: number;
   totalCarat: number;

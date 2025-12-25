@@ -62,6 +62,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
             <div className="space-y-1">
                 <DetailItem label="Customer Name" value={bill.customerName} />
                 {bill.roomNumber && <DetailItem label="Room Number" value={bill.roomNumber} />}
+                {bill.contactNumber && <DetailItem label="Contact" value={bill.contactNumber} />}
                 <Separator className="my-2" />
                 {bill.inCarat > 0 && <DetailItem label="In Carat" value={bill.inCarat} />}
                 {bill.outCarat > 0 && <DetailItem label="Out Carat" value={bill.outCarat} />}

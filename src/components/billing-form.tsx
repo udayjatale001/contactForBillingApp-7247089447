@@ -4,7 +4,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as React from 'react';
-import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home, Wrench } from 'lucide-react';
+import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home, Wrench, Phone } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { collection, doc } from 'firebase/firestore';
 
@@ -55,6 +55,7 @@ export function BillingForm() {
   const defaultFormValues: Partial<BillingFormValues> = {
       customerName: '',
       roomNumber: '',
+      contactNumber: '',
       inCarat: undefined,
       outCarat: undefined,
       smallCarat: undefined,
@@ -289,6 +290,22 @@ export function BillingForm() {
                         />
                          <FormField
                             control={form.control}
+                            name="contactNumber"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Contact Number</FormLabel>
+                                <FormControl>
+                                    <div className="relative">
+                                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Input type="tel" placeholder="e.g., 9876543210" className="pl-10" {...field} />
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
                             name="roomNumber"
                             render={({ field }) => (
                                 <FormItem>
@@ -300,6 +317,7 @@ export function BillingForm() {
                                 </FormItem>
                             )}
                         />
+                        
                         <FormField
                             control={form.control}
                             name="inCarat"
