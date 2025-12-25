@@ -35,17 +35,21 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
   const handlePrintClick = async () => {
     setIsPrinting(true);
     try {
-      // First, save the bill data
+      // First, save the bill data to ensure it's in the history.
       await onSave();
       
-      // Then, trigger the browser's print dialog
+      // Then, trigger the browser's print dialog.
+      // The CSS styles will ensure only the receipt is printed.
       window.print();
 
     } catch (error) {
+        // The onSave function (via non-blocking updates) has its own error handling toast.
+        // We can log here if needed, but the user will already be notified.
         console.error("Failed to save or print bill:", error);
     } finally {
         setIsPrinting(false);
-        onOpenChange(false); // Close dialog after printing/saving
+        // We keep the dialog open after printing in case they need to reference it,
+        // but it can be closed manually.
     }
   }
 
@@ -62,74 +66,85 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
         <style>
           {`
             @media print {
-              body * {
+              body > * {
                 visibility: hidden;
               }
-              #bill-receipt, #bill-receipt * {
+              #bill-receipt-container, #bill-receipt-container * {
                 visibility: visible;
               }
-              #bill-receipt {
+              #bill-receipt-container {
                 position: absolute;
                 left: 0;
                 top: 0;
                 width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+                padding: 1rem;
+                background: white; /* Ensure a white background for printing */
               }
+               #bill-receipt {
+                  width: 100%;
+                  border: none;
+                  box-shadow: none;
+               }
             }
           `}
         </style>
-        <div className="p-6" id="bill-receipt" ref={receiptRef}>
-            <DialogHeader className="mb-4">
-                <div className='flex justify-center items-center flex-col gap-2'>
-                    <div className="flex items-center gap-2">
-                        <Logo />
-                    </div>
-                    <h2 className="text-xl font-bold font-headline">Anand Sagar Fresh Fruits</h2>
-                    <p className="text-xs text-muted-foreground">Ichapur Road</p>
-                </div>
-                 <div className='flex justify-between text-xs text-muted-foreground mt-4'>
-                    <span>Bill No: A...{bill.id.slice(-4)}</span>
-                    <span>{new Date(bill.createdAt).toLocaleDateString()}</span>
-                </div>
-            </DialogHeader>
-            <div className="space-y-1">
-                <DetailItem label="Customer Name" value={bill.customerName} />
-                {bill.roomNumber && <DetailItem label="Room Number" value={bill.roomNumber} />}
-                {bill.contactNumber && <DetailItem label="Contact" value={bill.contactNumber} />}
-                <Separator className="my-2" />
-                {bill.inCarat > 0 && <DetailItem label="In Carat" value={bill.inCarat} />}
-                {bill.outCarat > 0 && <DetailItem label="Out Carat" value={bill.outCarat} />}
-                {bill.smallCarat && bill.smallCarat > 0 && <DetailItem label="Small Carat" value={`${bill.smallCarat} @ ${bill.smallCaratRate}rs`} />}
-                {bill.bigCarat && bill.bigCarat > 0 && <DetailItem label="Big Carat" value={`${bill.bigCarat} @ ${bill.bigCaratRate}rs`} />}
-                
-                <Separator className="my-2" />
-                <DetailItem label="Total Amount" value={`${bill.totalAmount.toLocaleString()}rs`} className="font-bold text-lg"/>
-                <DetailItem label="Paid Amount" value={`${bill.paidAmount.toLocaleString()}rs`} />
-                <DetailItem label="Due Amount" value={<Badge variant={bill.dueAmount > 0 ? "destructive" : "default"}>{bill.dueAmount.toLocaleString()}rs</Badge>} />
-                <Separator className="my-2" />
-                
-                {/* Internal Labour Info */}
-                {bill.totalLabourAmount && bill.totalLabourAmount > 0 && (
-                  <>
-                    <div className='text-center text-xs text-muted-foreground pt-2'>
-                      (Internal Labour Cost: {bill.totalLabourAmount.toLocaleString()}rs)
-                    </div>
-                    <Separator className="my-2" />
-                  </>
-                )}
+        {/* This outer container is used by the print styles */}
+        <div id="bill-receipt-container">
+          <div className="p-6" id="bill-receipt" ref={receiptRef}>
+              <DialogHeader className="mb-4">
+                  <div className='flex justify-center items-center flex-col gap-2'>
+                      <div className="flex items-center gap-2">
+                          <Logo />
+                      </div>
+                  </div>
+                   <div className='flex justify-between text-xs text-muted-foreground mt-4'>
+                      <span>Bill No: A...{bill.id.slice(-4)}</span>
+                      <span>{new Date(bill.createdAt).toLocaleDateString()}</span>
+                  </div>
+              </DialogHeader>
+              <div className="space-y-1">
+                  <DetailItem label="Customer Name" value={bill.customerName} />
+                  {bill.roomNumber && <DetailItem label="Room Number" value={bill.roomNumber} />}
+                  {bill.contactNumber && <DetailItem label="Contact" value={bill.contactNumber} />}
+                  <Separator className="my-2" />
+                  {bill.inCarat && bill.inCarat > 0 && <DetailItem label="In Carat" value={bill.inCarat} />}
+                  {bill.outCarat && bill.outCarat > 0 && <DetailItem label="Out Carat" value={bill.outCarat} />}
+                  {bill.smallCarat && bill.smallCarat > 0 && <DetailItem label="Small Carat" value={`${bill.smallCarat} @ ${bill.smallCaratRate}rs`} />}
+                  {bill.bigCarat && bill.bigCarat > 0 && <DetailItem label="Big Carat" value={`${bill.bigCarat} @ ${bill.bigCaratRate}rs`} />}
+                  
+                  <Separator className="my-2" />
+                  <DetailItem label="Total Amount" value={`${bill.totalAmount.toLocaleString()}rs`} className="font-bold text-lg"/>
+                  <DetailItem label="Paid Amount" value={`${bill.paidAmount.toLocaleString()}rs`} />
+                  <DetailItem label="Due Amount" value={<Badge variant={bill.dueAmount > 0 ? "destructive" : "default"}>{bill.dueAmount.toLocaleString()}rs</Badge>} />
+                  <Separator className="my-2" />
+                  
+                  {/* Internal Labour Info */}
+                  {bill.totalLabourAmount && bill.totalLabourAmount > 0 && (
+                    <>
+                      <div className='text-center text-xs text-muted-foreground pt-2'>
+                        (Internal Labour Cost: {bill.totalLabourAmount.toLocaleString()}rs)
+                      </div>
+                      <Separator className="my-2" />
+                    </>
+                  )}
 
-                <DetailItem label="Paid To" value={bill.paidTo} />
-                <DetailItem label="Date" value={new Date(bill.createdAt).toLocaleDateString()} />
-                <Separator className="my-2" />
-                 <div className='text-center text-sm text-muted-foreground pt-2'>
-                    Payment Method: {bill.paymentMode}
-                </div>
-                <div className="pt-12 pb-4 text-center">
-                    <div className="border-t border-dashed w-1/2 mx-auto"></div>
-                    <p className="text-xs text-muted-foreground mt-2">Seal / Signature</p>
-                </div>
-            </div>
+                  <DetailItem label="Paid To" value={bill.paidTo} />
+                  <DetailItem label="Date" value={new Date(bill.createdAt).toLocaleDateString()} />
+                  <Separator className="my-2" />
+                   <div className='text-center text-sm text-muted-foreground pt-2'>
+                      Payment Method: {bill.paymentMode}
+                  </div>
+                  <div className="pt-12 pb-4 text-center">
+                      <div className="border-t border-dashed w-1/2 mx-auto"></div>
+                      <p className="text-xs text-muted-foreground mt-2">Seal / Signature</p>
+                  </div>
+              </div>
+          </div>
         </div>
-
         <DialogFooter className="px-6 pb-6 sm:justify-between bg-secondary/20 pt-4 rounded-b-lg border-t print:hidden">
           
             <Button variant="default" onClick={handlePrintClick} className='flex-1' disabled={isPrinting}>
