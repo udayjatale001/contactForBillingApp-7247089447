@@ -57,7 +57,9 @@ export function BillingForm() {
       inCarat: undefined,
       outCarat: undefined,
       smallCarat: undefined,
+      smallCaratRate: undefined,
       bigCarat: undefined,
+      bigCaratRate: undefined,
       paidAmount: undefined,
       paymentMode: 'Cash' as 'Cash' | 'Online Payment' | 'Due',
       paidTo: 'Gopal Dada' as 'Gopal Dada' | 'Yuvraj Dada' | 'Suyash Dada' | 'Gaju Dada',
@@ -70,17 +72,19 @@ export function BillingForm() {
 
   const { watch, trigger, formState: { errors } } = form;
   const smallCarat = watch('smallCarat');
+  const smallCaratRate = watch('smallCaratRate');
   const bigCarat = watch('bigCarat');
+  const bigCaratRate = watch('bigCaratRate');
   const paidAmount = watch('paidAmount');
   const paymentMode = watch('paymentMode');
 
   const totalAmount = React.useMemo(() => {
-    const smallRate = appSettings?.smallCaratRate ?? 0;
-    const bigRate = appSettings?.bigCaratRate ?? 0;
+    const smallRate = Number(smallCaratRate) || 0;
+    const bigRate = Number(bigCaratRate) || 0;
     const smallCaratAmount = (Number(smallCarat) || 0) * smallRate;
     const bigCaratAmount = (Number(bigCarat) || 0) * bigRate;
     return smallCaratAmount + bigCaratAmount;
-  }, [smallCarat, bigCarat, appSettings]);
+  }, [smallCarat, smallCaratRate, bigCarat, bigCaratRate]);
 
   const dueAmount = React.useMemo(() => {
     let effectivePaidAmount = Number(paidAmount) || 0;
@@ -154,15 +158,7 @@ export function BillingForm() {
       setIsSubmitting(false);
       return;
     }
-    if (isLoadingRates || !appSettings) {
-       toast({
-        variant: 'destructive',
-        title: 'Rates Not Loaded',
-        description: 'Billing rates are not available. Please wait or check settings.',
-      });
-      setIsSubmitting(false);
-      return;
-    }
+    
     const isValid = await trigger();
     if (!isValid || (data.paidAmount && totalAmount > 0 && data.paidAmount > totalAmount)) {
         setIsSubmitting(false);
@@ -203,8 +199,8 @@ export function BillingForm() {
             dueAmount: finalDueAmount < 0 ? 0 : finalDueAmount,
             createdAt: new Date().toISOString(),
             caratType: caratType,
-            smallCaratRate: appSettings.smallCaratRate,
-            bigCaratRate: appSettings.bigCaratRate,
+            smallCaratRate: data.smallCaratRate ?? 0,
+            bigCaratRate: data.bigCaratRate ?? 0,
         };
         
       setGeneratedBill(fullBillDetails);
@@ -293,15 +289,28 @@ export function BillingForm() {
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2'><ChevronsUpDown />Carat Details</CardTitle>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <FormField
                             control={form.control}
                             name="smallCarat"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Small Carat (Rate: {appSettings?.smallCaratRate ?? 'N/A'})</FormLabel>
+                                <FormItem className="col-span-2 md:col-span-2">
+                                    <FormLabel>Small Carat (Qty)</FormLabel>
                                     <FormControl>
                                     <Input type="number" placeholder="e.g., 10" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="smallCaratRate"
+                            render={({ field }) => (
+                                <FormItem className="col-span-2 md:col-span-2">
+                                    <FormLabel>Rate</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" placeholder="e.g., 17" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -311,10 +320,23 @@ export function BillingForm() {
                             control={form.control}
                             name="bigCarat"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Big Carat (Rate: {appSettings?.bigCaratRate ?? 'N/A'})</FormLabel>
+                                <FormItem className="col-span-2 md:col-span-2">
+                                    <FormLabel>Big Carat (Qty)</FormLabel>
                                     <FormControl>
                                     <Input type="number" placeholder="e.g., 5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="bigCaratRate"
+                            render={({ field }) => (
+                                <FormItem className="col-span-2 md:col-span-2">
+                                    <FormLabel>Rate</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" placeholder="e.g., 20" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

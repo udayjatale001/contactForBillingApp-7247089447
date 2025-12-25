@@ -15,9 +15,17 @@ export const billingSchema = z.object({
     .number()
     .gt(0, { message: 'Small Carat must be a positive number.' })
     .optional(),
+  smallCaratRate: z.coerce
+    .number()
+    .gt(0, { message: 'Small Carat Rate must be a positive number.' })
+    .optional(),
   bigCarat: z.coerce
     .number()
     .gt(0, { message: 'Big Carat must be a positive number.' })
+    .optional(),
+  bigCaratRate: z.coerce
+    .number()
+    .gt(0, { message: 'Big Carat Rate must be a positive number.' })
     .optional(),
   paidAmount: z.coerce
     .number()
@@ -28,10 +36,21 @@ export const billingSchema = z.object({
   paymentMode: z.enum(['Online Payment', 'Cash', 'Due'], {
     required_error: 'You need to select a payment mode.',
   }),
-}).refine(data => data.smallCarat || data.bigCarat, {
+}).refine(data => {
+    // If smallCarat has a value, smallCaratRate must also have a value.
+    if (data.smallCarat && !data.smallCaratRate) return false;
+    // If bigCarat has a value, bigCaratRate must also have a value.
+    if (data.bigCarat && !data.bigCaratRate) return false;
+    return true;
+}, {
+    message: "Rate is required if quantity is provided.",
+    path: ["smallCaratRate"], // Or point to a more general location
+})
+.refine(data => data.smallCarat || data.bigCarat, {
     message: "At least one carat type (Small or Big) must be provided.",
     path: ["smallCarat"],
 });
+
 
 export type BillingFormValues = z.infer<typeof billingSchema>;
 
@@ -64,5 +83,3 @@ export type AppSettings = {
   bigCaratRate: number;
   labourRate: number;
 };
-
-    
