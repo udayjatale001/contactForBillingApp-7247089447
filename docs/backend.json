@@ -189,6 +189,42 @@
         "bigCaratRate",
         "labourRate"
       ]
+    },
+    "Notification": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Notification",
+      "type": "object",
+      "description": "Represents a notification message generated after a bill is created.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the notification."
+        },
+        "billId": {
+          "type": "string",
+          "description": "Reference to the Bill that triggered this notification."
+        },
+        "managerId": {
+          "type": "string",
+          "description": "Reference to the Manager who created the bill."
+        },
+        "message": {
+          "type": "string",
+          "description": "The content of the notification message."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Date and time when the notification was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "billId",
+        "managerId",
+        "message",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -279,6 +315,22 @@
             {
               "name": "settingsId",
               "description": "The fixed identifier for the settings document, e.g., 'rates'."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/notifications/{notificationId}",
+        "definition": {
+          "entityName": "Notification",
+          "schema": {
+            "$ref": "#/backend/entities/Notification"
+          },
+          "description": "A global collection of all notifications for owner oversight.",
+          "params": [
+            {
+              "name": "notificationId",
+              "description": "The unique identifier for the notification."
             }
           ]
         }

@@ -97,3 +97,12 @@ export type AppSettings = {
   bigCaratRate: number;
   labourRate: number;
 };
+
+// Represents a notification document in Firestore
+export type Notification = {
+    id: string;
+    billId: string;
+    managerId: string;
+    message: string;
+    createdAt: string; // ISO string
+}

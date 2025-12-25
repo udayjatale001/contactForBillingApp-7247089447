@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -65,6 +66,13 @@ service cloud.firestore {
      */
     function isImmutableBillManagerId() {
       return request.resource.data.managerId == resource.data.managerId;
+    }
+    
+    /**
+     * Validates that the managerId of an incoming notification matches the UID of the user creating it.
+     */
+    function isValidNotificationCreate() {
+      return request.resource.data.managerId == request.auth.uid;
     }
 
     // -------------------------------------------------------------------------
@@ -149,7 +157,20 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isOwnerRole();
     }
+
+    /**
+     * @description A global collection of all notifications, designed for owner oversight.
+     * @path /notifications/{notificationId}
+     * @allow (list, get) Owners have full read access.
+     * @allow (create) Any authenticated manager can create a notification.
+     * @deny (update, delete) No one can update or delete notifications to maintain an immutable log.
+     */
+    match /notifications/{notificationId} {
+        allow get: if isOwnerRole();
+        allow list: if isOwnerRole();
+        allow create: if isSignedIn() && isValidNotificationCreate();
+        allow update: if false;
+        allow delete: if false;
+    }
   }
 }
-
-    

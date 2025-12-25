@@ -55,6 +55,7 @@ import { format, getYear, getMonth } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
 import { Input } from './ui/input';
+import { NotificationsFeed } from './notifications-feed';
 
 const ALL_MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -508,6 +509,67 @@ export function OwnerDashboard() {
         </Card>
       </div>
 
+      <div className="grid gap-4 lg:grid-cols-2">
+         {/* Notifications Feed */}
+        <NotificationsFeed />
+        
+        {/* Due Amounts & Reminders */}
+        <Card>
+            <CardHeader>
+                <CardTitle>Customer Reminders</CardTitle>
+                <CardDescription>
+                    Customers with outstanding payments in the selected period.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                {dueBills.length > 0 ? (
+                    <div className='grid grid-cols-1'>
+                        <div>
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Customer</TableHead>
+                                        <TableHead>Total Due</TableHead>
+                                        <TableHead>Last Bill</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {dueBills.slice(0, 5).map(dueCustomer => (
+                                    <TableRow key={dueCustomer.customerName}>
+                                        <TableCell className="font-medium">{dueCustomer.customerName}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="destructive">{dueCustomer.totalDueAmount.toLocaleString()}rs</Badge>
+                                        </TableCell>
+                                        <TableCell>{format(new Date(dueCustomer.lastBillDate), 'dd MMM')}</TableCell>
+                                    </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                        <div className="flex items-center justify-center p-6 bg-secondary/30 rounded-lg mt-4">
+                            <Button size="lg" onClick={handleSendReminders} disabled={!isOwner || isSendingReminders}>
+                                {isSendingReminders ? (
+                                    <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Sending...
+                                    </>
+                                ) : 'Send Reminders'}
+                            </Button>
+                        </div>
+                    </div>
+                ): (
+                    <div className="text-center py-12">
+                        <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <h3 className="mt-4 text-lg font-semibold">No Due Amounts</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            All accounts are settled for this period.
+                        </p>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+      </div>
+
       {/* Main Grid */}
       <Tabs defaultValue="sales">
         <Card>
@@ -622,7 +684,7 @@ export function OwnerDashboard() {
       
       <div className="grid gap-4 lg:grid-cols-7">
         {/* Recent Bills */}
-        <Card className="lg:col-span-4">
+        <Card className="lg:col-span-7">
           <CardHeader>
             <CardTitle>Recent Bills</CardTitle>
             <CardDescription>
@@ -665,62 +727,6 @@ export function OwnerDashboard() {
                 </div>
             )}
           </CardContent>
-        </Card>
-
-         {/* Due Amounts & Reminders */}
-        <Card className="lg:col-span-3">
-            <CardHeader>
-                <CardTitle>Customer Reminders</CardTitle>
-                <CardDescription>
-                    Customers with outstanding payments in the selected period.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                {dueBills.length > 0 ? (
-                    <div className='grid grid-cols-1'>
-                        <div>
-                             <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Customer</TableHead>
-                                        <TableHead>Total Due</TableHead>
-                                        <TableHead>Last Bill</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {dueBills.slice(0, 5).map(dueCustomer => (
-                                    <TableRow key={dueCustomer.customerName}>
-                                        <TableCell className="font-medium">{dueCustomer.customerName}</TableCell>
-                                        <TableCell>
-                                            <Badge variant="destructive">{dueCustomer.totalDueAmount.toLocaleString()}rs</Badge>
-                                        </TableCell>
-                                        <TableCell>{format(new Date(dueCustomer.lastBillDate), 'dd MMM')}</TableCell>
-                                    </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                        <div className="flex items-center justify-center p-6 bg-secondary/30 rounded-lg mt-4">
-                            <Button size="lg" onClick={handleSendReminders} disabled={!isOwner || isSendingReminders}>
-                                {isSendingReminders ? (
-                                    <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Sending...
-                                    </>
-                                ) : 'Send Reminders'}
-                            </Button>
-                        </div>
-                    </div>
-                ): (
-                    <div className="text-center py-12">
-                        <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-lg font-semibold">No Due Amounts</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            All accounts are settled for this period.
-                        </p>
-                    </div>
-                )}
-            </CardContent>
         </Card>
       </div>
     </div>

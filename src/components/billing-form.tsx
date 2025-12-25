@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { BillingFormValues, billingSchema, Bill, AppSettings } from '@/lib/types';
+import { BillingFormValues, billingSchema, Bill, AppSettings, Notification } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { BillSummaryDialog } from './bill-summary-dialog';
 import { cn } from '@/lib/utils';
@@ -159,25 +159,36 @@ export function BillingForm() {
   const handleSaveBill = async () => {
     if (generatedBill && user && firestore) {
       try {
-        // Create references to both locations
-        const managerBillRef = doc(firestore, 'managers', user.uid, 'bills', generatedBill.id);
-        const globalBillRef = doc(firestore, 'bills', generatedBill.id);
-
-        // Use non-blocking functions to write to both locations
+        // 1. Save the bill documents
         addDocumentNonBlocking(collection(firestore, 'managers', user.uid, 'bills'), generatedBill);
         addDocumentNonBlocking(collection(firestore, 'bills'), generatedBill);
 
+        // 2. Create the notification message
+        const notificationMessage = `${generatedBill.customerName} paid ${generatedBill.paidAmount}rs for ${generatedBill.inCarat} carats to ${generatedBill.paidTo} via ${generatedBill.paymentMode}. Due amount is ${generatedBill.dueAmount}rs.`;
+
+        // 3. Create the notification object
+        const newNotification: Notification = {
+            id: uuidv4(),
+            billId: generatedBill.id,
+            managerId: user.uid,
+            message: notificationMessage,
+            createdAt: new Date().toISOString(),
+        };
+
+        // 4. Save the notification
+        addDocumentNonBlocking(collection(firestore, 'notifications'), newNotification);
+
         toast({
           title: 'Bill Saved!',
-          description: 'The bill has been successfully saved to your history.',
+          description: 'The bill and notification have been successfully saved.',
         });
         handleCloseDialog();
       } catch (error) {
-        console.error("Error saving bill: ", error);
+        console.error("Error saving bill and notification: ", error);
         toast({
             variant: 'destructive',
-            title: 'Error Saving Bill',
-            description: 'Could not save the bill to the database.',
+            title: 'Error Saving Data',
+            description: 'Could not save the bill and notification to the database.',
         });
       }
     }
