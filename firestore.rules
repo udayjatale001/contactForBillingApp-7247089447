@@ -184,12 +184,12 @@ service cloud.firestore {
      * @description Collection for storing individual labour charge records.
      * @path /labours/{labourId}
      * @allow (create) Any authenticated manager can create a labour record.
-     * @allow (list) Owners can list all records. Managers can list records they created.
+     * @allow (list) All authenticated users can list records.
      * @allow (get, update, delete) Only the manager who created the record or an owner can access/modify it.
      */
     match /labours/{labourId} {
         allow get: if isOwner(resource.data.managerId) || isOwnerRole();
-        allow list: if isOwnerRole() || (isSignedIn() && request.query.get('managerId')[2] == request.auth.uid);
+        allow list: if isSignedIn();
         allow create: if isSignedIn() && isValidLabourCreate();
         allow update, delete: if isOwner(resource.data.managerId) || isOwnerRole();
     }
