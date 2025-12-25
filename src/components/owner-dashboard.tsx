@@ -511,7 +511,7 @@ export function OwnerDashboard() {
 
       <div className="grid gap-4 lg:grid-cols-2">
          {/* Notifications Feed */}
-        <NotificationsFeed />
+        {isOwner && <NotificationsFeed />}
         
         {/* Due Amounts & Reminders */}
         <Card>
@@ -732,3 +732,5 @@ export function OwnerDashboard() {
     </div>
   );
 }
+
+    
