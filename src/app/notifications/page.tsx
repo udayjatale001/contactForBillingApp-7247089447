@@ -15,7 +15,7 @@ import {
   useUser,
   useFirestore,
 } from '@/firebase';
-import { collection, query, orderBy, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, deleteDoc, writeBatch } from 'firebase/firestore';
 import type { Notification } from '@/lib/types';
 import {
   Loader2,
@@ -49,6 +49,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function NotificationsPage() {
   const firestore = useFirestore();
@@ -61,6 +62,9 @@ export default function NotificationsPage() {
     Notification | undefined
   >();
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = React.useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = React.useState(false);
 
   const notificationsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -85,6 +89,40 @@ export default function NotificationsPage() {
       return nameMatch && dateMatch;
     });
   }, [notifications, searchTerm, selectedDate]);
+  
+  React.useEffect(() => {
+    // When filters change, we need to remove selected IDs that are no longer visible.
+    const visibleIds = new Set(filteredNotifications.map(n => n.id));
+    setSelectedIds(currentIds => {
+      const newIds = new Set<string>();
+      currentIds.forEach(id => {
+        if (visibleIds.has(id)) {
+          newIds.add(id);
+        }
+      });
+      return newIds;
+    });
+  }, [filteredNotifications]);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(filteredNotifications.map(n => n.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(id);
+      } else {
+        newSet.delete(id);
+      }
+      return newSet;
+    });
+  };
 
   const handleDeleteClick = (
     e: React.MouseEvent,
@@ -122,8 +160,39 @@ export default function NotificationsPage() {
       setNotificationToDelete(undefined);
     }
   };
+  
+  const handleBulkDelete = async () => {
+    if (!firestore || selectedIds.size === 0) return;
+    
+    setIsBulkDeleting(true);
+    const batch = writeBatch(firestore);
+    selectedIds.forEach(id => {
+      batch.delete(doc(firestore, 'notifications', id));
+    });
+
+    try {
+      await batch.commit();
+      toast({
+        title: 'Notifications Deleted',
+        description: `${selectedIds.size} notifications have been successfully removed.`
+      });
+      setSelectedIds(new Set());
+    } catch (error) {
+      console.error("Error bulk deleting notifications: ", error);
+      toast({
+        variant: 'destructive',
+        title: 'Bulk Deletion Failed',
+        description: 'Could not delete the selected notifications. You may not have permission.'
+      });
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteConfirm(false);
+    }
+  };
 
   const isLoading = isUserLoading || isLoadingNotifications;
+  
+  const allFilteredSelected = filteredNotifications.length > 0 && selectedIds.size === filteredNotifications.length;
 
   const renderContent = () => {
     if (isLoading) {
@@ -136,13 +205,22 @@ export default function NotificationsPage() {
 
     if (filteredNotifications && filteredNotifications.length > 0) {
       return (
-        <div className="space-y-4">
+        <div className="space-y-2">
           {filteredNotifications.map((notification) => (
             <div
               key={notification.id}
-              className="flex items-start justify-between gap-4 group"
+              className={cn(
+                "flex items-center justify-between gap-4 group p-2 rounded-md transition-colors",
+                selectedIds.has(notification.id) && 'bg-primary/10'
+                )}
             >
-              <div className="flex items-start gap-4 flex-1">
+              <div className="flex items-center gap-4 flex-1">
+                 <Checkbox 
+                    checked={selectedIds.has(notification.id)} 
+                    onCheckedChange={(checked) => handleSelectOne(notification.id, !!checked)}
+                    id={`select-${notification.id}`}
+                    aria-label={`Select notification ${notification.id}`}
+                />
                 <div className="bg-primary/10 p-2 rounded-full">
                   <Bell className="h-5 w-5 text-primary" />
                 </div>
@@ -192,58 +270,85 @@ export default function NotificationsPage() {
           <h2 className="text-3xl font-bold tracking-tight font-headline">
             Notifications
           </h2>
+           {selectedIds.size > 0 && (
+             <Button 
+                variant="destructive" 
+                onClick={() => setShowBulkDeleteConfirm(true)}
+                disabled={isBulkDeleting}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete ({selectedIds.size})
+            </Button>
+           )}
         </div>
         <Card>
           <CardHeader>
             <CardTitle>Activity Feed</CardTitle>
             <CardDescription>A log of all billing activities.</CardDescription>
-            <div className="flex flex-col md:flex-row gap-2 pt-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={'outline'}
-                      className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !selectedDate && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? (
-                        format(selectedDate, 'PPP')
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      initialFocus
+            <div className='border-t pt-4 mt-4'>
+                <div className="flex flex-col md:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by name..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
                     />
-                  </PopoverContent>
-                </Popover>
-                {selectedDate && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setSelectedDate(undefined)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={'outline'}
+                          className={cn(
+                            'w-full justify-start text-left font-normal',
+                            !selectedDate && 'text-muted-foreground'
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {selectedDate ? (
+                            format(selectedDate, 'PPP')
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={setSelectedDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {selectedDate && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setSelectedDate(undefined)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                 {filteredNotifications.length > 0 && (
+                    <div className="flex items-center space-x-2 pt-4">
+                        <Checkbox 
+                            id="select-all" 
+                            checked={allFilteredSelected}
+                            onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                        />
+                        <label
+                            htmlFor="select-all"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                           Select all ({filteredNotifications.length})
+                        </label>
+                    </div>
                 )}
-              </div>
             </div>
           </CardHeader>
           <CardContent>{renderContent()}</CardContent>
@@ -273,6 +378,33 @@ export default function NotificationsPage() {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+       <AlertDialog
+        open={showBulkDeleteConfirm}
+        onOpenChange={setShowBulkDeleteConfirm}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the {selectedIds.size} selected notifications.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isBulkDeleting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Delete Selected
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
