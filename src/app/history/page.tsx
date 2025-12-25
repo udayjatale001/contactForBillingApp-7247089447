@@ -204,7 +204,10 @@ export default function HistoryPage() {
 
   const isLoadingData = isLoading || isOwner === null;
   const allFilteredSelected = filteredBills.length > 0 && selectedIds.size === filteredBills.length;
-  const canDelete = (bill: Bill) => isOwner || (user && user.uid === bill.managerId);
+  const canDelete = (bill: Bill) => {
+    if (isOwner === null || !user) return false; // Don't allow deletion if role or user is not determined
+    return isOwner || user.uid === bill.managerId;
+  };
 
 
   return (
