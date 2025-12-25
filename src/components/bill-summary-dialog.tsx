@@ -66,8 +66,8 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
                 <Separator className="my-2" />
                 {bill.inCarat > 0 && <DetailItem label="In Carat" value={bill.inCarat} />}
                 {bill.outCarat > 0 && <DetailItem label="Out Carat" value={bill.outCarat} />}
-                {bill.smallCarat && bill.smallCarat > 0 && <DetailItem label="17kg Carat" value={`${bill.smallCarat} @ ${bill.smallCaratRate}rs`} />}
-                {bill.bigCarat && bill.bigCarat > 0 && <DetailItem label="20kg Carat" value={`${bill.bigCarat} @ ${bill.bigCaratRate}rs`} />}
+                {bill.smallCarat && bill.smallCarat > 0 && <DetailItem label="Small Carat" value={`${bill.smallCarat} @ ${bill.smallCaratRate}rs`} />}
+                {bill.bigCarat && bill.bigCarat > 0 && <DetailItem label="Big Carat" value={`${bill.bigCarat} @ ${bill.bigCaratRate}rs`} />}
                 
                 <Separator className="my-2" />
                 <DetailItem label="Total Amount" value={`${bill.totalAmount.toLocaleString()}rs`} className="font-bold text-lg"/>
