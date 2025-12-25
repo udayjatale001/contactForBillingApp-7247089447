@@ -15,14 +15,16 @@ export default function NotificationsPage() {
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
 
   React.useEffect(() => {
-    if (user && firestore) {
+    // We should only check the role if the user is loaded and exists.
+    if (!isUserLoading && user && firestore) {
       const checkRole = async () => {
         const ownerDocRef = doc(firestore, 'roles_owner', user.uid);
         const ownerDoc = await getDoc(ownerDocRef);
         setIsOwner(ownerDoc.exists());
       };
       checkRole();
-    } else if (!isUserLoading) {
+    } else if (!isUserLoading && !user) {
+      // If loading is finished and there's no user, they are definitely not an owner.
       setIsOwner(false);
     }
   }, [user, isUserLoading, firestore]);
@@ -108,5 +110,3 @@ export default function NotificationsPage() {
     </div>
   );
 }
-
-    
