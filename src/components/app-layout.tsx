@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -75,6 +76,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       href: '/',
       label: 'Billing',
       icon: Home,
+      ownerOnly: false,
+    },
+    {
+      href: '/uday',
+      label: 'Uday',
+      icon: User,
       ownerOnly: false,
     },
     {
