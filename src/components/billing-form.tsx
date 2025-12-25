@@ -114,12 +114,13 @@ export function BillingForm() {
   const handleSaveBill = async () => {
     if (generatedBill && user && firestore) {
       try {
-        const managerBillsColRef = collection(firestore, 'managers', user.uid, 'bills');
-        const globalBillsColRef = collection(firestore, 'bills');
-        
-        // Use the non-blocking functions
-        addDocumentNonBlocking(managerBillsColRef, generatedBill);
-        addDocumentNonBlocking(globalBillsColRef, generatedBill);
+        // Create references to both locations
+        const managerBillRef = doc(firestore, 'managers', user.uid, 'bills', generatedBill.id);
+        const globalBillRef = doc(firestore, 'bills', generatedBill.id);
+
+        // Use non-blocking functions to write to both locations
+        addDocumentNonBlocking(collection(firestore, 'managers', user.uid, 'bills'), generatedBill);
+        addDocumentNonBlocking(collection(firestore, 'bills'), generatedBill);
 
         toast({
           title: 'Bill Saved!',
@@ -298,7 +299,7 @@ export function BillingForm() {
                             name="smallCarat"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Small Carat (Rate: {appSettings?.smallCaratRate ?? 0})</FormLabel>
+                                    <FormLabel>Small Carat (Rate: {appSettings?.smallCaratRate ?? 'N/A'})</FormLabel>
                                     <FormControl>
                                     <Input type="number" placeholder="e.g., 10" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
@@ -311,7 +312,7 @@ export function BillingForm() {
                             name="bigCarat"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Big Carat (Rate: {appSettings?.bigCaratRate ?? 0})</FormLabel>
+                                    <FormLabel>Big Carat (Rate: {appSettings?.bigCaratRate ?? 'N/A'})</FormLabel>
                                     <FormControl>
                                     <Input type="number" placeholder="e.g., 5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
@@ -457,5 +458,3 @@ export function BillingForm() {
     </>
   );
 }
-
-    
