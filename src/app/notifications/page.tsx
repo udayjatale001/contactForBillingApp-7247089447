@@ -42,7 +42,7 @@ export default function NotificationsPage() {
               <div className='flex-1'>
                 <p className="text-sm text-foreground">{notification.message}</p>
                 <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                  {new Date(notification.createdAt).toLocaleString()} ({formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })})
                 </p>
               </div>
             </div>
