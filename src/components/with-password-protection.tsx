@@ -4,6 +4,7 @@ import React, { useState, useEffect, ComponentType } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -15,8 +16,10 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { Button } from './ui/button';
 
 const CORRECT_PASSWORD = 'suyash001';
+const RECOVERY_PHONE_NUMBER = '9826926999';
 
 // This is a Higher-Order Component (HOC)
 export default function withPasswordProtection<P extends object>(
@@ -27,6 +30,8 @@ export default function withPasswordProtection<P extends object>(
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isClient, setIsClient] = useState(false);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [recoveryNumber, setRecoveryNumber] = useState('');
     const { toast } = useToast();
     const router = useRouter();
 
@@ -47,12 +52,32 @@ export default function withPasswordProtection<P extends object>(
             title: 'Incorrect Password',
             description: 'The password you entered is incorrect.',
           });
-          // Immediately navigate away on failure
-          router.back();
+          // Do not navigate away on failure, let them try again or use forgot password
         }
         setIsLoading(false);
       }, 300);
     };
+
+    const handleRecoveryCheck = () => {
+        setIsLoading(true);
+        setTimeout(() => {
+            if (recoveryNumber === RECOVERY_PHONE_NUMBER) {
+                setIsAuthenticated(true);
+                setShowForgotPassword(false);
+                toast({
+                    title: 'Authentication Successful',
+                    description: 'Access granted.',
+                });
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: 'Incorrect Number',
+                    description: 'The mobile number you entered is not authorized for recovery.',
+                });
+            }
+            setIsLoading(false);
+        }, 300);
+    }
 
     const handleCancel = () => {
       router.back(); // Go back to the previous page
@@ -70,40 +95,70 @@ export default function withPasswordProtection<P extends object>(
 
     // Otherwise, always show the password dialog.
     return (
-      <AlertDialog open={true} onOpenChange={!isAuthenticated ? handleCancel : undefined}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Authentication Required</AlertDialogTitle>
-            <AlertDialogDescription>
-              You need to enter the password to view this page.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-2 py-4">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handlePasswordCheck()}
-              autoFocus
-            />
-          </div>
-          <AlertDialogFooter>
-            <button
-                className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground mt-2 sm:mt-0"
-                onClick={handleCancel}
-                disabled={isLoading}
-            >
-                Cancel
-            </button>
-            <AlertDialogAction onClick={handlePasswordCheck} disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Submit
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <>
+        <AlertDialog open={!showForgotPassword} onOpenChange={!isAuthenticated ? handleCancel : undefined}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Authentication Required</AlertDialogTitle>
+              <AlertDialogDescription>
+                You need to enter the password to view this page.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handlePasswordCheck()}
+                  autoFocus
+                />
+              </div>
+               <Button variant="link" className="p-0 h-auto text-xs text-muted-foreground" onClick={() => setShowForgotPassword(true)}>
+                    Forgot Password?
+               </Button>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleCancel} disabled={isLoading}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handlePasswordCheck} disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Submit
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Password Recovery</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Please enter the registered mobile number to recover access.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="space-y-2 py-4">
+                    <Label htmlFor="recovery-number">Registered Mobile Number</Label>
+                    <Input
+                        id="recovery-number"
+                        type="tel"
+                        value={recoveryNumber}
+                        onChange={(e) => setRecoveryNumber(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleRecoveryCheck()}
+                        autoFocus
+                    />
+                </div>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setShowForgotPassword(false)} disabled={isLoading}>Back to Login</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleRecoveryCheck} disabled={isLoading}>
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Verify
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+      </>
     );
   };
 
