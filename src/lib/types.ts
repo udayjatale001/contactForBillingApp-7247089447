@@ -4,9 +4,13 @@ import { z } from 'zod';
 export const billingSchema = z.object({
   customerName: z
     .string({ required_error: 'Customer name is required.' })
-    .min(2, { message: 'Customer name must be at least 2 characters.' }),
+    .min(1, { message: 'Customer name cannot be empty.' }),
   roomNumber: z.string().optional(),
-  contactNumber: z.string().optional(),
+  contactNumber: z.string()
+    .optional()
+    .refine((val) => val === '' || val === undefined || /^\d{10}$/.test(val), {
+      message: 'Contact number must be exactly 10 digits.',
+    }),
   inCarat: z.coerce
     .number()
     .nonnegative({ message: 'In Carat cannot be negative.' }).optional(),

@@ -77,7 +77,7 @@ export function BillingForm() {
     mode: 'onBlur',
   });
 
-  const { watch, setValue, formState: { errors } } = form;
+  const { watch, setValue, trigger, getValues } = form;
   
   // Watch all relevant fields
   const watchedValues = watch();
@@ -191,12 +191,16 @@ export function BillingForm() {
             addDocumentNonBlocking(collection(firestore, 'labours'), newLabourRecord);
         }
         
-        // 4. Reset the form
+        // 4. Trigger print
+        window.print();
+
+        // 5. Reset the form
         form.reset(defaultFormValues);
+        setGeneratedBill(null);
 
         toast({
-          title: 'Bill Saved!',
-          description: 'The bill and associated records have been saved.',
+          title: 'Bill Saved & Printed!',
+          description: 'The bill has been saved and the print dialog opened.',
         });
     }
   };
@@ -206,6 +210,21 @@ export function BillingForm() {
       setGeneratedBill(null);
     }
   }
+
+  const capitalizeFirstLetter = (string: string) => {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  };
+  
+  const handleCustomerNameBlur = async () => {
+    // Manually trigger validation for the field
+    await trigger('customerName');
+    // Get the current value
+    const currentValue = getValues('customerName');
+    // Capitalize and set the new value
+    setValue('customerName', capitalizeFirstLetter(currentValue), { shouldValidate: true });
+  };
+
 
   async function onSubmit(data: BillingFormValues) {
     setIsSubmitting(true);
@@ -305,7 +324,7 @@ export function BillingForm() {
                                 <FormItem>
                                 <FormLabel>Customer Name</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Enter customer's name" {...field} />
+                                    <Input placeholder="Enter customer's name" {...field} onBlur={handleCustomerNameBlur} />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -632,8 +651,9 @@ export function BillingForm() {
           bill={generatedBill}
           open={!!generatedBill}
           onOpenChange={handleDialogClose}
-          onSave={async () => handleDialogClose()}
-          isSavingDisabled={true}
+          onSave={handleSaveAndPrint}
+          isSaving={false} // This can be managed if printing has a loading state
+          isSavingDisabled={false}
         />
       )}
     </>
