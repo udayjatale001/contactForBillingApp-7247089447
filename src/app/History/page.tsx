@@ -42,6 +42,7 @@ import {
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, getDoc, doc, deleteDoc, writeBatch, getDocs } from 'firebase/firestore';
 import { BillSummaryDialog } from '@/components/bill-summary-dialog';
+import { TokenSummaryDialog } from '@/components/token-summary-dialog';
 import { cn } from '@/lib/utils';
 import { isSameDay, format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -323,6 +324,7 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
   const [tokenToDelete, setTokenToDelete] = React.useState<Token | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [selectedToken, setSelectedToken] = React.useState<Token | null>(null);
 
   const collectionPath = React.useMemo(() => {
     if (isOwner === null || !user) return null;
@@ -350,6 +352,10 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
       return nameMatch && dateMatch;
     });
   }, [tokens, searchTerm, selectedDate]);
+  
+  const handleRowClick = (token: Token) => {
+    setSelectedToken(token);
+  };
   
   const handleDeleteClick = (e: React.MouseEvent, token: Token) => {
     e.stopPropagation();
@@ -473,7 +479,11 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
                 </TableHeader>
                 <TableBody>
                   {filteredTokens.map((token) => (
-                    <TableRow key={token.id}>
+                    <TableRow 
+                      key={token.id}
+                      onClick={() => handleRowClick(token)}
+                      className="cursor-pointer"
+                    >
                       <TableCell>{token.customerName}</TableCell>
                       <TableCell>{token.inCarat || 'N/A'}</TableCell>
                       <TableCell>{token.roomNumber || 'N/A'}</TableCell>
@@ -531,6 +541,15 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {selectedToken && (
+        <TokenSummaryDialog
+            token={selectedToken}
+            open={!!selectedToken}
+            onOpenChange={() => setSelectedToken(null)}
+            onPrint={() => window.print()}
+        />
+      )}
     </>
   )
 }
