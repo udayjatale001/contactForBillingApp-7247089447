@@ -177,7 +177,7 @@ service cloud.firestore {
         allow read: if isSignedIn();
         allow create: if isSignedIn() && isValidNotificationCreate();
         allow update: if false;
-        allow delete: if isSignedIn();
+        allow delete: if isSignedIn() || isOwnerRole();
     }
 
     /**
