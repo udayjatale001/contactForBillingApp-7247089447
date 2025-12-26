@@ -157,7 +157,7 @@ export function BillingForm() {
   }, [paymentMode, form]);
 
 
-  const handleSaveBill = async () => {
+  const handleSaveAndPrint = async () => {
     if (generatedBill && user && firestore) {
         // 1. Save the bill documents
         addDocumentNonBlocking(collection(firestore, 'managers', user.uid, 'bills'), generatedBill);
@@ -190,6 +190,9 @@ export function BillingForm() {
             };
             addDocumentNonBlocking(collection(firestore, 'labours'), newLabourRecord);
         }
+        
+        // 4. Reset the form
+        form.reset(defaultFormValues);
 
         toast({
           title: 'Bill Saved!',
@@ -198,9 +201,10 @@ export function BillingForm() {
     }
   };
 
-  const handleCloseDialog = () => {
-    setGeneratedBill(null);
-    form.reset(defaultFormValues);
+  const handleDialogClose = (open: boolean) => {
+    if (!open) {
+      setGeneratedBill(null);
+    }
   }
 
   async function onSubmit(data: BillingFormValues) {
@@ -627,8 +631,8 @@ export function BillingForm() {
         <BillSummaryDialog
           bill={generatedBill}
           open={!!generatedBill}
-          onOpenChange={handleCloseDialog}
-          onSave={handleSaveBill}
+          onOpenChange={handleDialogClose}
+          onSaveAndPrint={handleSaveAndPrint}
         />
       )}
     </>

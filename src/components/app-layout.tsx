@@ -106,8 +106,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       ownerOnly: false,
     },
     {
-      href: '/suyash',
-      label: 'Suyash',
+      href: '/History',
+      label: 'History',
       icon: User,
       ownerOnly: false,
     },
