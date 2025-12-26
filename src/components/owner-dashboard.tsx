@@ -49,11 +49,12 @@ import {
   Wrench,
   ClipboardList,
   Phone,
+  TrendingUp,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import type { Bill, AppSettings } from '@/lib/types';
-import { format, getYear, getMonth } from 'date-fns';
+import { format, getYear, getMonth, subHours } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
 import { Input } from './ui/input';
@@ -208,6 +209,9 @@ export function OwnerDashboard() {
     totalDue,
     totalSales,
     totalLabour,
+    todaysRevenue,
+    todaysLabourCost,
+    todaysNetProfit,
     inactiveCustomers,
     monthlyData,
     yearlyData,
@@ -223,6 +227,9 @@ export function OwnerDashboard() {
       totalDue: 0,
       totalSales: 0,
       totalLabour: 0,
+      todaysRevenue: 0,
+      todaysLabourCost: 0,
+      todaysNetProfit: 0,
       inactiveCustomers: 0,
       monthlyData: ALL_MONTHS.map(month => ({ month, total: 0 })),
       yearlyData: [],
@@ -236,6 +243,15 @@ export function OwnerDashboard() {
     if (!allBills) {
       return initialResult;
     }
+
+    const now = new Date();
+    const twentyFourHoursAgo = subHours(now, 24);
+
+    const todaysBills = allBills.filter(bill => new Date(bill.createdAt) >= twentyFourHoursAgo);
+
+    const todaysRevenue = todaysBills.reduce((acc, bill) => acc + bill.paidAmount, 0);
+    const todaysLabourCost = todaysBills.reduce((acc, bill) => acc + (bill.totalLabourAmount || 0), 0);
+    const todaysNetProfit = todaysRevenue - todaysLabourCost;
 
     const years = new Set<string>();
     allBills.forEach(bill => years.add(getYear(new Date(bill.createdAt)).toString()));
@@ -356,6 +372,9 @@ export function OwnerDashboard() {
       totalDue,
       totalSales,
       totalLabour,
+      todaysRevenue,
+      todaysLabourCost,
+      todaysNetProfit,
       inactiveCustomers: inactiveCount,
       monthlyData: formattedMonthlyData,
       yearlyData: formattedYearlyData,
@@ -421,6 +440,46 @@ export function OwnerDashboard() {
 
   return (
     <div className="space-y-4">
+       {/* Today's Profit Section */}
+      <Card>
+        <CardHeader className='pb-2'>
+            <CardTitle className='flex items-center gap-2 text-base'>
+                <TrendingUp className='h-5 w-5' />
+                Today (Last 24 Hours)
+            </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-3">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{todaysRevenue.toLocaleString()}rs</div>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Today's Labour Cost</CardTitle>
+                    <Wrench className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{todaysLabourCost.toLocaleString()}rs</div>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Today's Net Profit</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold text-green-600">{todaysNetProfit.toLocaleString()}rs</div>
+                </CardContent>
+            </Card>
+        </CardContent>
+      </Card>
+
+
       {/* Global Filters */}
       <Card>
         <CardHeader className='pb-2'>
@@ -764,5 +823,3 @@ export function OwnerDashboard() {
     </div>
   );
 }
-
-    
