@@ -51,6 +51,8 @@ import {
   Phone,
   TrendingUp,
   X,
+  MessageSquare,
+  Trash2,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
@@ -180,6 +182,7 @@ export function OwnerDashboard() {
   const { toast } = useToast();
   const [remindersState, setRemindersState] = React.useState<{ [key: string]: 'sending' | 'sent' | 'error' }>({});
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
+  const [dismissedCustomers, setDismissedCustomers] = React.useState<string[]>([]);
   
   const [selectedYear, setSelectedYear] = React.useState<string>(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = React.useState<string>((new Date().getMonth() + 1).toString().padStart(2, '0'));
@@ -376,7 +379,9 @@ export function OwnerDashboard() {
       }
     });
 
-    const customersWithDue = Object.values(aggregatedDueCustomers).sort((a, b) => b.totalDueAmount - a.totalDueAmount);
+    const customersWithDue = Object.values(aggregatedDueCustomers)
+      .filter(customer => !dismissedCustomers.includes(customer.customerName))
+      .sort((a, b) => b.totalDueAmount - a.totalDueAmount);
 
     return {
       totalAmount,
@@ -396,8 +401,29 @@ export function OwnerDashboard() {
       recentBills: filteredBills.slice(0, 5),
       availableYears: allAvailableYears,
     };
-  }, [allBills, selectedYear, selectedMonth, selectedDate]);
+  }, [allBills, selectedYear, selectedMonth, selectedDate, dismissedCustomers]);
 
+  const handleDismissCustomer = (customerName: string) => {
+    setDismissedCustomers(prev => [...prev, customerName]);
+  };
+
+  const handleWhatsAppReminder = (customer: AggregatedDueCustomer) => {
+    if (!customer.contactNumber) {
+      toast({
+        variant: 'destructive',
+        title: 'No Contact Number',
+        description: `Cannot send reminder to ${customer.customerName} as there is no number on file.`,
+      });
+      return;
+    }
+    const message = `🍎 Ananad Sagar Fresh Fruits 🍎
+This is a gentle reminder that your payment is pending. 💰
+Please clear the due amount at your earliest convenience. 😊
+Thank you.`;
+
+    const whatsappUrl = `https://wa.me/91${customer.contactNumber}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   const handleSendReminder = async (customer: AggregatedDueCustomer) => {
     setRemindersState(prev => ({ ...prev, [customer.customerName]: 'sending' }));
@@ -672,8 +698,7 @@ export function OwnerDashboard() {
                             <TableRow>
                                 <TableHead>Customer</TableHead>
                                 <TableHead>Total Due</TableHead>
-                                <TableHead>Contact</TableHead>
-                                <TableHead className="text-right">Action</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -688,28 +713,26 @@ export function OwnerDashboard() {
                                 <TableCell>
                                     <Badge variant="destructive">{customer.totalDueAmount.toLocaleString()}rs</Badge>
                                 </TableCell>
-                                <TableCell>
-                                    {customer.contactNumber ? (
-                                        <Button asChild variant="ghost" size="sm" className="flex items-center gap-2">
-                                            <a href={`tel:${customer.contactNumber}`}>
-                                                <Phone className="h-4 w-4" />
-                                                {customer.contactNumber}
-                                            </a>
-                                        </Button>
-                                    ) : (
-                                        <span className="text-xs text-muted-foreground">No contact</span>
-                                    )}
-                                </TableCell>
                                 <TableCell className="text-right">
-                                     <Button 
-                                        size="sm"
-                                        onClick={() => handleSendReminder(customer)}
-                                        disabled={!isOwner || remindersState[customer.customerName] === 'sending'}
-                                     >
-                                         {remindersState[customer.customerName] === 'sending' ? (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                         ) : 'Send Reminder'}
-                                    </Button>
+                                     <div className="flex items-center justify-end gap-2">
+                                        <Button 
+                                            size="icon" 
+                                            variant="ghost" 
+                                            onClick={() => handleWhatsAppReminder(customer)}
+                                            disabled={!customer.contactNumber}
+                                            title="Send WhatsApp Reminder"
+                                        >
+                                            <MessageSquare className="h-4 w-4 text-green-600" />
+                                        </Button>
+                                        <Button 
+                                            size="icon" 
+                                            variant="ghost"
+                                            onClick={() => handleDismissCustomer(customer.customerName)}
+                                            title="Dismiss Reminder"
+                                        >
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                             ))}
@@ -890,5 +913,7 @@ export function OwnerDashboard() {
     </div>
   );
 }
+
+    
 
     
