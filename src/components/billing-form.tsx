@@ -4,9 +4,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as React from 'react';
-import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home, Wrench, Phone } from 'lucide-react';
+import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home, Wrench, Phone, Calendar as CalendarIcon } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { collection, doc } from 'firebase/firestore';
+import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -36,6 +37,8 @@ import { useToast } from '@/hooks/use-toast';
 import { BillSummaryDialog } from './bill-summary-dialog';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, addDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
 
 
 export function BillingForm() {
@@ -56,6 +59,7 @@ export function BillingForm() {
       customerName: '',
       roomNumber: '',
       contactNumber: '',
+      createdAt: new Date(),
       inCarat: undefined,
       outCarat: undefined,
       smallCarat: undefined,
@@ -283,7 +287,7 @@ export function BillingForm() {
             dueAmount: finalDueAmount < 0 ? 0 : finalDueAmount,
             paidTo: data.paidTo,
             paymentMode: data.paymentMode,
-            createdAt: new Date().toISOString(),
+            createdAt: (data.createdAt || new Date()).toISOString(),
             ...(data.inCaratLabour && { inCaratLabour: data.inCaratLabour }),
             ...(data.inCaratLabourRate && { inCaratLabourRate: data.inCaratLabourRate }),
             ...(data.outCaratLabour && { outCaratLabour: data.outCaratLabour }),
@@ -360,6 +364,45 @@ export function BillingForm() {
                             )}
                         />
                         
+                        <FormField
+                          control={form.control}
+                          name="createdAt"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Bill Date</FormLabel>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant={"outline"}
+                                      className={cn(
+                                        "w-full text-left font-normal",
+                                        !field.value && "text-muted-foreground"
+                                      )}
+                                    >
+                                      {field.value ? (
+                                        format(field.value, "PPP")
+                                      ) : (
+                                        <span>Pick a date</span>
+                                      )}
+                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
                         <FormField
                             control={form.control}
                             name="inCarat"

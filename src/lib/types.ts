@@ -11,6 +11,7 @@ export const billingSchema = z.object({
     .refine((val) => val === '' || val === undefined || /^\d{10}$/.test(val), {
       message: 'Contact number must be exactly 10 digits.',
     }),
+  createdAt: z.date().optional(), // New field for bill date
   inCarat: z.coerce
     .number()
     .nonnegative({ message: 'In Carat cannot be negative.' }).optional(),
