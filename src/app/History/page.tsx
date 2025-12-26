@@ -53,7 +53,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
-import withPasswordProtection from '@/components/with-password-protection';
 
 function HistoryPage() {
   const { user, isUserLoading } = useUser();
@@ -335,4 +334,4 @@ function HistoryPage() {
   );
 }
 
-export default withPasswordProtection(HistoryPage);
+export default HistoryPage;
