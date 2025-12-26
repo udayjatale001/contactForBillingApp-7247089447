@@ -32,7 +32,7 @@ export const billingSchema = z.object({
   paidAmount: z.coerce
     .number()
     .nonnegative({ message: 'Paid amount cannot be negative.' }).optional(),
-  paidTo: z.enum(['Gopal Dada', 'Yuvraj Dada', 'Suyash Dada', 'Gaju Dada'], {
+  paidTo: z.enum(['Gopal Temkar', 'Yuvaraj Temkar', 'Suyash Temkar', 'Gaju Dada'], {
     required_error: 'You need to select who was paid.',
   }),
   paymentMode: z.enum(['Online Payment', 'Cash', 'Due'], {

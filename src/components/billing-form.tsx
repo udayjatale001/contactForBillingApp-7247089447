@@ -64,7 +64,7 @@ export function BillingForm() {
       bigCaratRate: undefined,
       paidAmount: undefined,
       paymentMode: 'Cash' as 'Cash' | 'Online Payment' | 'Due',
-      paidTo: 'Gopal Dada' as 'Gopal Dada' | 'Yuvraj Dada' | 'Suyash Dada' | 'Gaju Dada',
+      paidTo: 'Gopal Temkar' as 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gaju Dada',
       inCaratLabour: undefined,
       inCaratLabourRate: 1.5,
       outCaratLabour: undefined,
@@ -526,9 +526,9 @@ export function BillingForm() {
                                     </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                    <SelectItem value="Gopal Dada">Gopal Dada</SelectItem>
-                                    <SelectItem value="Yuvraj Dada">Yuvraj Dada</SelectItem>
-                                    <SelectItem value="Suyash Dada">Suyash Dada</SelectItem>
+                                    <SelectItem value="Gopal Temkar">Gopal Temkar</SelectItem>
+                                    <SelectItem value="Yuvaraj Temkar">Yuvaraj Temkar</SelectItem>
+                                    <SelectItem value="Suyash Temkar">Suyash Temkar</SelectItem>
                                     <SelectItem value="Gaju Dada">Gaju Dada</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -632,7 +632,8 @@ export function BillingForm() {
           bill={generatedBill}
           open={!!generatedBill}
           onOpenChange={handleDialogClose}
-          onSaveAndPrint={handleSaveAndPrint}
+          onSave={async () => handleDialogClose()}
+          isSavingDisabled={true}
         />
       )}
     </>
