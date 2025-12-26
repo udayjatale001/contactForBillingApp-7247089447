@@ -51,6 +51,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Checkbox } from '@/components/ui/checkbox';
 import withPasswordProtection from '@/components/with-password-protection';
+import { ParsedNotification } from '@/components/parsed-notification';
 
 function NotificationsPage() {
   const firestore = useFirestore();
@@ -223,14 +224,12 @@ function NotificationsPage() {
                     aria-label={`Select notification ${notification.id}`}
                     className='mt-1'
                 />
-                <div className="bg-secondary p-3 rounded-full">
+                <div className="bg-secondary p-3 rounded-full mt-1">
                   <Bell className="h-5 w-5 text-secondary-foreground" />
                 </div>
                 <div className="flex-1 space-y-1">
-                  <p className="font-medium text-foreground leading-snug">
-                    {notification.message}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
+                  <ParsedNotification message={notification.message} />
+                  <p className="text-sm text-muted-foreground pt-1">
                     {new Date(notification.createdAt).toLocaleString()} (
                     {formatDistanceToNow(new Date(notification.createdAt), {
                       addSuffix: true,

@@ -11,6 +11,7 @@ import { Loader2, Bell, FileText } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { Button } from './ui/button';
+import { ParsedNotification } from './parsed-notification';
 
 export function NotificationsFeed() {
   const firestore = useFirestore();
@@ -39,15 +40,15 @@ export function NotificationsFeed() {
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : notifications && notifications.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {notifications.map((notification) => (
               <div key={notification.id} className="flex items-start gap-4">
-                <div className="bg-primary/10 p-2 rounded-full">
+                <div className="bg-primary/10 p-3 rounded-full mt-1">
                    <Bell className="h-5 w-5 text-primary" />
                 </div>
                 <div className='flex-1'>
-                  <p className="text-sm text-foreground">{notification.message}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <ParsedNotification message={notification.message} />
+                  <p className="text-xs text-muted-foreground pt-1">
                     {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                   </p>
                 </div>
