@@ -20,16 +20,31 @@ import {
 import { Badge } from '@/components/ui/badge';
 import type { Bill } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import { FileText, Loader2, Search } from 'lucide-react';
+import {
+  FileText,
+  Loader2,
+  Search,
+  Calendar as CalendarIcon,
+  X,
+} from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, getDoc, doc } from 'firebase/firestore';
 import { BillSummaryDialog } from '@/components/bill-summary-dialog';
 import { cn } from '@/lib/utils';
+import { isSameDay, format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 export default function HistoryPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
   const [selectedBill, setSelectedBill] = React.useState<Bill | null>(null);
 
@@ -61,10 +76,14 @@ export default function HistoryPage() {
 
   const filteredBills = React.useMemo(() => {
     if (!bills) return [];
-    return bills.filter(bill =>
-      bill.customerName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [bills, searchTerm]);
+    return bills.filter(bill => {
+      const nameMatch = bill.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      const dateMatch = selectedDate
+        ? isSameDay(new Date(bill.createdAt), selectedDate)
+        : true;
+      return nameMatch && dateMatch;
+    });
+  }, [bills, searchTerm, selectedDate]);
   
   const handleRowClick = (bill: Bill) => {
     setSelectedBill(bill);
@@ -90,14 +109,55 @@ export default function HistoryPage() {
             <CardDescription>
               A complete record of all generated bills. Click on a row to see details.
             </CardDescription>
-            <div className="relative pt-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  placeholder="Search by customer name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+            <div className="border-t pt-4 mt-4">
+              <div className="flex flex-col md:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by customer name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={'outline'}
+                        className={cn(
+                          'w-full justify-start text-left font-normal',
+                          !selectedDate && 'text-muted-foreground'
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {selectedDate ? (
+                          format(selectedDate, 'PPP')
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={setSelectedDate}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {selectedDate && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedDate(undefined)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -143,7 +203,7 @@ export default function HistoryPage() {
                   <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
                   <h3 className="mt-4 text-lg font-semibold">No Bills Found</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                      Your search for "{searchTerm}" did not return any results.
+                      Your search did not return any results.
                   </p>
               </div>
             )}
