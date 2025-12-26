@@ -39,120 +39,126 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     })
   }
 
-  const DetailItem = ({ label, value, className }: { label: string, value: React.ReactNode, className?: string}) => (
-    <div className={cn(`flex justify-between items-baseline py-1`, className)}>
+  const DetailItem = ({ label, value, className, valueClassName }: { label: string, value: React.ReactNode, className?: string, valueClassName?: string }) => (
+    <div className={cn("flex justify-between items-center", className)}>
       <p className="text-sm text-muted-foreground">{label}</p>
-      <div className="text-sm font-medium text-right">{value}</div>
+      <p className={cn("text-sm font-medium", valueClassName)}>{value}</p>
     </div>
   );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0">
+      <DialogContent className="sm:max-w-lg p-0">
         <style>
           {`
             @media print {
-              body > *, .print-hidden {
+              body, body > *, .print-hidden {
                 visibility: hidden;
               }
               #bill-receipt-container, #bill-receipt-container * {
                 visibility: visible;
               }
-              #bill-receipt-container {
+               #bill-receipt-container {
                 position: absolute;
                 left: 0;
                 top: 0;
                 width: 100%;
-                height: 100%;
-                display: flex;
-                justify-content: center;
-                align-items: flex-start;
+                height: 100vh;
+                display: block;
                 padding: 0;
                 margin: 0;
                 background: white;
+                overflow: visible;
               }
                #bill-receipt {
                   width: 100%;
                   border: none;
                   box-shadow: none;
                   margin: 0;
-                  padding: 1rem;
-                  font-size: 12px; /* Adjust font size for printing */
-               }
-               .print-only-text {
-                   font-size: 10px;
+                  padding: 1.5rem;
+                  font-size: 14px;
                }
             }
           `}
         </style>
-        {/* This outer container is used by the print styles */}
         <div id="bill-receipt-container">
-          <div className="p-6" id="bill-receipt">
-              {/* Header */}
-              <div className="text-center mb-4">
-                  <h2 className="text-xl font-bold">Anand Sagar Ripening Chamber</h2>
-                  <p className="text-sm text-muted-foreground">Ichapur Road, Shahpur</p>
+          <div className="p-6 bg-white rounded-lg" id="bill-receipt">
+            {/* Header */}
+            <header className="flex justify-between items-start mb-6 pb-4 border-b">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800">Anand Sagar Ripening Chamber</h1>
+                <p className="text-sm text-gray-500">Ichapur Road, Shahpur</p>
               </div>
-              <Separator className="my-3"/>
-              {/* Bill Info */}
-              <div className='flex justify-between text-xs text-muted-foreground mb-3'>
-                  <span>Bill No: A...{bill.id.slice(-6).toUpperCase()}</span>
-                  <span>{new Date(bill.createdAt).toLocaleDateString()}</span>
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Bill No: #{bill.id.slice(-6).toUpperCase()}</p>
+                <p className="text-sm text-gray-500">Date: {new Date(bill.createdAt).toLocaleDateString()}</p>
               </div>
-              
+            </header>
+
+            <main className="space-y-6">
               {/* Customer Details */}
-              <div className='mb-4'>
-                <h3 className='font-semibold text-md mb-1 border-b pb-1'>Customer Details</h3>
-                <DetailItem label="Name" value={bill.customerName} />
-                {bill.roomNumber && <DetailItem label="Room Number" value={bill.roomNumber} />}
-                {bill.contactNumber && <DetailItem label="Contact" value={bill.contactNumber} />}
-              </div>
-             
-              {/* Carat Details Table */}
-              <div className='mb-4'>
-                <h3 className='font-semibold text-md mb-2 border-b pb-1'>Carat & Labour Details</h3>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h2 className="text-lg font-bold text-gray-700 mb-2">Customer Details</h2>
                 <div className="space-y-1">
-                    {bill.inCarat && bill.inCarat > 0 && <DetailItem label="In Carat" value={bill.inCarat} />}
-                    {bill.outCarat && bill.outCarat > 0 && <DetailItem label="Out Carat" value={bill.outCarat} />}
-                    {bill.smallCarat && bill.smallCarat > 0 && <DetailItem label="Small Carat" value={`${bill.smallCarat} × ${bill.smallCaratRate}rs`} />}
-                    {bill.bigCarat && bill.bigCarat > 0 && <DetailItem label="Big Carat" value={`${bill.bigCarat} × ${bill.bigCaratRate}rs`} />}
+                  <DetailItem label="Name" value={bill.customerName} />
+                  {bill.roomNumber && <DetailItem label="Room Number" value={bill.roomNumber} />}
+                  {bill.contactNumber && <DetailItem label="Contact" value={bill.contactNumber} />}
+                </div>
+              </div>
+
+              {/* Carat Details */}
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h2 className="text-lg font-bold text-gray-700 mb-3">Carat Details</h2>
+                <div className="space-y-3">
+                  {bill.inCarat && bill.inCarat > 0 && <DetailItem label="In Carat" value={bill.inCarat} />}
+                  {bill.outCarat && bill.outCarat > 0 && <DetailItem label="Out Carat" value={bill.outCarat} />}
+
+                  {bill.smallCarat && bill.smallCarat > 0 && (
+                    <DetailItem
+                      label="Small Carat"
+                      value={`${bill.smallCarat} at per carat ₹${bill.smallCaratRate}`}
+                    />
+                  )}
+                  {bill.bigCarat && bill.bigCarat > 0 && (
+                     <DetailItem
+                      label="Big Carat"
+                      value={`${bill.bigCarat} at per carat ₹${bill.bigCaratRate}`}
+                    />
+                  )}
+                   <Separator className="my-2" />
+                  <DetailItem label="Total Amount" value={`₹${bill.totalAmount.toLocaleString()}`} valueClassName="text-lg font-bold text-gray-800" />
+                  <DetailItem label="Paid Amount" value={`₹${bill.paidAmount.toLocaleString()}`} />
+                  <DetailItem 
+                    label="Due Amount" 
+                    value={`₹${bill.dueAmount.toLocaleString()}`} 
+                    valueClassName={cn("font-bold", bill.dueAmount > 0 ? "text-red-600" : "text-green-600")} 
+                  />
                 </div>
               </div>
               
-              <Separator className="my-3" />
-
-              {/* Amount Summary */}
-              <div className="space-y-2">
-                 <DetailItem label="Total Amount" value={`${bill.totalAmount.toLocaleString()}rs`} className="font-bold text-lg"/>
-                 <DetailItem label="Paid Amount" value={`${bill.paidAmount.toLocaleString()}rs`} />
-                 <DetailItem label="Due Amount" value={<Badge variant={bill.dueAmount > 0 ? "destructive" : "default"}>{bill.dueAmount.toLocaleString()}rs</Badge>} />
+              {/* Payment Details */}
+              <div className="p-4 bg-gray-50 rounded-lg">
+                 <h2 className="text-lg font-bold text-gray-700 mb-2">Payment Details</h2>
+                 <div className="space-y-1">
+                    <DetailItem label="Paid To" value={bill.paidTo} />
+                    <DetailItem label="Payment Method" value={bill.paymentMode} />
+                    <DetailItem label="Date & Time" value={new Date(bill.createdAt).toLocaleString()} />
+                 </div>
               </div>
-              
-              {/* Internal Labour Info */}
-              {bill.totalLabourAmount && bill.totalLabourAmount > 0 && (
-                <div className='text-center text-xs text-muted-foreground pt-3 italic print-only-text'>
-                    (Internal Labour Cost: {bill.totalLabourAmount.toLocaleString()}rs)
-                </div>
-              )}
+            </main>
 
-              <Separator className="my-3" />
-
-               {/* Payment Details */}
-              <div className='mb-4'>
-                <DetailItem label="Paid To" value={bill.paidTo} />
-                <DetailItem label="Payment Method" value={bill.paymentMode} />
-                <DetailItem label="Date" value={new Date(bill.createdAt).toLocaleString()} />
+            {/* Footer */}
+            <footer className="mt-10 pt-6 border-t flex justify-between items-center">
+              <div className="text-center">
+                <p className="text-sm text-gray-500">Seal / Signature</p>
               </div>
-
-              {/* Footer */}
-              <div className="pt-12 pb-2 text-center">
-                  <div className="border-t border-dashed w-1/2 mx-auto"></div>
-                  <p className="text-xs text-muted-foreground mt-2">Seal / Signature</p>
-                  <p className="text-xs text-muted-foreground mt-4">Thank you for your business!</p>
+              <div className="text-sm text-gray-600">
+                Thank You 😊
               </div>
+            </footer>
           </div>
         </div>
-        <DialogFooter className="px-6 pb-4 sm:justify-between pt-4 rounded-b-lg border-t print-hidden">
+        <DialogFooter className="px-6 pb-4 sm:justify-between pt-4 rounded-b-lg border-t print-hidden bg-gray-50">
           <DialogClose asChild>
             <Button variant="outline" className='flex-1'>
                 <X className="mr-2 h-4 w-4" />
