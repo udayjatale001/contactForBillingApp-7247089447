@@ -87,12 +87,14 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0">
+      <DialogContent className="sm:max-w-lg p-0 print:border-none print:shadow-none print:bg-white">
         <style>
           {`
             @media print {
               body, body > *, .print-hidden {
                 visibility: hidden;
+                margin: 0;
+                padding: 0;
               }
               #bill-receipt-container, #bill-receipt-container * {
                 visibility: visible;
@@ -101,8 +103,10 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                 position: absolute;
                 left: 0;
                 top: 0;
+                right: 0;
                 width: 100%;
-                height: 100vh;
+                height: auto;
+                min-height: 100vh;
                 display: block;
                 padding: 0;
                 margin: 0;
@@ -116,6 +120,9 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                   margin: 0;
                   padding: 1.5rem;
                   font-size: 14px;
+               }
+               .print-hidden {
+                 display: none;
                }
             }
           `}
@@ -172,6 +179,9 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                     value={`₹${bill.dueAmount.toLocaleString()}`} 
                     valueClassName={cn("font-bold", bill.dueAmount > 0 ? "text-red-600" : "text-green-600")} 
                   />
+                   {bill.totalLabourAmount && bill.totalLabourAmount > 0 && (
+                    <p className="text-xs italic text-gray-500 pt-2">(Internal Labour Cost: ₹{bill.totalLabourAmount.toLocaleString()})</p>
+                  )}
                 </div>
               </div>
               
