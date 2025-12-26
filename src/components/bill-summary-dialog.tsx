@@ -49,18 +49,14 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     let caratDetails = '*Carat Details:*\n';
     if (bill.inCarat) caratDetails += `In Carat: ${bill.inCarat}\n`;
     if (bill.outCarat) caratDetails += `Out Carat: ${bill.outCarat}\n`;
-    if (bill.smallCarat) caratDetails += `Small Carat: ${bill.smallCarat} at per carat ${bill.smallCaratRate}rs\n`;
-    if (bill.bigCarat) caratDetails += `Big Carat: ${bill.bigCarat} at per carat ${bill.bigCaratRate}rs\n\n`;
+    if (bill.smallCarat) caratDetails += `${bill.smallCaratRate}kg Carat: ${bill.smallCarat} at per carat ${bill.smallCaratRate}rs\n`;
+    if (bill.bigCarat) caratDetails += `${bill.bigCaratRate}kg Carat: ${bill.bigCarat} at per carat ${bill.bigCaratRate}rs\n\n`;
     
     let amountSummary = `*Amount Summary:*\n`;
     amountSummary += `Total Amount: ${bill.totalAmount.toLocaleString()}rs\n`;
     amountSummary += `Paid Amount: ${bill.paidAmount.toLocaleString()}rs\n`;
     amountSummary += `*Due Amount: ${bill.dueAmount.toLocaleString()}rs*\n\n`;
     
-    if (bill.totalLabourAmount && bill.totalLabourAmount > 0) {
-      amountSummary += `_(Internal Labour Cost: ${bill.totalLabourAmount.toLocaleString()}rs)_\n\n`;
-    }
-
     const paymentDetails = `*Payment Details:*\nPaid To: ${bill.paidTo}\nMethod: ${bill.paymentMode}\nDate: ${new Date(bill.createdAt).toLocaleString()}\n\n`;
     const footer = `Thank you for your business! 😊`;
 
@@ -161,13 +157,13 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
 
                   {bill.smallCarat && bill.smallCarat > 0 && (
                     <DetailItem
-                      label="Small Carat"
+                      label={`${bill.smallCaratRate}kg Carat`}
                       value={`${bill.smallCarat} at per carat ${bill.smallCaratRate}rs`}
                     />
                   )}
                   {bill.bigCarat && bill.bigCarat > 0 && (
                      <DetailItem
-                      label="Big Carat"
+                      label={`${bill.bigCaratRate}kg Carat`}
                       value={`${bill.bigCarat} at per carat ${bill.bigCaratRate}rs`}
                     />
                   )}
@@ -179,9 +175,6 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                     value={`${bill.dueAmount.toLocaleString()}rs`} 
                     valueClassName={cn("font-bold", bill.dueAmount > 0 ? "text-red-600" : "text-green-600")} 
                   />
-                   {bill.totalLabourAmount && bill.totalLabourAmount > 0 && (
-                    <p className="text-xs italic text-gray-500 pt-2">(Internal Labour Cost: {bill.totalLabourAmount.toLocaleString()}rs)</p>
-                  )}
                 </div>
               </div>
               
@@ -189,7 +182,6 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               <div className="p-4 bg-gray-50 rounded-lg">
                  <h2 className="text-lg font-bold text-gray-700 mb-2">Payment Details</h2>
                  <div className="space-y-1">
-                    <DetailItem label="Paid To" value={bill.paidTo} />
                     <DetailItem label="Payment Method" value={bill.paymentMode} />
                     <DetailItem label="Date & Time" value={new Date(bill.createdAt).toLocaleString()} />
                  </div>
