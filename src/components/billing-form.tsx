@@ -7,7 +7,7 @@ import * as React from 'react';
 import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home, Wrench, Phone, Calendar as CalendarIcon } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { collection, doc } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { format, setHours, setMinutes } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -168,13 +168,17 @@ export function BillingForm() {
         addDocumentNonBlocking(collection(firestore, 'bills'), generatedBill);
 
         // 2. Create and save the notification
-        const notificationMessage = `${generatedBill.customerName} paid ${generatedBill.paidAmount}rs for ${generatedBill.totalCarat} carats to ${generatedBill.paidTo} via ${generatedBill.paymentMode}. Due amount is ${generatedBill.dueAmount}rs.`;
         const newNotification: Notification = {
             id: uuidv4(),
             billId: generatedBill.id,
             managerId: user.uid,
-            message: notificationMessage,
             createdAt: new Date().toISOString(),
+            customerName: generatedBill.customerName,
+            paidAmount: generatedBill.paidAmount,
+            dueAmount: generatedBill.dueAmount,
+            totalCarat: generatedBill.totalCarat,
+            paidTo: generatedBill.paidTo,
+            paymentMode: generatedBill.paymentMode
         };
         addDocumentNonBlocking(collection(firestore, 'notifications'), newNotification);
 
@@ -308,6 +312,15 @@ export function BillingForm() {
       setIsSubmitting(false);
     }
   }
+  
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>, date: Date | undefined) => {
+    const { value } = e.target;
+    if (value && date) {
+      const [hours, minutes] = value.split(':');
+      const newDate = setHours(setMinutes(date, parseInt(minutes)), parseInt(hours));
+      setValue('createdAt', newDate, { shouldValidate: true });
+    }
+  };
 
   return (
     <>
@@ -369,36 +382,46 @@ export function BillingForm() {
                           name="createdAt"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Bill Date</FormLabel>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <FormControl>
-                                    <Button
-                                      variant={"outline"}
-                                      className={cn(
-                                        "w-full text-left font-normal",
-                                        !field.value && "text-muted-foreground"
-                                      )}
-                                    >
-                                      {field.value ? (
-                                        format(field.value, "PPP")
-                                      ) : (
-                                        <span>Pick a date</span>
-                                      )}
-                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                  </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                  <Calendar
-                                    mode="single"
-                                    selected={field.value}
-                                    onSelect={field.onChange}
-                                    initialFocus
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                              <FormMessage />
+                              <FormLabel>Bill Date & Time</FormLabel>
+                              <div className='flex gap-2'>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <FormControl>
+                                      <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                          "w-full text-left font-normal",
+                                          !field.value && "text-muted-foreground"
+                                        )}
+                                      >
+                                        {field.value ? (
+                                          format(field.value, "PP")
+                                        ) : (
+                                          <span>Pick a date</span>
+                                        )}
+                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                      </Button>
+                                    </FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                      mode="single"
+                                      selected={field.value}
+                                      onSelect={field.onChange}
+                                      initialFocus
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                                <FormControl>
+                                    <Input 
+                                        type="time" 
+                                        className='w-[120px]'
+                                        value={field.value ? format(field.value, 'HH:mm') : ''}
+                                        onChange={(e) => handleTimeChange(e, field.value)}
+                                    />
+                                </FormControl>
+                              </div>
+                               <FormMessage />
                             </FormItem>
                           )}
                         />
@@ -702,3 +725,5 @@ export function BillingForm() {
     </>
   );
 }
+
+    
