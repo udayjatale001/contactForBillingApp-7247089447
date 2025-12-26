@@ -32,6 +32,9 @@ export default function withPasswordProtection<P extends object>(
     const [isClient, setIsClient] = useState(false);
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [recoveryNumber, setRecoveryNumber] = useState('');
+    const [showCreatePassword, setShowCreatePassword] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const { toast } = useToast();
     const router = useRouter();
 
@@ -52,7 +55,6 @@ export default function withPasswordProtection<P extends object>(
             title: 'Incorrect Password',
             description: 'The password you entered is incorrect.',
           });
-          // Do not navigate away on failure, let them try again or use forgot password
         }
         setIsLoading(false);
       }, 300);
@@ -62,11 +64,11 @@ export default function withPasswordProtection<P extends object>(
         setIsLoading(true);
         setTimeout(() => {
             if (recoveryNumber === RECOVERY_PHONE_NUMBER) {
-                setIsAuthenticated(true);
-                setShowForgotPassword(false);
+                setShowForgotPassword(false); // Close recovery dialog
+                setShowCreatePassword(true);  // Open create password dialog
                 toast({
-                    title: 'Authentication Successful',
-                    description: 'Access granted.',
+                    title: 'Verification Successful',
+                    description: 'Please create a new password.',
                 });
             } else {
                 toast({
@@ -78,25 +80,49 @@ export default function withPasswordProtection<P extends object>(
             setIsLoading(false);
         }, 300);
     }
+    
+    const handleCreatePassword = () => {
+        if (newPassword !== confirmPassword) {
+            toast({
+                variant: 'destructive',
+                title: 'Passwords do not match',
+                description: 'Please ensure both passwords are the same.',
+            });
+            return;
+        }
+        if (newPassword.length < 6) {
+             toast({
+                variant: 'destructive',
+                title: 'Password too short',
+                description: 'Password must be at least 6 characters long.',
+            });
+            return;
+        }
+        // In a real app, you'd save the new password here.
+        // For this demo, we just grant access for the session.
+        setIsAuthenticated(true);
+        setShowCreatePassword(false);
+        toast({
+            title: 'Password "Reset" Successful',
+            description: 'Access granted for this session.',
+        });
+    }
 
     const handleCancel = () => {
       router.back(); // Go back to the previous page
     };
     
-    // On the server or before the client check, render nothing.
     if (!isClient) {
       return null;
     }
     
-    // If authenticated in the current render cycle, show the page.
     if (isAuthenticated) {
       return <WrappedComponent {...props} />;
     }
 
-    // Otherwise, always show the password dialog.
     return (
       <>
-        <AlertDialog open={!showForgotPassword} onOpenChange={!isAuthenticated ? handleCancel : undefined}>
+        <AlertDialog open={!isAuthenticated && !showForgotPassword && !showCreatePassword}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Authentication Required</AlertDialogTitle>
@@ -154,6 +180,46 @@ export default function withPasswordProtection<P extends object>(
                     <AlertDialogAction onClick={handleRecoveryCheck} disabled={isLoading}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Verify
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={showCreatePassword} onOpenChange={setShowCreatePassword}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Create New Password</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Enter and confirm your new password to regain access for this session.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="space-y-4 py-2">
+                    <div className="space-y-2">
+                        <Label htmlFor="new-password">New Password</Label>
+                        <Input
+                            id="new-password"
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="confirm-password">Confirm New Password</Label>
+                        <Input
+                            id="confirm-password"
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleCreatePassword()}
+                        />
+                    </div>
+                </div>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setShowCreatePassword(false)} disabled={isLoading}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleCreatePassword} disabled={isLoading}>
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Reset Password
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
