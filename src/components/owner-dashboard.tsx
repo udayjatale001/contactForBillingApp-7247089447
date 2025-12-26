@@ -339,6 +339,16 @@ export function OwnerDashboard() {
         year,
         total: yearlyLabour[year] || 0,
     }));
+
+    const formattedMonthlyData = ALL_MONTHS.map(month => ({
+      month,
+      total: monthlySalesForYear[month] || 0,
+    }));
+
+    const formattedMonthlyLabourData = ALL_MONTHS.map(month => ({
+        month,
+        total: monthlyLabourForYear[month] || 0,
+    }));
     
     // --- Due Bills Calculation ---
     const aggregatedDueCustomers: { [key: string]: AggregatedDueCustomer } = {};
