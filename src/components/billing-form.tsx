@@ -39,54 +39,7 @@ import { cn } from '@/lib/utils';
 import { useUser, useFirestore, addDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
-
-
-// Token component for printing
-const TokenToPrint = React.forwardRef<HTMLDivElement, { values: Partial<BillingFormValues> }>(({ values }, ref) => {
-    return (
-        <div ref={ref} className="p-4 border-2 border-dashed border-gray-400 rounded-lg bg-white text-black font-sans">
-            <div className="text-center pb-2 border-b border-dashed border-gray-300">
-                <h2 className="text-lg font-bold">Ananad Sagar Ripening Chamber</h2>
-                <p className="text-xs">Customer Token</p>
-            </div>
-            <div className="space-y-2 mt-3 text-sm">
-                <div className="flex justify-between">
-                    <span className="font-semibold">Date:</span>
-                    <span>{format(new Date(), 'PP')}</span>
-                </div>
-                 <div className="flex justify-between">
-                    <span className="font-semibold">Time:</span>
-                    <span>{format(new Date(), 'p')}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="font-semibold">Customer:</span>
-                    <span className="font-bold">{values.customerName || 'N/A'}</span>
-                </div>
-                 {values.roomNumber && (
-                    <div className="flex justify-between">
-                        <span className="font-semibold">Room No:</span>
-                        <span>{values.roomNumber}</span>
-                    </div>
-                 )}
-                <div className="mt-2 pt-2 border-t border-dashed border-gray-300">
-                    {typeof values.inCarat === 'number' && (
-                        <div className="flex justify-between text-base">
-                            <span className="font-semibold">In Carat:</span>
-                            <span>{values.inCarat}</span>
-                        </div>
-                    )}
-                    {typeof values.outCarat === 'number' && (
-                        <div className="flex justify-between text-base">
-                            <span className="font-semibold">Out Carat:</span>
-                            <span>{values.outCarat}</span>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-});
-TokenToPrint.displayName = 'TokenToPrint';
+import { TokenSummaryDialog } from './token-summary-dialog';
 
 
 export function BillingForm() {
@@ -94,9 +47,9 @@ export function BillingForm() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isPrintingToken, setIsPrintingToken] = React.useState(false);
+  const [isSavingToken, setIsSavingToken] = React.useState(false);
   const [generatedBill, setGeneratedBill] = React.useState<Bill | null>(null);
-  const tokenPrintRef = React.useRef<HTMLDivElement>(null);
+  const [generatedToken, setGeneratedToken] = React.useState<Token | null>(null);
 
 
   const settingsDocRef = useMemoFirebase(() => {
@@ -264,7 +217,7 @@ export function BillingForm() {
     }
   };
 
-  const handleDialogClose = (open: boolean) => {
+  const handleBillDialogClose = (open: boolean) => {
     if (!open) {
       setGeneratedBill(null);
     }
@@ -373,19 +326,19 @@ export function BillingForm() {
     }
   };
 
-  const handlePrintToken = async () => {
-    setIsPrintingToken(true);
+  const handleShowTokenDialog = async () => {
+    setIsSavingToken(true);
     const data = getValues();
 
     if (!user || !firestore) {
       toast({ variant: 'destructive', title: 'Error', description: 'User not logged in or DB not ready.'});
-      setIsPrintingToken(false);
+      setIsSavingToken(false);
       return;
     }
 
     if (!data.customerName) {
       form.setError('customerName', { type: 'manual', message: 'Customer name is required for a token.'});
-      setIsPrintingToken(false);
+      setIsSavingToken(false);
       return;
     }
     
@@ -405,11 +358,11 @@ export function BillingForm() {
         addDocumentNonBlocking(collection(firestore, 'tokens'), newToken),
         addDocumentNonBlocking(collection(firestore, 'managers', user.uid, 'tokens'), newToken)
       ]);
-
-      window.print();
+      
+      setGeneratedToken(newToken);
       
       toast({
-        title: 'Token Saved & Printed',
+        title: 'Token Saved',
         description: `Token for ${data.customerName} has been saved.`,
       });
 
@@ -420,37 +373,24 @@ export function BillingForm() {
         description: 'An error occurred while saving the token.',
       });
     } finally {
-      setIsPrintingToken(false);
+      setIsSavingToken(false);
     }
   };
+  
+  const handleTokenDialogClose = (open: boolean) => {
+      if (!open) {
+          setGeneratedToken(null);
+      }
+  }
+  
+  const handlePrintAndCloseTokenDialog = () => {
+    window.print();
+    setGeneratedToken(null);
+  };
+
 
   return (
     <>
-      <style>
-        {`
-            @media print {
-              body, body > *, .print-hidden {
-                visibility: hidden;
-                margin: 0;
-                padding: 0;
-              }
-              #token-print-area, #token-print-area * {
-                visibility: visible;
-              }
-              #token-print-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: auto;
-                background: white;
-              }
-            }
-        `}
-      </style>
-      <div id="token-print-area" className='print-hidden absolute -top-[9999px] -left-[9999px] w-[300px]'>
-          <TokenToPrint ref={tokenPrintRef} values={watchedValues} />
-      </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -584,10 +524,10 @@ export function BillingForm() {
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={handlePrintToken}
-                            disabled={isPrintingToken || (!watchedValues.customerName && !watchedValues.inCarat)}
+                            onClick={handleShowTokenDialog}
+                            disabled={isSavingToken || (!watchedValues.customerName && !watchedValues.inCarat)}
                         >
-                            {isPrintingToken ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+                            {isSavingToken ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
                             Print Token
                         </Button>
                     </CardFooter>
@@ -854,12 +794,22 @@ export function BillingForm() {
         <BillSummaryDialog
           bill={generatedBill}
           open={!!generatedBill}
-          onOpenChange={handleDialogClose}
+          onOpenChange={handleBillDialogClose}
           onSave={handleSaveAndPrint}
           isSaving={false} // This can be managed if printing has a loading state
           isSavingDisabled={false}
         />
       )}
+      {generatedToken && (
+          <TokenSummaryDialog 
+            token={generatedToken}
+            open={!!generatedToken}
+            onOpenChange={handleTokenDialogClose}
+            onPrint={handlePrintAndCloseTokenDialog}
+          />
+      )}
     </>
   );
 }
+
+    
