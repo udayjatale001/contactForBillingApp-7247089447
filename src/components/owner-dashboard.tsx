@@ -379,7 +379,7 @@ export function OwnerDashboard() {
       monthlyData: formattedMonthlyData,
       yearlyData: formattedYearlyData,
       monthlyLabourData: formattedMonthlyLabourData,
-      yearlyLabourData: formattedYearlyData,
+      yearlyLabourData: formattedYearlyLabourData,
       dueBills: customersWithDue,
       recentBills: filteredBills.slice(0, 5),
       availableYears: allAvailableYears,
