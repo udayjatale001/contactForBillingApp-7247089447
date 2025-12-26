@@ -50,8 +50,9 @@ import { cn } from '@/lib/utils';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Checkbox } from '@/components/ui/checkbox';
+import withPasswordProtection from '@/components/with-password-protection';
 
-export default function NotificationsPage() {
+function NotificationsPage() {
   const firestore = useFirestore();
   const { isUserLoading } = useUser();
   const { toast } = useToast();
@@ -412,3 +413,5 @@ export default function NotificationsPage() {
     </>
   );
 }
+
+export default withPasswordProtection(NotificationsPage);
