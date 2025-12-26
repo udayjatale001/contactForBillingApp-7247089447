@@ -28,6 +28,7 @@ export default function withPasswordProtection<P extends object>(
   const WithPasswordProtection = (props: P) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
+    const [sessionPassword, setSessionPassword] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isClient, setIsClient] = useState(false);
     const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -47,7 +48,7 @@ export default function withPasswordProtection<P extends object>(
       setIsLoading(true);
       // Simulate a small delay for user feedback
       setTimeout(() => {
-        if (password === CORRECT_PASSWORD) {
+        if (password === CORRECT_PASSWORD || (sessionPassword && password === sessionPassword)) {
           setIsAuthenticated(true);
         } else {
           toast({
@@ -98,13 +99,13 @@ export default function withPasswordProtection<P extends object>(
             });
             return;
         }
-        // In a real app, you'd save the new password here.
-        // For this demo, we just grant access for the session.
+        
+        setSessionPassword(newPassword);
         setIsAuthenticated(true);
         setShowCreatePassword(false);
         toast({
             title: 'Password "Reset" Successful',
-            description: 'Access granted for this session.',
+            description: 'Access granted for this session with the new password.',
         });
     }
 
