@@ -206,30 +206,31 @@ function NotificationsPage() {
 
     if (filteredNotifications && filteredNotifications.length > 0) {
       return (
-        <div className="space-y-2">
+        <div className="space-y-4">
           {filteredNotifications.map((notification) => (
             <div
               key={notification.id}
               className={cn(
-                "flex items-center justify-between gap-4 group p-2 rounded-md transition-colors",
-                selectedIds.has(notification.id) && 'bg-primary/10'
+                "flex items-start justify-between gap-4 group p-4 rounded-lg border transition-colors",
+                selectedIds.has(notification.id) ? 'bg-primary/10 border-primary/20' : 'bg-card'
                 )}
             >
-              <div className="flex items-center gap-4 flex-1">
+              <div className="flex items-start gap-4 flex-1">
                  <Checkbox 
                     checked={selectedIds.has(notification.id)} 
                     onCheckedChange={(checked) => handleSelectOne(notification.id, !!checked)}
                     id={`select-${notification.id}`}
                     aria-label={`Select notification ${notification.id}`}
+                    className='mt-1'
                 />
-                <div className="bg-primary/10 p-2 rounded-full">
-                  <Bell className="h-5 w-5 text-primary" />
+                <div className="bg-secondary p-3 rounded-full">
+                  <Bell className="h-5 w-5 text-secondary-foreground" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-foreground">
+                <div className="flex-1 space-y-1">
+                  <p className="font-medium text-foreground leading-snug">
                     {notification.message}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     {new Date(notification.createdAt).toLocaleString()} (
                     {formatDistanceToNow(new Date(notification.createdAt), {
                       addSuffix: true,
@@ -241,7 +242,7 @@ function NotificationsPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                 onClick={(e) => handleDeleteClick(e, notification)}
               >
                 <Trash2 className="h-4 w-4 text-destructive" />
