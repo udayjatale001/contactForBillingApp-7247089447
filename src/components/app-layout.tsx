@@ -88,12 +88,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       ownerOnly: false,
     },
     {
-      href: '/history',
-      label: 'History',
-      icon: FileText,
-      ownerOnly: false,
-    },
-    {
       href: '/Admin',
       label: 'Admin',
       icon: LayoutDashboard,

@@ -55,7 +55,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import withPasswordProtection from '@/components/with-password-protection';
 
-function SuyashPage() {
+function HistoryPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
