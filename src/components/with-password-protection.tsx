@@ -20,6 +20,7 @@ import { Button } from './ui/button';
 
 const CORRECT_PASSWORD = 'suyash001';
 const RECOVERY_PHONE_NUMBER = '9826926999';
+const LOCAL_STORAGE_KEY = 'admin_password';
 
 // This is a Higher-Order Component (HOC)
 export default function withPasswordProtection<P extends object>(
@@ -28,7 +29,7 @@ export default function withPasswordProtection<P extends object>(
   const WithPasswordProtection = (props: P) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
-    const [sessionPassword, setSessionPassword] = useState<string | null>(null);
+    const [storedPassword, setStoredPassword] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isClient, setIsClient] = useState(false);
     const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -42,13 +43,22 @@ export default function withPasswordProtection<P extends object>(
     useEffect(() => {
       // This effect runs once to confirm we are on the client.
       setIsClient(true);
+      try {
+        const savedPassword = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (savedPassword) {
+          setStoredPassword(savedPassword);
+        }
+      } catch (error) {
+        console.error('Could not access localStorage:', error);
+      }
     }, []);
 
     const handlePasswordCheck = () => {
       setIsLoading(true);
       // Simulate a small delay for user feedback
       setTimeout(() => {
-        if (password === CORRECT_PASSWORD || (sessionPassword && password === sessionPassword)) {
+        const effectivePassword = storedPassword || CORRECT_PASSWORD;
+        if (password === effectivePassword) {
           setIsAuthenticated(true);
         } else {
           toast({
@@ -100,13 +110,23 @@ export default function withPasswordProtection<P extends object>(
             return;
         }
         
-        setSessionPassword(newPassword);
-        setIsAuthenticated(true);
-        setShowCreatePassword(false);
-        toast({
-            title: 'Password "Reset" Successful',
-            description: 'Access granted for this session with the new password.',
-        });
+        try {
+            localStorage.setItem(LOCAL_STORAGE_KEY, newPassword);
+            setStoredPassword(newPassword);
+            setIsAuthenticated(true);
+            setShowCreatePassword(false);
+            toast({
+                title: 'Password Reset Successful',
+                description: 'Access granted. Your new password has been saved.',
+            });
+        } catch (error) {
+            console.error('Failed to save password to localStorage:', error);
+             toast({
+                variant: 'destructive',
+                title: 'Save Failed',
+                description: 'Could not save the new password. Please try again.',
+            });
+        }
     }
 
     const handleCancel = () => {
@@ -191,7 +211,7 @@ export default function withPasswordProtection<P extends object>(
                 <AlertDialogHeader>
                     <AlertDialogTitle>Create New Password</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Enter and confirm your new password to regain access for this session.
+                        Enter and confirm your new password. This will replace your old password.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="space-y-4 py-2">
