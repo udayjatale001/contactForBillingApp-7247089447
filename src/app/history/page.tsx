@@ -17,42 +17,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import type { Bill } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { FileText, Loader2, Search, Trash2 } from 'lucide-react';
+import { FileText, Loader2, Search } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, getDoc, doc, writeBatch, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDoc, doc } from 'firebase/firestore';
 import { BillSummaryDialog } from '@/components/bill-summary-dialog';
-import { useToast } from '@/hooks/use-toast';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
 export default function HistoryPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
-  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
   const [selectedBill, setSelectedBill] = React.useState<Bill | null>(null);
-  const [billToDelete, setBillToDelete] = React.useState<Bill | null>(null);
-  const [isDeleting, setIsDeleting] = React.useState(false);
-  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
-  const [isBulkDeleting, setIsBulkDeleting] = React.useState(false);
-  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = React.useState(false);
 
   React.useEffect(() => {
     if(user && firestore) {
@@ -87,39 +66,6 @@ export default function HistoryPage() {
     );
   }, [bills, searchTerm]);
   
-  React.useEffect(() => {
-    const visibleIds = new Set(filteredBills.map(b => b.id));
-    setSelectedIds(currentIds => {
-      const newIds = new Set<string>();
-      currentIds.forEach(id => {
-        if (visibleIds.has(id)) {
-          newIds.add(id);
-        }
-      });
-      return newIds;
-    });
-  }, [filteredBills]);
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(new Set(filteredBills.map(b => b.id)));
-    } else {
-      setSelectedIds(new Set());
-    }
-  };
-
-  const handleSelectOne = (id: string, checked: boolean) => {
-    setSelectedIds(prev => {
-      const newSet = new Set(prev);
-      if (checked) {
-        newSet.add(id);
-      } else {
-        newSet.delete(id);
-      }
-      return newSet;
-    });
-  };
-
   const handleRowClick = (bill: Bill) => {
     setSelectedBill(bill);
   };
@@ -128,89 +74,8 @@ export default function HistoryPage() {
     setSelectedBill(null);
   };
   
-  const openDeleteDialog = (e: React.MouseEvent, bill: Bill) => {
-      e.stopPropagation();
-      setBillToDelete(bill);
-  };
-
-  const handleDeleteBill = async () => {
-    if (!firestore || !billToDelete || !user) return;
-    setIsDeleting(true);
-
-    const globalBillRef = doc(firestore, 'bills', billToDelete.id);
-    const managerBillRef = doc(firestore, 'managers', billToDelete.managerId, 'bills', billToDelete.id);
-
-    try {
-        // Perform deletes separately instead of in a batch
-        await deleteDoc(globalBillRef);
-        await deleteDoc(managerBillRef);
-        
-        toast({
-            title: 'Bill Deleted',
-            description: `The bill for ${billToDelete.customerName} has been successfully deleted.`,
-        });
-    } catch (error: any) {
-        console.error("Error deleting bill: ", error);
-        
-        const permissionError = new FirestorePermissionError({
-          path: error.message.includes(globalBillRef.path) ? globalBillRef.path : managerBillRef.path,
-          operation: 'delete',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-
-        toast({
-            variant: 'destructive',
-            title: 'Deletion Failed',
-            description: 'You do not have sufficient permissions to delete this bill.',
-        });
-    } finally {
-        setIsDeleting(false);
-        setBillToDelete(null);
-    }
-  };
-  
-  const handleBulkDelete = async () => {
-    if (!firestore || selectedIds.size === 0 || !bills) return;
-    
-    setIsBulkDeleting(true);
-    const batch = writeBatch(firestore);
-    const billsToDelete = bills.filter(bill => selectedIds.has(bill.id));
-
-    billsToDelete.forEach(bill => {
-        const globalBillRef = doc(firestore, 'bills', bill.id);
-        batch.delete(globalBillRef);
-        const managerBillRef = doc(firestore, 'managers', bill.managerId, 'bills', bill.id);
-        batch.delete(managerBillRef);
-    });
-
-    try {
-      await batch.commit();
-      toast({
-        title: 'Bills Deleted',
-        description: `${selectedIds.size} bills have been successfully removed.`
-      });
-      setSelectedIds(new Set());
-    } catch (error) {
-      console.error("Error bulk deleting bills: ", error);
-      toast({
-        variant: 'destructive',
-        title: 'Bulk Deletion Failed',
-        description: 'Could not delete the selected bills. You may not have permission.'
-      });
-    } finally {
-      setIsBulkDeleting(false);
-      setShowBulkDeleteConfirm(false);
-    }
-  };
-
   const isLoadingData = isLoading || isOwner === null;
-  const allFilteredSelected = filteredBills.length > 0 && selectedIds.size === filteredBills.length;
-  const canDelete = (bill: Bill) => {
-    if (isUserLoading || isOwner === null || !user) return false;
-    return isOwner || user.uid === bill.managerId;
-  };
-
-
+  
   return (
     <>
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -218,16 +83,6 @@ export default function HistoryPage() {
           <h2 className="text-3xl font-bold tracking-tight font-headline">
             Billing History
           </h2>
-          {selectedIds.size > 0 && isOwner && (
-             <Button 
-                variant="destructive" 
-                onClick={() => setShowBulkDeleteConfirm(true)}
-                disabled={isBulkDeleting}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete ({selectedIds.size})
-            </Button>
-           )}
         </div>
         <Card>
           <CardHeader>
@@ -254,21 +109,11 @@ export default function HistoryPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                     <TableHead className="w-[50px]">
-                        {isOwner && (
-                            <Checkbox 
-                                checked={allFilteredSelected}
-                                onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                                aria-label="Select all"
-                            />
-                        )}
-                     </TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Total Amount</TableHead>
                     <TableHead>Paid Amount</TableHead>
                     <TableHead>Due Amount</TableHead>
                     <TableHead>Date & Time</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -276,20 +121,8 @@ export default function HistoryPage() {
                     <TableRow
                       key={bill.id}
                       onClick={() => handleRowClick(bill)}
-                      className={cn(
-                        "cursor-pointer",
-                         selectedIds.has(bill.id) && 'bg-primary/10'
-                      )}
+                      className="cursor-pointer"
                     >
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        {isOwner && (
-                            <Checkbox
-                                checked={selectedIds.has(bill.id)}
-                                onCheckedChange={(checked) => handleSelectOne(bill.id, !!checked)}
-                                aria-label={`Select bill ${bill.id}`}
-                            />
-                        )}
-                      </TableCell>
                       <TableCell>{bill.customerName}</TableCell>
                       <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
                       <TableCell>{bill.paidAmount.toLocaleString()}rs</TableCell>
@@ -301,18 +134,6 @@ export default function HistoryPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>{new Date(bill.createdAt).toLocaleString()}</TableCell>
-                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => openDeleteDialog(e, bill)}
-                          disabled={!canDelete(bill)}
-                          title={canDelete(bill) ? "Delete Bill" : "Only owners or the bill creator can delete this"}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
-                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -335,59 +156,12 @@ export default function HistoryPage() {
           open={!!selectedBill}
           onOpenChange={handleCloseDialog}
           onSave={async () => {
+            // This onSave is a no-op when viewing history, as the bill is already saved.
             handleCloseDialog();
           }}
           isSavingDisabled={true}
         />
       )}
-      <AlertDialog open={!!billToDelete} onOpenChange={() => setBillToDelete(null)}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the bill
-                for <span className="font-semibold">{billToDelete?.customerName}</span> from the servers.
-            </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-                onClick={handleDeleteBill}
-                disabled={isDeleting}
-                className="bg-destructive hover:bg-destructive/90"
-            >
-                {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Delete
-            </AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-       <AlertDialog
-        open={showBulkDeleteConfirm}
-        onOpenChange={setShowBulkDeleteConfirm}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the {selectedIds.size} selected bills.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBulkDelete}
-              disabled={isBulkDeleting}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              {isBulkDeleting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Delete Selected
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
