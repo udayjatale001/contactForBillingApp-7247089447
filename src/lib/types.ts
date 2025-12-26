@@ -95,8 +95,15 @@ export type Notification = {
     id: string;
     billId: string;
     managerId: string;
-    message: string;
+    message?: string;
     createdAt: string; // ISO string
+    // Denormalized fields for richer notifications
+    customerName?: string;
+    paidAmount?: number;
+    dueAmount?: number;
+    totalCarat?: number;
+    paidTo?: string;
+    paymentMode?: string;
 }
 
 // Represents a labour record in Firestore
@@ -112,3 +119,14 @@ export type Labour = {
   totalLabourAmount: number;
   createdAt: string; // ISO string
 };
+
+// Represents a token record in Firestore
+export type Token = {
+    id: string;
+    managerId: string;
+    customerName: string;
+    roomNumber?: string;
+    contactNumber?: string;
+    inCarat?: number;
+    createdAt: string; // ISO string
+}

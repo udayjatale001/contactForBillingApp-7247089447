@@ -196,34 +196,20 @@
       "type": "object",
       "description": "Represents a notification message generated after a bill is created.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the notification."
-        },
-        "billId": {
-          "type": "string",
-          "description": "Reference to the Bill that triggered this notification."
-        },
-        "managerId": {
-          "type": "string",
-          "description": "Reference to the Manager who created the bill."
-        },
-        "message": {
-          "type": "string",
-          "description": "The content of the notification message."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Date and time when the notification was created.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "billId": { "type": "string" },
+        "managerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "paidAmount": { "type": "number" },
+        "dueAmount": { "type": "number" },
+        "totalCarat": { "type": "number" },
+        "paidTo": { "type": "string" },
+        "paymentMode": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": [
-        "id",
-        "billId",
-        "managerId",
-        "message",
-        "createdAt"
+        "id", "billId", "managerId", "customerName", "paidAmount", 
+        "dueAmount", "totalCarat", "paidTo", "paymentMode", "createdAt"
       ]
     },
     "Labour": {
@@ -244,6 +230,22 @@
         "createdAt": { "type": "string", "description": "Date and time when the record was created.", "format": "date-time" }
       },
       "required": [ "id", "billId", "managerId", "customerName", "totalLabourAmount", "createdAt" ]
+    },
+    "Token": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Token",
+      "type": "object",
+      "description": "Represents a pre-bill token for tracking customer carat drops.",
+      "properties": {
+        "id": { "type": "string" },
+        "managerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "roomNumber": { "type": "string" },
+        "contactNumber": { "type": "string" },
+        "inCarat": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "managerId", "customerName", "createdAt"]
     }
   },
   "auth": {
@@ -287,6 +289,18 @@
               "name": "billId",
               "description": "The unique identifier for the bill."
             }
+          ]
+        }
+      },
+      {
+        "path": "/managers/{managerId}/tokens/{tokenId}",
+        "definition": {
+          "entityName": "Token",
+          "schema": { "$ref": "#/backend/entities/Token" },
+          "description": "Stores tokens created by each manager.",
+          "params": [
+            { "name": "managerId", "description": "The manager's UID." },
+            { "name": "tokenId", "description": "The token's unique ID." }
           ]
         }
       },
@@ -362,6 +376,17 @@
           "description": "A global collection of all internal labour charge records.",
           "params": [
             { "name": "labourId", "description": "The unique identifier for the labour record." }
+          ]
+        }
+      },
+      {
+        "path": "/tokens/{tokenId}",
+        "definition": {
+          "entityName": "Token",
+          "schema": { "$ref": "#/backend/entities/Token" },
+          "description": "A global collection of all tokens for owner oversight.",
+          "params": [
+            { "name": "tokenId", "description": "The token's unique ID." }
           ]
         }
       }

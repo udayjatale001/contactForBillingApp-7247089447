@@ -82,6 +82,14 @@ service cloud.firestore {
         return request.resource.data.managerId == request.auth.uid;
     }
 
+    /**
+     * Validates that the managerId of an incoming token matches the UID of the user creating it.
+     */
+    function isValidTokenCreate() {
+      return request.resource.data.managerId == request.auth.uid;
+    }
+
+
     // -------------------------------------------------------------------------
     // Collection Rules
     // -------------------------------------------------------------------------
@@ -109,6 +117,13 @@ service cloud.firestore {
        * @principle Enforces hierarchical ownership; permissions are inherited from the parent document.
        */
       match /bills/{billId} {
+        allow read, write: if isSignedIn();
+      }
+
+       /**
+       * @description Rules for a manager's private tokens subcollection.
+       */
+      match /tokens/{tokenId} {
         allow read, write: if isSignedIn();
       }
     }
@@ -142,6 +157,13 @@ service cloud.firestore {
      * @principle Segregates access patterns: global read for roles, specific write for owners.
      */
     match /bills/{billId} {
+      allow read, write: if isSignedIn();
+    }
+
+    /**
+     * @description Global collection of all tokens, for owner oversight.
+     */
+    match /tokens/{tokenId} {
       allow read, write: if isSignedIn();
     }
 

@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { BillingFormValues, billingSchema, Bill, AppSettings, Notification, Labour } from '@/lib/types';
+import { BillingFormValues, billingSchema, Bill, AppSettings, Notification, Labour, Token } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { BillSummaryDialog } from './bill-summary-dialog';
 import { cn } from '@/lib/utils';
@@ -94,6 +94,7 @@ export function BillingForm() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isPrintingToken, setIsPrintingToken] = React.useState(false);
   const [generatedBill, setGeneratedBill] = React.useState<Bill | null>(null);
   const tokenPrintRef = React.useRef<HTMLDivElement>(null);
 
@@ -372,8 +373,55 @@ export function BillingForm() {
     }
   };
 
-  const handlePrintToken = () => {
-    window.print();
+  const handlePrintToken = async () => {
+    setIsPrintingToken(true);
+    const data = getValues();
+
+    if (!user || !firestore) {
+      toast({ variant: 'destructive', title: 'Error', description: 'User not logged in or DB not ready.'});
+      setIsPrintingToken(false);
+      return;
+    }
+
+    if (!data.customerName) {
+      form.setError('customerName', { type: 'manual', message: 'Customer name is required for a token.'});
+      setIsPrintingToken(false);
+      return;
+    }
+    
+    const newToken: Token = {
+      id: uuidv4(),
+      managerId: user.uid,
+      customerName: data.customerName,
+      roomNumber: data.roomNumber,
+      contactNumber: data.contactNumber,
+      inCarat: data.inCarat,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      // Save to global and manager-specific collections
+      await Promise.all([
+        addDocumentNonBlocking(collection(firestore, 'tokens'), newToken),
+        addDocumentNonBlocking(collection(firestore, 'managers', user.uid, 'tokens'), newToken)
+      ]);
+
+      window.print();
+      
+      toast({
+        title: 'Token Saved & Printed',
+        description: `Token for ${data.customerName} has been saved.`,
+      });
+
+    } catch (error) {
+       toast({
+        variant: 'destructive',
+        title: 'Failed to Save Token',
+        description: 'An error occurred while saving the token.',
+      });
+    } finally {
+      setIsPrintingToken(false);
+    }
   };
 
   return (
@@ -537,9 +585,9 @@ export function BillingForm() {
                             type="button"
                             variant="outline"
                             onClick={handlePrintToken}
-                            disabled={!watchedValues.customerName && !watchedValues.inCarat && !watchedValues.outCarat}
+                            disabled={isPrintingToken || (!watchedValues.customerName && !watchedValues.inCarat)}
                         >
-                            <Printer className="mr-2 h-4 w-4" />
+                            {isPrintingToken ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
                             Print Token
                         </Button>
                     </CardFooter>
