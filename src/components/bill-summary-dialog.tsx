@@ -20,36 +20,20 @@ interface BillSummaryDialogProps {
   bill: Bill;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaveAndPrint: () => Promise<void>;
+  onSave: () => Promise<void>;
+  isSaving: boolean;
+  isSavingDisabled: boolean;
 }
 
-export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndPrint }: BillSummaryDialogProps) {
-  const [isPrinting, setIsPrinting] = React.useState(false);
-  const receiptRef = React.useRef<HTMLDivElement>(null);
+export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, isSavingDisabled }: BillSummaryDialogProps) {
 
   if (!bill) {
     return null;
   }
   
-  const handlePrintClick = async () => {
-    setIsPrinting(true);
-    try {
-      // First, save the bill data and reset the form.
-      await onSaveAndPrint();
-      
-      // Then, trigger the browser's print dialog.
-      // The CSS styles will ensure only the receipt is printed.
-      window.print();
-
-    } catch (error) {
-        // The onSave function (via non-blocking updates) has its own error handling toast.
-        // We can log here if needed, but the user will already be notified.
-        console.error("Failed to save or print bill:", error);
-    } finally {
-        setIsPrinting(false);
-        // Close the dialog after printing is initiated.
-        onOpenChange(false);
-    }
+  const handlePrintClick = () => {
+    // The print is handled via CSS, so we just trigger it.
+    window.print();
   }
 
   const DetailItem = ({ label, value, className }: { label: string, value: React.ReactNode, className?: string}) => (
@@ -93,13 +77,10 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndPrint }: 
         </style>
         {/* This outer container is used by the print styles */}
         <div id="bill-receipt-container">
-          <div className="p-6" id="bill-receipt" ref={receiptRef}>
-              <DialogHeader className="mb-4">
-                  <div className='flex justify-center items-center flex-col gap-2'>
-                      <div className="flex items-center gap-2">
-                          <Logo />
-                      </div>
-                  </div>
+          <div className="p-6" id="bill-receipt">
+              <DialogHeader className="mb-4 text-center">
+                  <h2 className="text-xl font-bold">Anand Sagar Ripening Chamber</h2>
+                  <p className="text-sm text-muted-foreground">Ichapur Road, Shahpur</p>
                    <div className='flex justify-between text-xs text-muted-foreground mt-4'>
                       <span>Bill No: A...{bill.id.slice(-4)}</span>
                       <span>{new Date(bill.createdAt).toLocaleDateString()}</span>
@@ -145,13 +126,16 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndPrint }: 
           </div>
         </div>
         <DialogFooter className="px-6 pb-6 sm:justify-between bg-secondary/20 pt-4 rounded-b-lg border-t print:hidden">
-          
-            <Button variant="default" onClick={handlePrintClick} className='flex-1' disabled={isPrinting}>
-              {isPrinting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+          {/* Keep the Save button, but handle print separately */}
+          <Button variant="default" onClick={onSave} className='flex-1' disabled={isSaving || isSavingDisabled}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Save Bill
+          </Button>
+          <Button variant="outline" onClick={handlePrintClick} className='flex-1'>
+              <Printer className="mr-2 h-4 w-4" />
               Print
             </Button>
           
-          <Button variant="outline" onClick={() => onOpenChange(false)} className='flex-1' disabled={isPrinting}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
