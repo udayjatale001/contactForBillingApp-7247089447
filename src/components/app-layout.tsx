@@ -85,12 +85,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       ownerOnly: false,
     },
     {
-      href: '/make-owner',
-      label: 'Owner',
-      icon: User,
-      ownerOnly: true,
-    },
-    {
       href: '/history',
       label: 'History',
       icon: FileText,
@@ -99,7 +93,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     {
       href: '/Admin',
       label: 'Admin',
-      icon: User,
+      icon: LayoutDashboard,
       ownerOnly: false,
     },
     {
@@ -118,8 +112,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const menuItems = React.useMemo(() => {
      if (isOwner === null) return []; // Still loading role
-    // Show dashboard link only if user is an owner
-    const items = baseMenuItems.filter(item => !item.ownerOnly || isOwner);
+    
+    let items = [...baseMenuItems];
+    
+    // If the user is an owner, add the Owner-specific links
     if (isOwner) {
         items.splice(1, 0, {
             href: '/dashboard',
@@ -127,15 +123,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             icon: LayoutDashboard,
             ownerOnly: true,
         });
-        // re-order owner link
-        const ownerIndex = items.findIndex(item => item.label === 'Owner');
-        if(ownerIndex > -1){
-          const ownerItem = items.splice(ownerIndex, 1)[0];
-          const historyIndex = items.findIndex(item => item.label === 'History');
-          items.splice(historyIndex, 0, ownerItem);
-        }
+         items.splice(3, 0, {
+            href: '/make-owner',
+            label: 'Owner Setup',
+            icon: User,
+            ownerOnly: true,
+        });
     }
-    return items;
+
+    // Filter out items that are not for the current user type
+    return items.filter(item => !item.ownerOnly || isOwner);
+
   }, [isOwner]);
 
   if (isUserLoading || user === null || isOwner === null) {
