@@ -40,7 +40,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
   }
 
   const generateWhatsAppMessage = () => {
-    const header = `*Anand Sagar Ripening Chamber*\nIchapur Road, Shahpur\n\n`;
+    const header = `*Ananad Sagar Ripening Chamber*\nIchapur Road, Shahpur\n\n`;
     const billInfo = `*Bill No:* #${bill.id.slice(-6).toUpperCase()}\n*Date:* ${new Date(bill.createdAt).toLocaleDateString()}\n\n`;
     const customerDetails = `*Customer Details:*\nName: ${bill.customerName}\n` +
       (bill.roomNumber ? `Room No: ${bill.roomNumber}\n` : '') +
@@ -132,12 +132,12 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             {/* Header */}
             <header className="flex justify-between items-start mb-6 pb-4 border-b">
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">Anand Sagar Ripening Chamber</h1>
+                <h1 className="text-2xl font-bold text-gray-800">Ananad Sagar Ripening Chamber</h1>
                 <p className="text-sm text-gray-500">Ichapur Road, Shahpur</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-500">Bill No: #${bill.id.slice(-6).toUpperCase()}</p>
-                <p className="text-sm text-gray-500">Date: {new Date(bill.createdAt).toLocaleDateString()}</p>
+                <p className="text-sm text-gray-500">Date: ${new Date(bill.createdAt).toLocaleDateString()}</p>
               </div>
             </header>
 

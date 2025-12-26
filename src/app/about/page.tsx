@@ -1,3 +1,4 @@
+
 import {
   Card,
   CardContent,
@@ -19,7 +20,7 @@ export default function AboutPage() {
         <CardHeader className="items-center">
           <Logo />
           <CardTitle className="text-center pt-4">
-            Aanand Sagar Billing App
+            Ananad Sagar Billing App
           </CardTitle>
           <CardDescription>
             Version 1.0.0
@@ -27,7 +28,7 @@ export default function AboutPage() {
         </CardHeader>
         <CardContent className="text-center text-muted-foreground">
           <p>
-            This application is designed to streamline the billing process for Aanand Sagar Fresh Fruit.
+            This application is designed to streamline the billing process for Ananad Sagar Fresh Fruit.
           </p>
           <p className="mt-4">
             Developed to provide a fast, reliable, and user-friendly experience for managers and owners.

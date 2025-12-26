@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -7,8 +8,8 @@ import { RootStateProvider } from '@/components/root-state-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'Aanand Sagar Billing App',
-  description: 'Billing application for Aanand Sagar Fresh Fruit',
+  title: 'Ananad Sagar Billing App',
+  description: 'Billing application for Ananad Sagar Fresh Fruit',
 };
 
 const fontSans = Inter({

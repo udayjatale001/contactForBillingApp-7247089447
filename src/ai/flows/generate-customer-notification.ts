@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -38,7 +39,7 @@ const generateCustomerNotificationPrompt = ai.definePrompt({
   name: 'generateCustomerNotificationPrompt',
   input: {schema: GenerateCustomerNotificationInputSchema},
   output: {schema: GenerateCustomerNotificationOutputSchema},
-  prompt: `You are an SMS notification generator for Aanand Sagar Fresh Fruit. Generate a personalized SMS notification for the customer with the following details:
+  prompt: `You are an SMS notification generator for Ananad Sagar Fresh Fruit. Generate a personalized SMS notification for the customer with the following details:
 
 Customer Name: {{customerName}}
 Total Carat: {{totalCarat}}

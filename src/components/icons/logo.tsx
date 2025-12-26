@@ -1,3 +1,4 @@
+
 import { Apple } from 'lucide-react';
 
 export function Logo() {
@@ -8,7 +9,7 @@ export function Logo() {
       </div>
       <div className="flex flex-col">
         <span className="font-bold text-lg font-headline text-foreground leading-tight">
-          Aanand Sagar
+          Ananad Sagar
         </span>
         <span className="text-xs text-muted-foreground leading-tight">
           Billing App
