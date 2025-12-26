@@ -77,38 +77,38 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const baseMenuItems = [
     {
       href: '/',
-      label: 'Billing',
+      label: 'Create Bill',
       icon: Home,
       ownerOnly: false,
     },
     {
+      href: '/History',
+      label: 'Billing History',
+      icon: FileText,
+      ownerOnly: false,
+    },
+    {
       href: '/Labourer',
-      label: 'Labourer',
+      label: 'Labour',
       icon: Wrench,
+      ownerOnly: false,
+    },
+    {
+      href: '/notifications',
+      label: 'Notifications',
+      icon: Bell,
       ownerOnly: false,
     },
     {
       href: '/Admin',
       label: 'Admin',
-      icon: LayoutDashboard,
-      ownerOnly: false,
-    },
-    {
-      href: '/notifications',
-      label: 'Notification',
-      icon: Bell,
+      icon: User,
       ownerOnly: false,
     },
     {
       href: '/about',
       label: 'About',
       icon: Info,
-      ownerOnly: false,
-    },
-    {
-      href: '/History',
-      label: 'History',
-      icon: User,
       ownerOnly: false,
     },
   ];
@@ -120,16 +120,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     
     // If the user is an owner, add the Owner-specific links
     if (isOwner) {
-        items.splice(1, 0, {
+        items.unshift({
             href: '/dashboard',
             label: 'Dashboard',
             icon: LayoutDashboard,
-            ownerOnly: true,
-        });
-         items.splice(4, 0, {
-            href: '/make-owner',
-            label: 'Owner Setup',
-            icon: User,
             ownerOnly: true,
         });
     }
