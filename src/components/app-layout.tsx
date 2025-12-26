@@ -105,12 +105,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       icon: Bell,
       ownerOnly: false,
     },
-     {
-      href: '/google',
-      label: 'Google',
-      icon: Globe,
-      ownerOnly: false,
-    },
     {
       href: '/about',
       label: 'About',
