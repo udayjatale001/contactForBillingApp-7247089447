@@ -48,8 +48,8 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSavingDi
         console.error("Failed to save or print bill:", error);
     } finally {
         setIsPrinting(false);
-        // We keep the dialog open after printing in case they need to reference it,
-        // but it can be closed manually.
+        // Close the dialog after printing.
+        onOpenChange(false);
     }
   }
 
