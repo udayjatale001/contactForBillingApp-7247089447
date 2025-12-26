@@ -31,44 +31,46 @@ export default function withPasswordProtection<P extends object>(
     const router = useRouter();
 
     useEffect(() => {
-      // Ensure this code only runs on the client
+      // This effect runs once to confirm we are on the client.
       setIsClient(true);
-      const sessionAuth = sessionStorage.getItem('isPageAuthenticated');
-      if (sessionAuth === 'true') {
-        setIsAuthenticated(true);
-      }
     }, []);
 
     const handlePasswordCheck = () => {
       setIsLoading(true);
-      if (password === CORRECT_PASSWORD) {
-        sessionStorage.setItem('isPageAuthenticated', 'true');
-        setIsAuthenticated(true);
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Incorrect Password',
-          description: 'The password you entered is incorrect.',
-        });
-      }
-      setIsLoading(false);
+      // Simulate a small delay for user feedback
+      setTimeout(() => {
+        if (password === CORRECT_PASSWORD) {
+          setIsAuthenticated(true);
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Incorrect Password',
+            description: 'The password you entered is incorrect.',
+          });
+          // Immediately navigate away on failure
+          router.back();
+        }
+        setIsLoading(false);
+      }, 300);
     };
 
     const handleCancel = () => {
       router.back(); // Go back to the previous page
     };
-
+    
+    // On the server or before the client check, render nothing.
     if (!isClient) {
-        // Render nothing or a loader on the server to avoid SSR issues
-        return null;
+      return null;
     }
-
+    
+    // If authenticated in the current render cycle, show the page.
     if (isAuthenticated) {
       return <WrappedComponent {...props} />;
     }
 
+    // Otherwise, always show the password dialog.
     return (
-      <AlertDialog open={true} onOpenChange={handleCancel}>
+      <AlertDialog open={true} onOpenChange={!isAuthenticated ? handleCancel : undefined}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Authentication Required</AlertDialogTitle>
@@ -105,7 +107,6 @@ export default function withPasswordProtection<P extends object>(
     );
   };
 
-  // Set a display name for the HOC for better debugging
   WithPasswordProtection.displayName = `WithPasswordProtection(${getDisplayName(
     WrappedComponent
   )})`;
