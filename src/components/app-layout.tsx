@@ -14,6 +14,7 @@ import {
   User,
   Bell,
   Wrench,
+  Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -102,6 +103,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       href: '/notifications',
       label: 'Notification',
       icon: Bell,
+      ownerOnly: false,
+    },
+     {
+      href: '/google',
+      label: 'Google',
+      icon: Globe,
       ownerOnly: false,
     },
     {
