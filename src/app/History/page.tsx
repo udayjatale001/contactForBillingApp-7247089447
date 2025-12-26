@@ -270,7 +270,7 @@ function HistoryPage() {
                           {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{new Date(bill.createdAt).toLocaleString()}</TableCell>
+                      <TableCell>{format(new Date(bill.createdAt), 'PPpp')}</TableCell>
                        <TableCell className="text-right">
                         <Button
                           variant="ghost"

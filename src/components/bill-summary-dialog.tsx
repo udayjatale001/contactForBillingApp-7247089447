@@ -15,6 +15,7 @@ import type { Bill } from '@/lib/types';
 import { Loader2, Printer, X, MessageSquare } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 
 interface BillSummaryDialogProps {
@@ -41,7 +42,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
 
   const generateWhatsAppMessage = () => {
     const header = `*Ananad Sagar Ripening Chamber*\nIchapur Road, Shahpur\n\n`;
-    const billInfo = `*Bill No:* #${bill.id.slice(-6).toUpperCase()}\n*Date:* ${new Date(bill.createdAt).toLocaleDateString()}\n\n`;
+    const billInfo = `*Bill No:* #${bill.id.slice(-6).toUpperCase()}\n*Date:* ${format(new Date(bill.createdAt), 'PP')}\n\n`;
     const customerDetails = `*Customer Details:*\nName: ${bill.customerName}\n` +
       (bill.roomNumber ? `Room No: ${bill.roomNumber}\n` : '') +
       (bill.contactNumber ? `Contact: ${bill.contactNumber}\n` : '') + '\n';
@@ -49,15 +50,15 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     let caratDetails = '*Carat Details:*\n';
     if (bill.inCarat) caratDetails += `In Carat: ${bill.inCarat}\n`;
     if (bill.outCarat) caratDetails += `Out Carat: ${bill.outCarat}\n`;
-    if (bill.smallCarat) caratDetails += `${bill.smallCaratRate}kg Carat: ${bill.smallCarat} at per carat ${bill.smallCaratRate}rs\n`;
-    if (bill.bigCarat) caratDetails += `${bill.bigCaratRate}kg Carat: ${bill.bigCarat} at per carat ${bill.bigCaratRate}rs\n\n`;
+    if (bill.smallCarat && bill.smallCaratRate) caratDetails += `${bill.smallCaratRate}kg Carat: ${bill.smallCarat} at per carat ${bill.smallCaratRate}rs\n`;
+    if (bill.bigCarat && bill.bigCaratRate) caratDetails += `${bill.bigCaratRate}kg Carat: ${bill.bigCarat} at per carat ${bill.bigCaratRate}rs\n\n`;
     
     let amountSummary = `*Amount Summary:*\n`;
     amountSummary += `Total Amount: ${bill.totalAmount.toLocaleString()}rs\n`;
     amountSummary += `Paid Amount: ${bill.paidAmount.toLocaleString()}rs\n`;
     amountSummary += `*Due Amount: ${bill.dueAmount.toLocaleString()}rs*\n\n`;
     
-    const paymentDetails = `*Payment Details:*\nPaid To: ${bill.paidTo}\nMethod: ${bill.paymentMode}\nDate: ${new Date(bill.createdAt).toLocaleString()}\n\n`;
+    const paymentDetails = `*Payment Details:*\nPayment Method: ${bill.paymentMode}\nDate & Time: ${format(new Date(bill.createdAt), 'PPpp')}\n\n`;
     const footer = `Thank you for your business! 😊`;
 
     return encodeURIComponent(header + billInfo + customerDetails + caratDetails + amountSummary + paymentDetails + footer);
@@ -133,7 +134,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray-500">Bill No: #${bill.id.slice(-6).toUpperCase()}</p>
-                <p className="text-sm text-gray-500">Date: ${new Date(bill.createdAt).toLocaleDateString()}</p>
+                <p className="text-sm text-gray-500">Date: ${format(new Date(bill.createdAt), 'PP')}</p>
               </div>
             </header>
 
@@ -155,13 +156,13 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                   {bill.inCarat && bill.inCarat > 0 && <DetailItem label="In Carat" value={bill.inCarat} />}
                   {bill.outCarat && bill.outCarat > 0 && <DetailItem label="Out Carat" value={bill.outCarat} />}
 
-                  {bill.smallCarat && bill.smallCarat > 0 && (
+                  {bill.smallCarat && bill.smallCarat > 0 && bill.smallCaratRate && (
                     <DetailItem
                       label={`${bill.smallCaratRate}kg Carat`}
                       value={`${bill.smallCarat} at per carat ${bill.smallCaratRate}rs`}
                     />
                   )}
-                  {bill.bigCarat && bill.bigCarat > 0 && (
+                  {bill.bigCarat && bill.bigCarat > 0 && bill.bigCaratRate && (
                      <DetailItem
                       label={`${bill.bigCaratRate}kg Carat`}
                       value={`${bill.bigCarat} at per carat ${bill.bigCaratRate}rs`}
@@ -183,7 +184,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                  <h2 className="text-lg font-bold text-gray-700 mb-2">Payment Details</h2>
                  <div className="space-y-1">
                     <DetailItem label="Payment Method" value={bill.paymentMode} />
-                    <DetailItem label="Date & Time" value={new Date(bill.createdAt).toLocaleString()} />
+                    <DetailItem label="Date & Time" value={format(new Date(bill.createdAt), 'PPpp')} />
                  </div>
               </div>
             </main>

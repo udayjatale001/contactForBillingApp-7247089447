@@ -82,8 +82,8 @@ function NotificationsPage() {
   const filteredNotifications = React.useMemo(() => {
     if (!notifications) return [];
     return notifications.filter((notification) => {
-      const nameMatch = notification.message
-        .toLowerCase()
+       const nameMatch = notification.customerName
+        ?.toLowerCase()
         .includes(searchTerm.toLowerCase());
       const dateMatch = selectedDate
         ? isSameDay(new Date(notification.createdAt), selectedDate)
@@ -228,9 +228,9 @@ function NotificationsPage() {
                   <Bell className="h-5 w-5 text-secondary-foreground" />
                 </div>
                 <div className="flex-1 space-y-1">
-                  <ParsedNotification message={notification.message} />
+                  <ParsedNotification notification={notification} />
                   <p className="text-sm text-muted-foreground pt-1">
-                    {new Date(notification.createdAt).toLocaleString()} (
+                    {format(new Date(notification.createdAt), 'PPpp')} (
                     {formatDistanceToNow(new Date(notification.createdAt), {
                       addSuffix: true,
                     })}

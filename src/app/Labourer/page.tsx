@@ -348,7 +348,7 @@ export default function LabourerPage() {
                           : 'N/A'}
                       </TableCell>
                       <TableCell>{record.totalLabourAmount.toLocaleString()}rs</TableCell>
-                      <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>{format(new Date(record.createdAt), 'PP')}</TableCell>
                        <TableCell className="text-right">
                         <Button
                           variant="ghost"

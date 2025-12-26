@@ -330,15 +330,6 @@ export function OwnerDashboard() {
         yearlyLabour[year] = (yearlyLabour[year] || 0) + (bill.totalLabourAmount || 0);
     });
 
-    const formattedMonthlyData = ALL_MONTHS.map(month => ({
-      month,
-      total: monthlySalesForYear[month] || 0,
-    }));
-    const formattedMonthlyLabourData = ALL_MONTHS.map(month => ({
-      month,
-      total: monthlyLabourForYear[month] || 0,
-    }));
-
     const sortedYearsForChart = Array.from(yearsInData).sort((a, b) => Number(a) - Number(b));
     const formattedYearlyData = sortedYearsForChart.map(year => ({
         year,
@@ -681,7 +672,7 @@ export function OwnerDashboard() {
                                 <TableCell>
                                     <div className="font-medium">{customer.customerName}</div>
                                     <div className="text-xs text-muted-foreground">
-                                        Last Bill: {format(new Date(customer.lastBillDate), 'dd MMM, yyyy')}
+                                        Last Bill: {format(new Date(customer.lastBillDate), 'PP')}
                                     </div>
                                 </TableCell>
                                 <TableCell>
@@ -869,7 +860,7 @@ export function OwnerDashboard() {
                                 {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
                             </Badge>
                             </TableCell>
-                            <TableCell>{format(new Date(bill.createdAt), 'dd MMM, p')}</TableCell>                        
+                            <TableCell>{format(new Date(bill.createdAt), 'PPp')}</TableCell>                        
                         </TableRow>
                         ))}
                     </TableBody>
