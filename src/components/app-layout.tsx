@@ -49,6 +49,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       router.push('/login');
     } else if (user) {
       const checkRole = async () => {
+        if (!firestore) return;
         const ownerDocRef = doc(firestore, 'roles_owner', user.uid);
         const ownerDoc = await getDoc(ownerDocRef);
         setIsOwner(ownerDoc.exists());
@@ -58,6 +59,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user, isUserLoading, router, firestore]);
 
   const handleLogout = async () => {
+    if (!auth) return;
     try {
       await signOut(auth);
       toast({ title: 'Logged out successfully.' });
@@ -79,9 +81,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       ownerOnly: false,
     },
     {
+      href: '/uday',
+      label: 'Uday',
+      icon: User,
+      ownerOnly: false,
+    },
+    {
       href: '/Labourer',
       label: 'Labourer',
-      icon: User,
+      icon: Wrench,
       ownerOnly: false,
     },
     {
@@ -123,7 +131,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             icon: LayoutDashboard,
             ownerOnly: true,
         });
-         items.splice(3, 0, {
+         items.splice(4, 0, {
             href: '/make-owner',
             label: 'Owner Setup',
             icon: User,
@@ -134,9 +142,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     // Filter out items that are not for the current user type
     return items.filter(item => !item.ownerOnly || isOwner);
 
-  }, [isOwner]);
+  }, [isOwner, baseMenuItems]);
 
-  if (isUserLoading || user === null || isOwner === null) {
+  if (isUserLoading || user === null || (user && isOwner === null)) {
      return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin" />

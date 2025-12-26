@@ -147,7 +147,7 @@ service cloud.firestore {
      */
     match /bills/{billId} {
       allow get: if isOwnerRole() || isOwner(resource.data.managerId);
-      allow list: if isOwnerRole();
+      allow list: if isOwnerRole() || (isSignedIn() && request.query.where.managerId == request.auth.uid);
       allow create: if isSignedIn() && isValidGlobalBillCreate();
       allow update: if isOwner(resource.data.managerId) && isImmutableBillManagerId();
       allow delete: if isOwner(resource.data.managerId) || isOwnerRole();
@@ -195,5 +195,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
