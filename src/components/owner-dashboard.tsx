@@ -237,7 +237,7 @@ export function OwnerDashboard() {
       yearlyLabourData: [],
       dueBills: [],
       recentBills: [],
-      availableYears: [new Date().getFullYear().toString()],
+      availableYears: [] as string[],
     };
 
     if (!allBills) {
@@ -253,13 +253,10 @@ export function OwnerDashboard() {
     const todaysLabourCost = todaysBills.reduce((acc, bill) => acc + (bill.totalLabourAmount || 0), 0);
     const todaysNetProfit = todaysRevenue - todaysLabourCost;
 
-    const years = new Set<string>();
-    allBills.forEach(bill => years.add(getYear(new Date(bill.createdAt)).toString()));
-    const earliestYearInHistory = Array.from(years).sort((a,b) => Number(a) - Number(b))[0];
-    const earliestYear = earliestYearInHistory ? parseInt(earliestYearInHistory) : new Date().getFullYear();
-    
-    const allAvailableYears = Array.from({length: new Date().getFullYear() - earliestYear + 1}, (_, i) => (earliestYear + i).toString()).reverse();
-
+    // Static year range from 2025 to 3000
+    const startYear = 2025;
+    const endYear = 3000;
+    const allAvailableYears = Array.from({ length: endYear - startYear + 1 }, (_, i) => (startYear + i).toString());
 
     // Filter bills based on selected month and year
     const filteredBills = allBills.filter(bill => {
@@ -313,6 +310,9 @@ export function OwnerDashboard() {
         monthlyLabourForYear[month] = (monthlyLabourForYear[month] || 0) + (bill.totalLabourAmount || 0);
     });
 
+    const yearsInData = new Set<string>();
+    allBills.forEach(bill => yearsInData.add(getYear(new Date(bill.createdAt)).toString()));
+    
     allBills.forEach(bill => {
         const year = getYear(new Date(bill.createdAt)).toString();
         yearlySales[year] = (yearlySales[year] || 0) + bill.paidAmount;
@@ -328,7 +328,7 @@ export function OwnerDashboard() {
       total: monthlyLabourForYear[month] || 0,
     }));
 
-    const sortedYearsForChart = Array.from(years).sort((a, b) => Number(a) - Number(b));
+    const sortedYearsForChart = Array.from(yearsInData).sort((a, b) => Number(a) - Number(b));
     const formattedYearlyData = sortedYearsForChart.map(year => ({
         year,
         total: yearlySales[year] || 0,
