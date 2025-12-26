@@ -53,10 +53,11 @@ import {
   X,
   MessageSquare,
   Trash2,
+  FileDown,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
-import type { Bill, AppSettings } from '@/lib/types';
+import { collection, query, orderBy, doc, getDoc, getDocs } from 'firebase/firestore';
+import type { Bill, AppSettings, Labour } from '@/lib/types';
 import { format, getYear, getMonth, subHours, isSameDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
@@ -65,6 +66,7 @@ import { NotificationsFeed } from './notifications-feed';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
+import * as XLSX from 'xlsx';
 
 const ALL_MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -187,6 +189,8 @@ export function OwnerDashboard() {
   const [selectedYear, setSelectedYear] = React.useState<string>(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = React.useState<string>((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
+
+  const [isExporting, setIsExporting] = React.useState(false);
 
   React.useEffect(() => {
     if(user && firestore) {
@@ -324,6 +328,11 @@ export function OwnerDashboard() {
         monthlyLabourForYear[month] = (monthlyLabourForYear[month] || 0) + (bill.totalLabourAmount || 0);
     });
 
+    const formattedMonthlyData = ALL_MONTHS.map(month => ({
+      month,
+      total: monthlySalesForYear[month] || 0,
+    }));
+    
     const yearsInData = new Set<string>();
     allBills.forEach(bill => yearsInData.add(getYear(new Date(bill.createdAt)).toString()));
     
@@ -341,11 +350,6 @@ export function OwnerDashboard() {
     const formattedYearlyLabourData = sortedYearsForChart.map(year => ({
         year,
         total: yearlyLabour[year] || 0,
-    }));
-
-    const formattedMonthlyData = ALL_MONTHS.map(month => ({
-      month,
-      total: monthlySalesForYear[month] || 0,
     }));
 
     const formattedMonthlyLabourData = ALL_MONTHS.map(month => ({
@@ -405,6 +409,85 @@ export function OwnerDashboard() {
 
   const handleDismissCustomer = (customerName: string) => {
     setDismissedCustomers(prev => [...prev, customerName]);
+  };
+
+  const handleExport = async () => {
+    if (!firestore) return;
+    setIsExporting(true);
+
+    try {
+        const billsQuery = query(collection(firestore, 'bills'), orderBy('createdAt', 'desc'));
+        const labourQuery = query(collection(firestore, 'labours'), orderBy('createdAt', 'desc'));
+
+        const [billsSnapshot, labourSnapshot] = await Promise.all([
+            getDocs(billsQuery),
+            getDocs(labourQuery)
+        ]);
+
+        const billsData = billsSnapshot.docs.map(doc => {
+            const data = doc.data() as Bill;
+            return {
+                'Bill ID': data.id,
+                'Customer Name': data.customerName,
+                'Room Number': data.roomNumber || 'N/A',
+                'Contact Number': data.contactNumber || 'N/A',
+                'Date': format(new Date(data.createdAt), 'yyyy-MM-dd pp'),
+                'In Carat': data.inCarat || 0,
+                'Out Carat': data.outCarat || 0,
+                'Total Carat': data.totalCarat,
+                'Carat Type': data.caratType,
+                'Small Carat Qty': data.smallCarat || 0,
+                'Small Carat Rate': data.smallCaratRate || 0,
+                'Big Carat Qty': data.bigCarat || 0,
+                'Big Carat Rate': data.bigCaratRate || 0,
+                'Total Amount': data.totalAmount,
+                'Paid Amount': data.paidAmount,
+                'Due Amount': data.dueAmount,
+                'Payment Mode': data.paymentMode,
+                'Paid To': data.paidTo,
+                'Total Labour Amount': data.totalLabourAmount || 0
+            };
+        });
+
+        const labourData = labourSnapshot.docs.map(doc => {
+            const data = doc.data() as Labour;
+            return {
+                'Record ID': data.id,
+                'Bill ID': data.billId,
+                'Customer Name': data.customerName,
+                'Date': format(new Date(data.createdAt), 'yyyy-MM-dd'),
+                'In Carat Labour': data.inCaratLabour || 0,
+                'In Carat Labour Rate': data.inCaratLabourRate || 0,
+                'Out Carat Labour': data.outCaratLabour || 0,
+                'Out Carat Labour Rate': data.outCaratLabourRate || 0,
+                'Total Labour Amount': data.totalLabourAmount
+            };
+        });
+
+        const wb = XLSX.utils.book_new();
+        const billsSheet = XLSX.utils.json_to_sheet(billsData);
+        const labourSheet = XLSX.utils.json_to_sheet(labourData);
+
+        XLSX.utils.book_append_sheet(wb, billsSheet, 'All Bills');
+        XLSX.utils.book_append_sheet(wb, labourSheet, 'Labour Records');
+
+        XLSX.writeFile(wb, 'Ananad_Sagar_Data.xlsx');
+
+        toast({
+            title: 'Export Successful',
+            description: 'All data has been exported to an Excel file.',
+        });
+
+    } catch (error) {
+        console.error("Failed to export data:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Export Failed',
+            description: 'Could not export data. Please check permissions and try again.',
+        });
+    } finally {
+        setIsExporting(false);
+    }
   };
 
   const handleWhatsAppReminder = (customer: AggregatedDueCustomer) => {
@@ -478,6 +561,25 @@ Thank you.`;
 
   return (
     <div className="space-y-4">
+      
+      {/* Export Button */}
+       <Card>
+        <CardHeader>
+             <CardTitle className='flex items-center justify-between'>
+                <span>Data Management</span>
+                 <Button onClick={handleExport} disabled={isExporting}>
+                    {isExporting ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <FileDown className="mr-2 h-4 w-4" />
+                    )}
+                    Export All Data to Excel
+                </Button>
+            </CardTitle>
+            <CardDescription>Download a complete record of all bills and labour charges.</CardDescription>
+        </CardHeader>
+       </Card>
+
        {/* Today's Profit Section */}
       <Card>
         <CardHeader className='pb-2'>
