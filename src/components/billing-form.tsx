@@ -4,7 +4,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as React from 'react';
-import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home, Wrench, Phone, Calendar as CalendarIcon } from 'lucide-react';
+import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home, Wrench, Phone, Calendar as CalendarIcon, Printer } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { collection, doc } from 'firebase/firestore';
 import { format, setHours, setMinutes } from 'date-fns';
@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { BillingFormValues, billingSchema, Bill, AppSettings, Notification, Labour } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -41,12 +41,62 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 
 
+// Token component for printing
+const TokenToPrint = React.forwardRef<HTMLDivElement, { values: Partial<BillingFormValues> }>(({ values }, ref) => {
+    return (
+        <div ref={ref} className="p-4 border-2 border-dashed border-gray-400 rounded-lg bg-white text-black font-sans">
+            <div className="text-center pb-2 border-b border-dashed border-gray-300">
+                <h2 className="text-lg font-bold">Ananad Sagar Ripening Chamber</h2>
+                <p className="text-xs">Customer Token</p>
+            </div>
+            <div className="space-y-2 mt-3 text-sm">
+                <div className="flex justify-between">
+                    <span className="font-semibold">Date:</span>
+                    <span>{format(new Date(), 'PP')}</span>
+                </div>
+                 <div className="flex justify-between">
+                    <span className="font-semibold">Time:</span>
+                    <span>{format(new Date(), 'p')}</span>
+                </div>
+                <div className="flex justify-between">
+                    <span className="font-semibold">Customer:</span>
+                    <span className="font-bold">{values.customerName || 'N/A'}</span>
+                </div>
+                 {values.roomNumber && (
+                    <div className="flex justify-between">
+                        <span className="font-semibold">Room No:</span>
+                        <span>{values.roomNumber}</span>
+                    </div>
+                 )}
+                <div className="mt-2 pt-2 border-t border-dashed border-gray-300">
+                    {typeof values.inCarat === 'number' && (
+                        <div className="flex justify-between text-base">
+                            <span className="font-semibold">In Carat:</span>
+                            <span>{values.inCarat}</span>
+                        </div>
+                    )}
+                    {typeof values.outCarat === 'number' && (
+                        <div className="flex justify-between text-base">
+                            <span className="font-semibold">Out Carat:</span>
+                            <span>{values.outCarat}</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+});
+TokenToPrint.displayName = 'TokenToPrint';
+
+
 export function BillingForm() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [generatedBill, setGeneratedBill] = React.useState<Bill | null>(null);
+  const tokenPrintRef = React.useRef<HTMLDivElement>(null);
+
 
   const settingsDocRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -322,8 +372,37 @@ export function BillingForm() {
     }
   };
 
+  const handlePrintToken = () => {
+    window.print();
+  };
+
   return (
     <>
+      <style>
+        {`
+            @media print {
+              body, body > *, .print-hidden {
+                visibility: hidden;
+                margin: 0;
+                padding: 0;
+              }
+              #token-print-area, #token-print-area * {
+                visibility: visible;
+              }
+              #token-print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: auto;
+                background: white;
+              }
+            }
+        `}
+      </style>
+      <div id="token-print-area" className='print-hidden absolute -top-[9999px] -left-[9999px] w-[300px]'>
+          <TokenToPrint ref={tokenPrintRef} values={watchedValues} />
+      </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -453,6 +532,17 @@ export function BillingForm() {
                             )}
                         />
                     </CardContent>
+                     <CardFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handlePrintToken}
+                            disabled={!watchedValues.customerName && !watchedValues.inCarat && !watchedValues.outCarat}
+                        >
+                            <Printer className="mr-2 h-4 w-4" />
+                            Print Token
+                        </Button>
+                    </CardFooter>
                 </Card>
 
                 {/* Carat Details */}
@@ -725,5 +815,3 @@ export function BillingForm() {
     </>
   );
 }
-
-    
