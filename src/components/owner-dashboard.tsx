@@ -43,22 +43,26 @@ import {
   Loader2,
   AlertCircle,
   FileText,
-  Calendar,
+  Calendar as CalendarIcon,
   Settings,
   Save,
   Wrench,
   ClipboardList,
   Phone,
   TrendingUp,
+  X,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import type { Bill, AppSettings } from '@/lib/types';
-import { format, getYear, getMonth, subHours } from 'date-fns';
+import { format, getYear, getMonth, subHours, isSameDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
 import { Input } from './ui/input';
 import { NotificationsFeed } from './notifications-feed';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import { cn } from '@/lib/utils';
 
 const ALL_MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -179,6 +183,7 @@ export function OwnerDashboard() {
   
   const [selectedYear, setSelectedYear] = React.useState<string>(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = React.useState<string>((new Date().getMonth() + 1).toString().padStart(2, '0'));
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
 
   React.useEffect(() => {
     if(user && firestore) {
@@ -261,6 +266,9 @@ export function OwnerDashboard() {
     // Filter bills based on selected month and year
     const filteredBills = allBills.filter(bill => {
       const billDate = new Date(bill.createdAt);
+      if (selectedDate) {
+        return isSameDay(billDate, selectedDate);
+      }
       const yearMatches = selectedYear === 'all' || getYear(billDate).toString() === selectedYear;
       const monthMatches = selectedMonth === 'all' || (getMonth(billDate) + 1).toString().padStart(2, '0') === selectedMonth;
       return yearMatches && monthMatches;
@@ -283,7 +291,9 @@ export function OwnerDashboard() {
     });
 
     let periodStart: Date;
-    if (selectedYear !== 'all' && selectedMonth !== 'all') {
+    if (selectedDate) {
+        periodStart = selectedDate;
+    } else if (selectedYear !== 'all' && selectedMonth !== 'all') {
       periodStart = new Date(parseInt(selectedYear), parseInt(selectedMonth) - 1, 1);
     } else if (selectedYear !== 'all') {
        periodStart = new Date(parseInt(selectedYear), 0, 1);
@@ -302,7 +312,8 @@ export function OwnerDashboard() {
     const monthlySalesForYear: { [key: string]: number } = Object.fromEntries(ALL_MONTHS.map(m => [m, 0]));
     const monthlyLabourForYear: { [key: string]: number } = Object.fromEntries(ALL_MONTHS.map(m => [m, 0]));
     
-    const billsForMonthlyChart = allBills.filter(bill => getYear(new Date(bill.createdAt)).toString() === selectedYear);
+    const yearForMonthlyChart = selectedDate ? getYear(selectedDate).toString() : selectedYear;
+    const billsForMonthlyChart = allBills.filter(bill => getYear(new Date(bill.createdAt)).toString() === yearForMonthlyChart);
 
     billsForMonthlyChart.forEach(bill => {
         const month = format(new Date(bill.createdAt), 'MMM');
@@ -384,7 +395,7 @@ export function OwnerDashboard() {
       recentBills: filteredBills.slice(0, 5),
       availableYears: allAvailableYears,
     };
-  }, [allBills, selectedYear, selectedMonth]);
+  }, [allBills, selectedYear, selectedMonth, selectedDate]);
 
 
   const handleSendReminder = async (customer: AggregatedDueCustomer) => {
@@ -481,18 +492,25 @@ export function OwnerDashboard() {
 
 
       {/* Global Filters */}
-      <Card>
+       <Card>
         <CardHeader className='pb-2'>
             <CardTitle className='flex items-center gap-2 text-base'>
-                <Calendar className='h-5 w-5' />
+                <CalendarIcon className='h-5 w-5' />
                 Filter by Period
             </CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center gap-4">
-           <div className='flex-1'>
+        <CardContent className="flex flex-col md:flex-row items-center gap-4">
+           <div className='flex-1 w-full'>
                 <p className='text-sm text-muted-foreground mb-1'>Year</p>
-                <Select value={selectedYear} onValueChange={setSelectedYear}>
-                    <SelectTrigger className="w-full">
+                <Select 
+                    value={selectedYear} 
+                    onValueChange={(value) => {
+                        setSelectedYear(value);
+                        setSelectedDate(undefined);
+                    }}
+                    disabled={!!selectedDate}
+                >
+                    <SelectTrigger>
                         <SelectValue placeholder="Select Year" />
                     </SelectTrigger>
                     <SelectContent>
@@ -503,10 +521,17 @@ export function OwnerDashboard() {
                     </SelectContent>
                 </Select>
            </div>
-            <div className='flex-1'>
+            <div className='flex-1 w-full'>
                  <p className='text-sm text-muted-foreground mb-1'>Month</p>
-                <Select value={selectedMonth} onValueChange={setSelectedMonth} disabled={selectedYear === 'all'}>
-                    <SelectTrigger className="w-full">
+                <Select 
+                    value={selectedMonth} 
+                    onValueChange={(value) => {
+                        setSelectedMonth(value);
+                        setSelectedDate(undefined);
+                    }}
+                    disabled={selectedYear === 'all' || !!selectedDate}
+                >
+                    <SelectTrigger>
                         <SelectValue placeholder="Select Month" />
                     </SelectTrigger>
                     <SelectContent>
@@ -518,6 +543,47 @@ export function OwnerDashboard() {
                         ))}
                     </SelectContent>
                 </Select>
+            </div>
+            <div className='text-center text-sm text-muted-foreground md:py-4'>OR</div>
+             <div className='flex-1 w-full'>
+                 <p className='text-sm text-muted-foreground mb-1'>Specific Date</p>
+                <div className="flex gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={'outline'}
+                          className={cn(
+                            'w-full justify-start text-left font-normal',
+                            !selectedDate && 'text-muted-foreground'
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {selectedDate ? (
+                            format(selectedDate, 'PPP')
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={setSelectedDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {selectedDate && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setSelectedDate(undefined)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                </div>
             </div>
         </CardContent>
       </Card>
@@ -685,14 +751,14 @@ export function OwnerDashboard() {
                     <CardHeader className="pt-0">
                          <div className="flex justify-end items-center gap-2">
                            <TabsList>
-                                <TabsTrigger value="monthly" disabled={selectedYear === 'all'}>Monthly</TabsTrigger>
+                                <TabsTrigger value="monthly" disabled={selectedYear === 'all' && !selectedDate}>Monthly</TabsTrigger>
                                 <TabsTrigger value="yearly">Yearly</TabsTrigger>
                             </TabsList>
                         </div>
                     </CardHeader>
                     <TabsContent value="monthly">
                         <CardContent className="pl-2">
-                            {selectedYear === 'all' ? (
+                            {(selectedYear === 'all' && !selectedDate) ? (
                                 <div className="flex flex-col items-center justify-center h-[350px] text-center">
                                     <AlertCircle className="h-10 w-10 text-muted-foreground" />
                                     <p className="mt-4 text-sm text-muted-foreground">Please select a specific year to view the monthly report.</p>
@@ -730,14 +796,14 @@ export function OwnerDashboard() {
                     <CardHeader className="pt-0">
                          <div className="flex justify-end items-center gap-2">
                            <TabsList>
-                                <TabsTrigger value="monthly" disabled={selectedYear === 'all'}>Monthly</TabsTrigger>
+                                <TabsTrigger value="monthly" disabled={selectedYear === 'all' && !selectedDate}>Monthly</TabsTrigger>
                                 <TabsTrigger value="yearly">Yearly</TabsTrigger>
                             </TabsList>
                         </div>
                     </CardHeader>
                     <TabsContent value="monthly">
                         <CardContent className="pl-2">
-                            {selectedYear === 'all' ? (
+                            {(selectedYear === 'all' && !selectedDate) ? (
                                 <div className="flex flex-col items-center justify-center h-[350px] text-center">
                                     <AlertCircle className="h-10 w-10 text-muted-foreground" />
                                     <p className="mt-4 text-sm text-muted-foreground">Please select a specific year to view the monthly report.</p>
@@ -823,3 +889,5 @@ export function OwnerDashboard() {
     </div>
   );
 }
+
+    
