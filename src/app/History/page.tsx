@@ -245,6 +245,7 @@ function HistoryPage() {
                   <TableRow>
                     <TableHead>Customer</TableHead>
                     <TableHead>Total Amount</TableHead>
+                    <TableHead>Paid Amount</TableHead>
                     <TableHead>Due Amount</TableHead>
                     <TableHead>Date & Time</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -259,6 +260,7 @@ function HistoryPage() {
                     >
                       <TableCell>{bill.customerName}</TableCell>
                       <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
+                      <TableCell>{bill.paidAmount.toLocaleString()}rs</TableCell>
                       <TableCell>
                         <Badge
                           variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}
