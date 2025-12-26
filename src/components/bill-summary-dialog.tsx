@@ -6,14 +6,15 @@ import {
   DialogContent,
   DialogHeader,
   DialogFooter,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
-import { Logo } from './icons/logo';
 import type { Bill } from '@/lib/types';
-import { Loader2, Printer } from 'lucide-react';
+import { Loader2, Printer, X } from 'lucide-react';
 import * as React from 'react';
+import { cn } from '@/lib/utils';
 
 
 interface BillSummaryDialogProps {
@@ -32,14 +33,16 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
   }
   
   const handlePrintClick = () => {
-    // The print is handled via CSS, so we just trigger it.
-    window.print();
+    onSave().then(() => {
+        // The print is handled via CSS, so we just trigger it after saving.
+        setTimeout(() => window.print(), 100);
+    })
   }
 
   const DetailItem = ({ label, value, className }: { label: string, value: React.ReactNode, className?: string}) => (
-    <div className={`flex justify-between items-baseline py-2 ${className}`}>
+    <div className={cn(`flex justify-between items-baseline py-1`, className)}>
       <p className="text-sm text-muted-foreground">{label}</p>
-      <div className="text-md font-semibold text-right">{value}</div>
+      <div className="text-sm font-medium text-right">{value}</div>
     </div>
   );
 
@@ -49,7 +52,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
         <style>
           {`
             @media print {
-              body > * {
+              body > *, .print-hidden {
                 visibility: hidden;
               }
               #bill-receipt-container, #bill-receipt-container * {
@@ -64,13 +67,20 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                 display: flex;
                 justify-content: center;
                 align-items: flex-start;
-                padding: 1rem;
-                background: white; /* Ensure a white background for printing */
+                padding: 0;
+                margin: 0;
+                background: white;
               }
                #bill-receipt {
                   width: 100%;
                   border: none;
                   box-shadow: none;
+                  margin: 0;
+                  padding: 1rem;
+                  font-size: 12px; /* Adjust font size for printing */
+               }
+               .print-only-text {
+                   font-size: 10px;
                }
             }
           `}
@@ -78,64 +88,81 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
         {/* This outer container is used by the print styles */}
         <div id="bill-receipt-container">
           <div className="p-6" id="bill-receipt">
-              <DialogHeader className="mb-4 text-center">
+              {/* Header */}
+              <div className="text-center mb-4">
                   <h2 className="text-xl font-bold">Anand Sagar Ripening Chamber</h2>
                   <p className="text-sm text-muted-foreground">Ichapur Road, Shahpur</p>
-                   <div className='flex justify-between text-xs text-muted-foreground mt-4'>
-                      <span>Bill No: A...{bill.id.slice(-4)}</span>
-                      <span>{new Date(bill.createdAt).toLocaleDateString()}</span>
-                  </div>
-              </DialogHeader>
-              <div className="space-y-1">
-                  <DetailItem label="Customer Name" value={bill.customerName} />
-                  {bill.roomNumber && <DetailItem label="Room Number" value={bill.roomNumber} />}
-                  {bill.contactNumber && <DetailItem label="Contact" value={bill.contactNumber} />}
-                  <Separator className="my-2" />
-                  {bill.inCarat && bill.inCarat > 0 && <DetailItem label="In Carat" value={bill.inCarat} />}
-                  {bill.outCarat && bill.outCarat > 0 && <DetailItem label="Out Carat" value={bill.outCarat} />}
-                  {bill.smallCarat && bill.smallCarat > 0 && <DetailItem label="Small Carat" value={`${bill.smallCarat} @ ${bill.smallCaratRate}rs`} />}
-                  {bill.bigCarat && bill.bigCarat > 0 && <DetailItem label="Big Carat" value={`${bill.bigCarat} @ ${bill.bigCaratRate}rs`} />}
-                  
-                  <Separator className="my-2" />
-                  <DetailItem label="Total Amount" value={`${bill.totalAmount.toLocaleString()}rs`} className="font-bold text-lg"/>
-                  <DetailItem label="Paid Amount" value={`${bill.paidAmount.toLocaleString()}rs`} />
-                  <DetailItem label="Due Amount" value={<Badge variant={bill.dueAmount > 0 ? "destructive" : "default"}>{bill.dueAmount.toLocaleString()}rs</Badge>} />
-                  <Separator className="my-2" />
-                  
-                  {/* Internal Labour Info */}
-                  {bill.totalLabourAmount && bill.totalLabourAmount > 0 && (
-                    <>
-                      <div className='text-center text-xs text-muted-foreground pt-2'>
-                        (Internal Labour Cost: {bill.totalLabourAmount.toLocaleString()}rs)
-                      </div>
-                      <Separator className="my-2" />
-                    </>
-                  )}
+              </div>
+              <Separator className="my-3"/>
+              {/* Bill Info */}
+              <div className='flex justify-between text-xs text-muted-foreground mb-3'>
+                  <span>Bill No: A...{bill.id.slice(-6).toUpperCase()}</span>
+                  <span>{new Date(bill.createdAt).toLocaleDateString()}</span>
+              </div>
+              
+              {/* Customer Details */}
+              <div className='mb-4'>
+                <h3 className='font-semibold text-md mb-1 border-b pb-1'>Customer Details</h3>
+                <DetailItem label="Name" value={bill.customerName} />
+                {bill.roomNumber && <DetailItem label="Room Number" value={bill.roomNumber} />}
+                {bill.contactNumber && <DetailItem label="Contact" value={bill.contactNumber} />}
+              </div>
+             
+              {/* Carat Details Table */}
+              <div className='mb-4'>
+                <h3 className='font-semibold text-md mb-2 border-b pb-1'>Carat & Labour Details</h3>
+                <div className="space-y-1">
+                    {bill.inCarat && bill.inCarat > 0 && <DetailItem label="In Carat" value={bill.inCarat} />}
+                    {bill.outCarat && bill.outCarat > 0 && <DetailItem label="Out Carat" value={bill.outCarat} />}
+                    {bill.smallCarat && bill.smallCarat > 0 && <DetailItem label="Small Carat" value={`${bill.smallCarat} × ${bill.smallCaratRate}rs`} />}
+                    {bill.bigCarat && bill.bigCarat > 0 && <DetailItem label="Big Carat" value={`${bill.bigCarat} × ${bill.bigCaratRate}rs`} />}
+                </div>
+              </div>
+              
+              <Separator className="my-3" />
 
-                  <DetailItem label="Paid To" value={bill.paidTo} />
-                  <DetailItem label="Date" value={new Date(bill.createdAt).toLocaleDateString()} />
-                  <Separator className="my-2" />
-                   <div className='text-center text-sm text-muted-foreground pt-2'>
-                      Payment Method: {bill.paymentMode}
-                  </div>
-                  <div className="pt-12 pb-4 text-center">
-                      <div className="border-t border-dashed w-1/2 mx-auto"></div>
-                      <p className="text-xs text-muted-foreground mt-2">Seal / Signature</p>
-                  </div>
+              {/* Amount Summary */}
+              <div className="space-y-2">
+                 <DetailItem label="Total Amount" value={`${bill.totalAmount.toLocaleString()}rs`} className="font-bold text-lg"/>
+                 <DetailItem label="Paid Amount" value={`${bill.paidAmount.toLocaleString()}rs`} />
+                 <DetailItem label="Due Amount" value={<Badge variant={bill.dueAmount > 0 ? "destructive" : "default"}>{bill.dueAmount.toLocaleString()}rs</Badge>} />
+              </div>
+              
+              {/* Internal Labour Info */}
+              {bill.totalLabourAmount && bill.totalLabourAmount > 0 && (
+                <div className='text-center text-xs text-muted-foreground pt-3 italic print-only-text'>
+                    (Internal Labour Cost: {bill.totalLabourAmount.toLocaleString()}rs)
+                </div>
+              )}
+
+              <Separator className="my-3" />
+
+               {/* Payment Details */}
+              <div className='mb-4'>
+                <DetailItem label="Paid To" value={bill.paidTo} />
+                <DetailItem label="Payment Method" value={bill.paymentMode} />
+                <DetailItem label="Date" value={new Date(bill.createdAt).toLocaleString()} />
+              </div>
+
+              {/* Footer */}
+              <div className="pt-12 pb-2 text-center">
+                  <div className="border-t border-dashed w-1/2 mx-auto"></div>
+                  <p className="text-xs text-muted-foreground mt-2">Seal / Signature</p>
+                  <p className="text-xs text-muted-foreground mt-4">Thank you for your business!</p>
               </div>
           </div>
         </div>
-        <DialogFooter className="px-6 pb-6 sm:justify-between bg-secondary/20 pt-4 rounded-b-lg border-t print:hidden">
-          {/* Keep the Save button, but handle print separately */}
-          <Button variant="default" onClick={onSave} className='flex-1' disabled={isSaving || isSavingDisabled}>
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Save Bill
-          </Button>
-          <Button variant="outline" onClick={handlePrintClick} className='flex-1'>
-              <Printer className="mr-2 h-4 w-4" />
-              Print
+        <DialogFooter className="px-6 pb-4 sm:justify-between pt-4 rounded-b-lg border-t print-hidden">
+          <DialogClose asChild>
+            <Button variant="outline" className='flex-1'>
+                <X className="mr-2 h-4 w-4" />
+                Close
             </Button>
-          
+          </DialogClose>
+          <Button variant="default" onClick={handlePrintClick} className='flex-1' disabled={isSaving || isSavingDisabled}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+            Print
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
