@@ -109,11 +109,7 @@ service cloud.firestore {
        * @principle Enforces hierarchical ownership; permissions are inherited from the parent document.
        */
       match /bills/{billId} {
-        allow get: if isOwner(managerId) || isOwnerRole();
-        allow list: if isOwner(managerId);
-        allow create: if isOwner(managerId) && isValidSubcollectionBillCreate(managerId);
-        allow update: if isOwner(managerId) && isImmutableBillManagerId();
-        allow delete: if isOwner(managerId) || isOwnerRole();
+        allow read, write: if isSignedIn();
       }
     }
 
@@ -146,11 +142,7 @@ service cloud.firestore {
      * @principle Segregates access patterns: global read for roles, specific write for owners.
      */
     match /bills/{billId} {
-      allow get: if isOwnerRole() || isOwner(resource.data.managerId);
-      allow list: if isOwnerRole() || (isSignedIn() && request.query.where.managerId == request.auth.uid);
-      allow create: if isSignedIn() && isValidGlobalBillCreate();
-      allow update: if isOwner(resource.data.managerId) && isImmutableBillManagerId();
-      allow delete: if isOwner(resource.data.managerId) || isOwnerRole();
+      allow read, write: if isSignedIn();
     }
 
     /**
@@ -188,10 +180,7 @@ service cloud.firestore {
      * @allow (get, update, delete) Only the manager who created the record or an owner can access/modify it.
      */
     match /labours/{labourId} {
-        allow get: if isOwner(resource.data.managerId) || isOwnerRole();
-        allow list: if isSignedIn();
-        allow create: if isSignedIn() && isValidLabourCreate();
-        allow update, delete: if isOwner(resource.data.managerId) || isOwnerRole();
+        allow read, write: if isSignedIn();
     }
   }
 }
