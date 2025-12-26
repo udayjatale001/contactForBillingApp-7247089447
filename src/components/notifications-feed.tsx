@@ -47,7 +47,7 @@ export function NotificationsFeed() {
                    <Bell className="h-5 w-5 text-primary" />
                 </div>
                 <div className='flex-1'>
-                  <ParsedNotification message={notification.message} />
+                  <ParsedNotification notification={notification} />
                   <p className="text-xs text-muted-foreground pt-1">
                     {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                   </p>

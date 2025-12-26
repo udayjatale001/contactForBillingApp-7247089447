@@ -11,6 +11,10 @@ interface ParsedNotificationProps {
 }
 
 export function ParsedNotification({ notification }: ParsedNotificationProps) {
+  if (!notification) {
+    return null;
+  }
+  
   const {
     customerName,
     paidAmount,
