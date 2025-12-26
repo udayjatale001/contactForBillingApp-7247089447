@@ -49,16 +49,16 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     let caratDetails = '*Carat Details:*\n';
     if (bill.inCarat) caratDetails += `In Carat: ${bill.inCarat}\n`;
     if (bill.outCarat) caratDetails += `Out Carat: ${bill.outCarat}\n`;
-    if (bill.smallCarat) caratDetails += `Small Carat: ${bill.smallCarat} at per carat ₹${bill.smallCaratRate}\n`;
-    if (bill.bigCarat) caratDetails += `Big Carat: ${bill.bigCarat} at per carat ₹${bill.bigCaratRate}\n\n`;
+    if (bill.smallCarat) caratDetails += `Small Carat: ${bill.smallCarat} at per carat ${bill.smallCaratRate}rs\n`;
+    if (bill.bigCarat) caratDetails += `Big Carat: ${bill.bigCarat} at per carat ${bill.bigCaratRate}rs\n\n`;
     
     let amountSummary = `*Amount Summary:*\n`;
-    amountSummary += `Total Amount: ₹${bill.totalAmount.toLocaleString()}\n`;
-    amountSummary += `Paid Amount: ₹${bill.paidAmount.toLocaleString()}\n`;
-    amountSummary += `*Due Amount: ₹${bill.dueAmount.toLocaleString()}*\n\n`;
+    amountSummary += `Total Amount: ${bill.totalAmount.toLocaleString()}rs\n`;
+    amountSummary += `Paid Amount: ${bill.paidAmount.toLocaleString()}rs\n`;
+    amountSummary += `*Due Amount: ${bill.dueAmount.toLocaleString()}rs*\n\n`;
     
     if (bill.totalLabourAmount && bill.totalLabourAmount > 0) {
-      amountSummary += `_(Internal Labour Cost: ₹${bill.totalLabourAmount.toLocaleString()})_\n\n`;
+      amountSummary += `_(Internal Labour Cost: ${bill.totalLabourAmount.toLocaleString()}rs)_\n\n`;
     }
 
     const paymentDetails = `*Payment Details:*\nPaid To: ${bill.paidTo}\nMethod: ${bill.paymentMode}\nDate: ${new Date(bill.createdAt).toLocaleString()}\n\n`;
@@ -136,7 +136,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                 <p className="text-sm text-gray-500">Ichapur Road, Shahpur</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-500">Bill No: #{bill.id.slice(-6).toUpperCase()}</p>
+                <p className="text-sm text-gray-500">Bill No: #${bill.id.slice(-6).toUpperCase()}</p>
                 <p className="text-sm text-gray-500">Date: {new Date(bill.createdAt).toLocaleDateString()}</p>
               </div>
             </header>
@@ -162,25 +162,25 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                   {bill.smallCarat && bill.smallCarat > 0 && (
                     <DetailItem
                       label="Small Carat"
-                      value={`${bill.smallCarat} at per carat ₹${bill.smallCaratRate}`}
+                      value={`${bill.smallCarat} at per carat ${bill.smallCaratRate}rs`}
                     />
                   )}
                   {bill.bigCarat && bill.bigCarat > 0 && (
                      <DetailItem
                       label="Big Carat"
-                      value={`${bill.bigCarat} at per carat ₹${bill.bigCaratRate}`}
+                      value={`${bill.bigCarat} at per carat ${bill.bigCaratRate}rs`}
                     />
                   )}
                    <Separator className="my-2" />
-                  <DetailItem label="Total Amount" value={`₹${bill.totalAmount.toLocaleString()}`} valueClassName="text-lg font-bold text-gray-800" />
-                  <DetailItem label="Paid Amount" value={`₹${bill.paidAmount.toLocaleString()}`} />
+                  <DetailItem label="Total Amount" value={`${bill.totalAmount.toLocaleString()}rs`} valueClassName="text-lg font-bold text-gray-800" />
+                  <DetailItem label="Paid Amount" value={`${bill.paidAmount.toLocaleString()}rs`} />
                   <DetailItem 
                     label="Due Amount" 
-                    value={`₹${bill.dueAmount.toLocaleString()}`} 
+                    value={`${bill.dueAmount.toLocaleString()}rs`} 
                     valueClassName={cn("font-bold", bill.dueAmount > 0 ? "text-red-600" : "text-green-600")} 
                   />
                    {bill.totalLabourAmount && bill.totalLabourAmount > 0 && (
-                    <p className="text-xs italic text-gray-500 pt-2">(Internal Labour Cost: ₹{bill.totalLabourAmount.toLocaleString()})</p>
+                    <p className="text-xs italic text-gray-500 pt-2">(Internal Labour Cost: {bill.totalLabourAmount.toLocaleString()}rs)</p>
                   )}
                 </div>
               </div>

@@ -769,7 +769,7 @@ export function OwnerDashboard() {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                                 <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
                                 <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={value => `${value.toLocaleString()}rs`}/>
-                                <Tooltip cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }} contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }}/>
+                                <Tooltip cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }} contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }} formatter={(value: number) => `${value.toLocaleString()}rs`} />
                                 <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                             </BarChart>
                             </ResponsiveContainer>
@@ -783,7 +783,7 @@ export function OwnerDashboard() {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                                 <XAxis dataKey="year" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
                                 <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={value => `${value.toLocaleString()}rs`}/>
-                                <Tooltip cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }} contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }}/>
+                                <Tooltip cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }} contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }} formatter={(value: number) => `${value.toLocaleString()}rs`} />
                                 <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                             </BarChart>
                             </ResponsiveContainer>
@@ -814,7 +814,7 @@ export function OwnerDashboard() {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                                 <XAxis dataKey="month" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
                                 <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={value => `${value.toLocaleString()}rs`}/>
-                                <Tooltip cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }} contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }}/>
+                                <Tooltip cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }} contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }} formatter={(value: number) => `${value.toLocaleString()}rs`} />
                                 <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                             </BarChart>
                             </ResponsiveContainer>
@@ -828,7 +828,7 @@ export function OwnerDashboard() {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                                 <XAxis dataKey="year" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
                                 <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={value => `${value.toLocaleString()}rs`}/>
-                                <Tooltip cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }} contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }}/>
+                                <Tooltip cursor={{ fill: 'hsl(var(--accent))', radius: 'var(--radius)' }} contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: 'var(--radius)' }} formatter={(value: number) => `${value.toLocaleString()}rs`} />
                                 <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                             </BarChart>
                             </ResponsiveContainer>

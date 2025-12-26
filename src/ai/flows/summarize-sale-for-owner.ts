@@ -18,11 +18,11 @@ import {z} from 'genkit';
 const SummarizeSaleForOwnerInputSchema = z.object({
   customerName: z.string().describe('The name of the customer.'),
   totalCarat: z.number().describe('The total carat amount.'),
-  caratType: z.enum(['Small Carat', 'Big Carat']).describe('The type of carat.'),
+  caratType: z.enum(['Small Carat', 'Big Carat', 'Mixed', 'N/A']).describe('The type of carat.'),
   totalAmount: z.number().describe('The total amount of the sale.'),
   paidAmount: z.number().describe('The amount paid by the customer.'),
   paidTo: z.string().describe('The recipient of the payment.'),
-  paymentMode: z.enum(['PhonePe', 'Cash']).describe('The payment mode used.'),
+  paymentMode: z.enum(['PhonePe', 'Cash', 'Online Payment', 'Due']).describe('The payment mode used.'),
 });
 
 export type SummarizeSaleForOwnerInput = z.infer<
@@ -50,13 +50,13 @@ const summarizeSaleForOwnerPrompt = ai.definePrompt({
   name: 'summarizeSaleForOwnerPrompt',
   input: {schema: SummarizeSaleForOwnerInputSchema},
   output: {schema: SummarizeSaleForOwnerOutputSchema},
-  prompt: `Summarize the following sale details into a concise message for the owner:
+  prompt: `Summarize the following sale details into a concise message for the owner. Use 'rs' as the currency symbol.
 
   Customer Name: {{{customerName}}}
   Total Carat: {{{totalCarat}}}
   Carat Type: {{{caratType}}}
-  Total Amount: {{{totalAmount}}}
-  Paid Amount: {{{paidAmount}}}
+  Total Amount: {{{totalAmount}}}rs
+  Paid Amount: {{{paidAmount}}}rs
   Paid To: {{{paidTo}}}
   Payment Mode: {{{paymentMode}}}
 

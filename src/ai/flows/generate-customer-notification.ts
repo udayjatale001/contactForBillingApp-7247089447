@@ -42,8 +42,8 @@ const generateCustomerNotificationPrompt = ai.definePrompt({
 
 Customer Name: {{customerName}}
 Total Carat: {{totalCarat}}
-Paid Amount: {{paidAmount}}
-Due Amount: {{dueAmount}}
+Paid Amount: {{paidAmount}}rs
+Due Amount: {{dueAmount}}rs
 
 The message should be concise and friendly.`,
 });
