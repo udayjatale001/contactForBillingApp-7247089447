@@ -95,11 +95,13 @@ function HistoryPage() {
   const filteredBills = React.useMemo(() => {
     if (!bills) return [];
     return bills.filter(bill => {
-      const nameMatch = bill.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      const searchLower = searchTerm.toLowerCase();
+      const nameMatch = bill.customerName.toLowerCase().includes(searchLower);
+      const billNoMatch = bill.id.slice(-6).toLowerCase().includes(searchLower);
       const dateMatch = selectedDate
         ? isSameDay(new Date(bill.createdAt), selectedDate)
         : true;
-      return nameMatch && dateMatch;
+      return (nameMatch || billNoMatch) && dateMatch;
     });
   }, [bills, searchTerm, selectedDate]);
   
@@ -188,7 +190,7 @@ function HistoryPage() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
-                    placeholder="Search by customer name..."
+                    placeholder="Search by customer name or bill no..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
