@@ -185,7 +185,6 @@ export default function withPasswordProtection<P extends object>(
                     type="tel"
                     value={mobileNumberInput}
                     onChange={(e) => setMobileNumberInput(e.target.value)}
-                    placeholder="9826926999"
                     autoFocus
                 />
             </div>
