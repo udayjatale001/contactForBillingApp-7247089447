@@ -110,6 +110,8 @@ export default {
   date: 'Date',
   time: 'Time',
   send_via_whatsapp: 'Send via WhatsApp',
+  signature_seal: 'Signature / Seal',
+  thank_you_note: 'Thank You',
   
   // Token Summary Dialog
   customer_token: 'Customer Token',
@@ -145,4 +147,7 @@ export default {
   
   // Owner Dashboard
   whatsapp_reminder_message: "Anand Sagar Fresh Fruits 🍎\nThis is a gentle reminder that your payment of ₹{0} is still pending.\nPlease clear the due amount at your earliest convenience.\nThank you.",
+  
+  // Whatsapp Bill Message
+  whatsapp_thank_you: 'Thank you for your business!',
 };

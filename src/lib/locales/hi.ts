@@ -53,11 +53,11 @@ export default {
   out_carat_placeholder: 'उदा., 100',
   print_token: 'टोकन प्रिंट करें',
   carat_details: 'कैरेट विवरण',
-  small_carat_qty: 'छोटा कैरेट (मात्रा)',
+  small_carat_qty: 'छोटा कैरेट',
   small_carat_placeholder: 'उदा., 10',
   rate: 'दर',
   rate_placeholder_small: 'उदा., 17',
-  big_carat_qty: 'बड़ा कैरेट (मात्रा)',
+  big_carat_qty: 'बड़ा कैरेट',
   big_carat_placeholder: 'उदा., 5',
   rate_placeholder_big: 'उदा., 20',
   labour_charges_internal: 'लेबर शुल्क (आंतरिक)',
@@ -110,6 +110,8 @@ export default {
   date: 'तारीख',
   time: 'समय',
   send_via_whatsapp: 'व्हाट्सएप के माध्यम से भेजें',
+  signature_seal: 'हस्ताक्षर / मुहर',
+  thank_you_note: 'धन्यवाद',
   
   // Token Summary Dialog
   customer_token: 'ग्राहक टोकन',
@@ -145,4 +147,7 @@ export default {
   
   // Owner Dashboard
   whatsapp_reminder_message: "आनंद सागर फ्रेश फ्रूट्स 🍎\nयह एक विनम्र अनुस्मारक है कि आपका ₹{0} का भुगतान अभी भी लंबित है।\nकृपया जल्द से जल्द बकाया राशि का भुगतान करें।\nधन्यवाद।",
+
+  // Whatsapp Bill Message
+  whatsapp_thank_you: 'आपके व्यवसाय के लिए धन्यवाद!',
 };

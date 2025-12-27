@@ -16,6 +16,7 @@ import { Loader2, Printer, X, MessageSquare } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { useLanguage } from '@/context/language-context';
 
 
 interface BillSummaryDialogProps {
@@ -28,6 +29,7 @@ interface BillSummaryDialogProps {
 }
 
 export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, isSavingDisabled }: BillSummaryDialogProps) {
+  const { t } = useLanguage();
 
   if (!bill) {
     return null;
@@ -41,25 +43,25 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
   }
 
   const generateWhatsAppMessage = () => {
-    const header = `*Ananad Sagar Ripening Chamber*\nIchapur Road, Shahpur\n\n`;
-    const billInfo = `*Bill No:* #${bill.id.slice(-6).toUpperCase()}\n*Date:* ${format(new Date(bill.createdAt), 'PP')}\n\n`;
-    const customerDetails = `*Customer Details:*\nName: ${bill.customerName}\n` +
-      (bill.roomNumber ? `Room No: ${bill.roomNumber}\n` : '') +
-      (bill.contactNumber ? `Contact: ${bill.contactNumber}\n` : '') + '\n';
+    const header = `*${t('bill_receipt_title')}*\n${t('bill_receipt_subtitle')}\n\n`;
+    const billInfo = `*${t('bill_no')}:* #${bill.id.slice(-6).toUpperCase()}\n*${t('date')}:* ${format(new Date(bill.createdAt), 'PP')}\n\n`;
+    const customerDetails = `*${t('customer_details')}:*\n${t('customer_name')}: ${bill.customerName}\n` +
+      (bill.roomNumber ? `${t('room_number')}: ${bill.roomNumber}\n` : '') +
+      (bill.contactNumber ? `${t('contact_number')}: ${bill.contactNumber}\n` : '') + '\n';
 
-    let caratDetails = '*Carat Details:*\n';
-    if (bill.inCarat) caratDetails += `In Carat: ${bill.inCarat}\n`;
-    if (bill.outCarat) caratDetails += `Out Carat: ${bill.outCarat}\n`;
-    if (bill.smallCarat && bill.smallCaratRate) caratDetails += `${bill.smallCaratRate}kg Carat: ${bill.smallCarat} at per carat ${bill.smallCaratRate}rs\n`;
-    if (bill.bigCarat && bill.bigCaratRate) caratDetails += `${bill.bigCaratRate}kg Carat: ${bill.bigCarat} at per carat ${bill.bigCaratRate}rs\n\n`;
+    let caratDetails = `*${t('carat_details')}:*\n`;
+    if (bill.inCarat) caratDetails += `${t('in_carat')}: ${bill.inCarat}\n`;
+    if (bill.outCarat) caratDetails += `${t('out_carat')}: ${bill.outCarat}\n`;
+    if (bill.smallCarat && bill.smallCaratRate) caratDetails += `${bill.smallCaratRate}kg ${t('small_carat_qty')}: ${bill.smallCarat} at per carat ${bill.smallCaratRate}${t('rs_symbol')}\n`;
+    if (bill.bigCarat && bill.bigCaratRate) caratDetails += `${bill.bigCaratRate}kg ${t('big_carat_qty')}: ${bill.bigCarat} at per carat ${bill.bigCaratRate}${t('rs_symbol')}\n\n`;
     
-    let amountSummary = `*Amount Summary:*\n`;
-    amountSummary += `Total Amount: ${bill.totalAmount.toLocaleString()}rs\n`;
-    amountSummary += `Paid Amount: ${bill.paidAmount.toLocaleString()}rs\n`;
-    amountSummary += `*Due Amount: ${bill.dueAmount.toLocaleString()}rs*\n\n`;
+    let amountSummary = `*${t('calculation_summary')}:*\n`;
+    amountSummary += `${t('total_amount')} ${bill.totalAmount.toLocaleString()}${t('rs_symbol')}\n`;
+    amountSummary += `${t('paid_amount')} ${bill.paidAmount.toLocaleString()}${t('rs_symbol')}\n`;
+    amountSummary += `*${t('due_amount')} ${bill.dueAmount.toLocaleString()}${t('rs_symbol')}*\n\n`;
     
-    const paymentDetails = `*Payment Details:*\nPayment Method: ${bill.paymentMode}\nDate & Time: ${format(new Date(bill.createdAt), 'PPpp')}\n\n`;
-    const footer = `Thank you for your business! 😊`;
+    const paymentDetails = `*${t('payment_details')}:*\n${t('payment_method')}: ${bill.paymentMode}\n${t('date')} & ${t('time')}: ${format(new Date(bill.createdAt), 'PPpp')}\n\n`;
+    const footer = `${t('whatsapp_thank_you')} 😊`;
 
     return encodeURIComponent(header + billInfo + customerDetails + caratDetails + amountSummary + paymentDetails + footer);
   };
@@ -129,51 +131,51 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             {/* Header */}
             <header className="flex justify-between items-start mb-6 pb-4 border-b">
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">Ananad Sagar Ripening Chamber</h1>
-                <p className="text-sm text-gray-500">Ichapur Road, Shahpur</p>
+                <h1 className="text-2xl font-bold text-gray-800">{t('bill_receipt_title')}</h1>
+                <p className="text-sm text-gray-500">{t('bill_receipt_subtitle')}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-500">Bill No: #${bill.id.slice(-6).toUpperCase()}</p>
-                <p className="text-sm text-gray-500">Date: ${format(new Date(bill.createdAt), 'PP')}</p>
+                <p className="text-sm text-gray-500">{t('bill_no')}: #${bill.id.slice(-6).toUpperCase()}</p>
+                <p className="text-sm text-gray-500">{t('date')}: ${format(new Date(bill.createdAt), 'PP')}</p>
               </div>
             </header>
 
             <main className="space-y-6">
               {/* Customer Details */}
               <div className="p-4 bg-gray-50 rounded-lg">
-                <h2 className="text-lg font-bold text-gray-700 mb-2">Customer Details</h2>
+                <h2 className="text-lg font-bold text-gray-700 mb-2">{t('customer_details')}</h2>
                 <div className="space-y-1">
-                  <DetailItem label="Name" value={bill.customerName} />
-                  {bill.roomNumber && <DetailItem label="Room Number" value={bill.roomNumber} />}
-                  {bill.contactNumber && <DetailItem label="Contact" value={bill.contactNumber} />}
+                  <DetailItem label={t('customer_name')} value={bill.customerName} />
+                  {bill.roomNumber && <DetailItem label={t('room_number')} value={bill.roomNumber} />}
+                  {bill.contactNumber && <DetailItem label={t('contact_number')} value={bill.contactNumber} />}
                 </div>
               </div>
 
               {/* Carat Details */}
               <div className="p-4 bg-gray-50 rounded-lg">
-                <h2 className="text-lg font-bold text-gray-700 mb-3">Carat Details</h2>
+                <h2 className="text-lg font-bold text-gray-700 mb-3">{t('carat_details')}</h2>
                 <div className="space-y-3">
-                  {bill.inCarat && bill.inCarat > 0 && <DetailItem label="In Carat" value={bill.inCarat} />}
-                  {bill.outCarat && bill.outCarat > 0 && <DetailItem label="Out Carat" value={bill.outCarat} />}
+                  {bill.inCarat && bill.inCarat > 0 && <DetailItem label={t('in_carat')} value={bill.inCarat} />}
+                  {bill.outCarat && bill.outCarat > 0 && <DetailItem label={t('out_carat')} value={bill.outCarat} />}
 
                   {bill.smallCarat && bill.smallCarat > 0 && bill.smallCaratRate && (
                     <DetailItem
-                      label={`${bill.smallCaratRate}kg Carat`}
-                      value={`${bill.smallCarat} at per carat ${bill.smallCaratRate}rs`}
+                      label={`${bill.smallCaratRate}kg ${t('small_carat_qty')}`}
+                      value={`${bill.smallCarat} at per carat ${bill.smallCaratRate}${t('rs_symbol')}`}
                     />
                   )}
                   {bill.bigCarat && bill.bigCarat > 0 && bill.bigCaratRate && (
                      <DetailItem
-                      label={`${bill.bigCaratRate}kg Carat`}
-                      value={`${bill.bigCarat} at per carat ${bill.bigCaratRate}rs`}
+                      label={`${bill.bigCaratRate}kg ${t('big_carat_qty')}`}
+                      value={`${bill.bigCarat} at per carat ${bill.bigCaratRate}${t('rs_symbol')}`}
                     />
                   )}
                    <Separator className="my-2" />
-                  <DetailItem label="Total Amount" value={`${bill.totalAmount.toLocaleString()}rs`} valueClassName="text-lg font-bold text-gray-800" />
-                  <DetailItem label="Paid Amount" value={`${bill.paidAmount.toLocaleString()}rs`} />
+                  <DetailItem label={t('total_amount')} value={`${bill.totalAmount.toLocaleString()}${t('rs_symbol')}`} valueClassName="text-lg font-bold text-gray-800" />
+                  <DetailItem label={t('paid_amount')} value={`${bill.paidAmount.toLocaleString()}${t('rs_symbol')}`} />
                   <DetailItem 
-                    label="Due Amount" 
-                    value={`${bill.dueAmount.toLocaleString()}rs`} 
+                    label={t('due_amount')} 
+                    value={`${bill.dueAmount.toLocaleString()}${t('rs_symbol')}`} 
                     valueClassName={cn("font-bold", bill.dueAmount > 0 ? "text-red-600" : "text-green-600")} 
                   />
                 </div>
@@ -181,10 +183,10 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               
               {/* Payment Details */}
               <div className="p-4 bg-gray-50 rounded-lg">
-                 <h2 className="text-lg font-bold text-gray-700 mb-2">Payment Details</h2>
+                 <h2 className="text-lg font-bold text-gray-700 mb-2">{t('payment_details')}</h2>
                  <div className="space-y-1">
-                    <DetailItem label="Payment Method" value={bill.paymentMode} />
-                    <DetailItem label="Date & Time" value={format(new Date(bill.createdAt), 'PPpp')} />
+                    <DetailItem label={t('payment_method')} value={bill.paymentMode} />
+                    <DetailItem label={`${t('date')} & ${t('time')}`} value={format(new Date(bill.createdAt), 'PPpp')} />
                  </div>
               </div>
             </main>
@@ -192,10 +194,10 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             {/* Footer */}
             <footer className="mt-10 pt-6 border-t flex justify-between items-center">
               <div className="text-center">
-                <p className="text-sm text-gray-500">Seal / Signature</p>
+                <p className="text-sm text-gray-500">{t('signature_seal')}</p>
               </div>
               <div className="text-sm text-gray-600">
-                Thank You 😊
+                {t('thank_you_note')} 😊
               </div>
             </footer>
           </div>
@@ -204,16 +206,16 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
           <DialogClose asChild>
             <Button variant="outline" className='flex-1'>
                 <X className="mr-2 h-4 w-4" />
-                Close
+                {t('close')}
             </Button>
           </DialogClose>
           <Button variant="secondary" onClick={handleWhatsAppClick} className='flex-1' disabled={!bill.contactNumber}>
             <MessageSquare className="mr-2 h-4 w-4" />
-            Send via WhatsApp
+            {t('send_via_whatsapp')}
           </Button>
           <Button variant="default" onClick={handlePrintClick} className='flex-1' disabled={isSaving || isSavingDisabled}>
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-            Save & Print
+            {t('save_and_print')}
           </Button>
         </DialogFooter>
       </DialogContent>
