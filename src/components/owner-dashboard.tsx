@@ -499,9 +499,9 @@ export function OwnerDashboard() {
       });
       return;
     }
-    const message = `🍎 Ananad Sagar Fresh Fruits 🍎
-This is a gentle reminder that your payment is pending. 💰
-Please clear the due amount at your earliest convenience. 😊
+    const message = `Anand Sagar Fresh Fruits 🍎
+This is a gentle reminder that your payment of ₹${customer.totalDueAmount.toLocaleString()} is still pending.
+Please clear the due amount at your earliest convenience.
 Thank you.`;
 
     const whatsappUrl = `https://wa.me/91${customer.contactNumber}?text=${encodeURIComponent(message)}`;
@@ -1020,3 +1020,6 @@ Thank you.`;
 
     
 
+
+
+    
