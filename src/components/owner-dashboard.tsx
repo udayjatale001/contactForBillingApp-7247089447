@@ -67,6 +67,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import * as XLSX from 'xlsx';
+import { useLanguage } from '@/context/language-context';
 
 const ALL_MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -181,6 +182,7 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
 export function OwnerDashboard() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [remindersState, setRemindersState] = React.useState<{ [key: string]: 'sending' | 'sent' | 'error' }>({});
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
@@ -499,10 +501,7 @@ export function OwnerDashboard() {
       });
       return;
     }
-    const message = `Anand Sagar Fresh Fruits 🍎
-This is a gentle reminder that your payment of ₹${customer.totalDueAmount.toLocaleString()} is still pending.
-Please clear the due amount at your earliest convenience.
-Thank you.`;
+    const message = t('whatsapp_reminder_message', customer.totalDueAmount.toLocaleString());
 
     const whatsappUrl = `https://wa.me/91${customer.contactNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');

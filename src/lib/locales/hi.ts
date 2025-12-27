@@ -142,4 +142,7 @@ export default {
   delete_token: 'टोकन हटाएं',
   token_deleted: 'टोकन हटाया गया',
   token_deleted_desc: '{0} के लिए टोकन हटा दिया गया है।',
+  
+  // Owner Dashboard
+  whatsapp_reminder_message: "आनंद सागर फ्रेश फ्रूट्स 🍎\nयह एक विनम्र अनुस्मारक है कि आपका ₹{0} का भुगतान अभी भी लंबित है।\nकृपया जल्द से जल्द बकाया राशि का भुगतान करें।\nधन्यवाद।",
 };

@@ -142,4 +142,7 @@ export default {
   delete_token: 'Delete Token',
   token_deleted: 'Token Deleted',
   token_deleted_desc: 'The token for {0} has been removed.',
+  
+  // Owner Dashboard
+  whatsapp_reminder_message: "Anand Sagar Fresh Fruits 🍎\nThis is a gentle reminder that your payment of ₹{0} is still pending.\nPlease clear the due amount at your earliest convenience.\nThank you.",
 };
