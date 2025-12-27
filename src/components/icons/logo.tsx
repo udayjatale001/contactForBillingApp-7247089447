@@ -1,7 +1,11 @@
 
+'use client';
+
 import { Banana } from 'lucide-react';
+import { useLanguage } from '@/context/language-context';
 
 export function Logo() {
+  const { t } = useLanguage();
   return (
     <div className="group flex items-center gap-2 text-primary">
       <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
@@ -12,7 +16,7 @@ export function Logo() {
           Ananad Sagar
         </span>
         <span className="text-xs text-muted-foreground leading-tight">
-          Billing App
+          {t('billing_app')}
         </span>
       </div>
     </div>

@@ -35,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
+import { useLanguage } from '@/context/language-context';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -44,6 +45,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
+  const { t } = useLanguage();
 
   React.useEffect(() => {
     if (!isUserLoading && !user) {
@@ -63,13 +65,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     if (!auth) return;
     try {
       await signOut(auth);
-      toast({ title: 'Logged out successfully.' });
+      toast({ title: t('logged_out_successfully') });
       router.push('/login');
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Logout Failed',
-        description: 'An error occurred while logging out.',
+        title: t('logout_failed'),
+        description: t('logout_error_desc'),
       });
     }
   };
@@ -77,37 +79,37 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const baseMenuItems = [
     {
       href: '/',
-      label: 'Create Bill',
+      label: t('create_bill'),
       icon: Home,
       ownerOnly: false,
     },
     {
       href: '/History',
-      label: 'Billing History',
+      label: t('billing_history'),
       icon: FileText,
       ownerOnly: false,
     },
     {
       href: '/Labourer',
-      label: 'Labour',
+      label: t('labour'),
       icon: Wrench,
       ownerOnly: false,
     },
     {
       href: '/notifications',
-      label: 'Notifications',
+      label: t('notifications'),
       icon: Bell,
       ownerOnly: false,
     },
     {
       href: '/Admin',
-      label: 'Admin',
+      label: t('admin'),
       icon: User,
       ownerOnly: false,
     },
     {
       href: '/about',
-      label: 'About',
+      label: t('about'),
       icon: Info,
       ownerOnly: false,
     },
@@ -122,7 +124,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     if (isOwner) {
         items.unshift({
             href: '/dashboard',
-            label: 'Dashboard',
+            label: t('dashboard'),
             icon: LayoutDashboard,
             ownerOnly: true,
         });
@@ -131,7 +133,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     // Filter out items that are not for the current user type
     return items.filter(item => !item.ownerOnly || isOwner);
 
-  }, [isOwner, baseMenuItems]);
+  }, [isOwner, baseMenuItems, t]);
 
   if (isUserLoading || user === null || (user && isOwner === null)) {
      return (
@@ -173,10 +175,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={handleLogout}
-                tooltip={{ children: 'Logout' }}
+                tooltip={{ children: t('logout') }}
               >
                 <LogOut />
-                <span>Logout</span>
+                <span>{t('logout')}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
