@@ -36,7 +36,7 @@ import { BillingFormValues, billingSchema, Bill, AppSettings, Notification, Labo
 import { useToast } from '@/hooks/use-toast';
 import { BillSummaryDialog } from './bill-summary-dialog';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, addDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, addDocumentNonBlocking, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { TokenSummaryDialog } from './token-summary-dialog';
@@ -67,16 +67,16 @@ export function BillingForm() {
       inCarat: undefined,
       outCarat: undefined,
       smallCarat: undefined,
-      smallCaratRate: undefined,
+      smallCaratRate: appSettings?.smallCaratRate,
       bigCarat: undefined,
-      bigCaratRate: undefined,
+      bigCaratRate: appSettings?.bigCaratRate,
       paidAmount: undefined,
       paymentMode: 'Cash' as 'Cash' | 'Online Payment' | 'Due',
       paidTo: 'Gopal Temkar' as 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gaju Dada',
       inCaratLabour: undefined,
-      inCaratLabourRate: 1.5,
+      inCaratLabourRate: appSettings?.labourRate,
       outCaratLabour: undefined,
-      outCaratLabourRate: 1.5,
+      outCaratLabourRate: appSettings?.labourRate,
   };
 
   const form = useForm<BillingFormValues>({
@@ -84,6 +84,16 @@ export function BillingForm() {
     defaultValues: defaultFormValues,
     mode: 'onBlur',
   });
+  
+  React.useEffect(() => {
+    if (appSettings) {
+        setValue('smallCaratRate', appSettings.smallCaratRate, { shouldValidate: true });
+        setValue('bigCaratRate', appSettings.bigCaratRate, { shouldValidate: true });
+        setValue('inCaratLabourRate', appSettings.labourRate, { shouldValidate: true });
+        setValue('outCaratLabourRate', appSettings.labourRate, { shouldValidate: true });
+    }
+  }, [appSettings, form.setValue]);
+
 
   const { watch, setValue, trigger, getValues } = form;
   
@@ -165,61 +175,79 @@ export function BillingForm() {
   }, [paymentMode, form]);
 
 
-  const handleSaveAndPrint = async () => {
-    if (generatedBill && user && firestore) {
-        // 1. Save the bill documents
-        addDocumentNonBlocking(collection(firestore, 'managers', user.uid, 'bills'), generatedBill);
-        addDocumentNonBlocking(collection(firestore, 'bills'), generatedBill);
+  const handleSaveBill = async (): Promise<void> => {
+    return new Promise(async (resolve, reject) => {
+      if (generatedBill && user && firestore) {
+          try {
+              const billCollectionRef = collection(firestore, 'bills');
+              const managerBillCollectionRef = collection(firestore, 'managers', user.uid, 'bills');
 
-        // 2. Create and save the notification
-        const newNotification: Notification = {
-            id: uuidv4(),
-            billId: generatedBill.id,
-            managerId: user.uid,
-            createdAt: new Date().toISOString(),
-            customerName: generatedBill.customerName,
-            paidAmount: generatedBill.paidAmount,
-            dueAmount: generatedBill.dueAmount,
-            totalCarat: generatedBill.totalCarat,
-            paidTo: generatedBill.paidTo,
-            paymentMode: generatedBill.paymentMode
-        };
-        addDocumentNonBlocking(collection(firestore, 'notifications'), newNotification);
+              // Use non-blocking writes for better UX
+              setDocumentNonBlocking(doc(billCollectionRef, generatedBill.id), generatedBill, { merge: true });
+              setDocumentNonBlocking(doc(managerBillCollectionRef, generatedBill.id), generatedBill, { merge: true });
 
-        // 3. Create and save the labour record if applicable
-        if (generatedBill.totalLabourAmount && generatedBill.totalLabourAmount > 0) {
-            const newLabourRecord: Labour = {
-                id: uuidv4(),
-                billId: generatedBill.id,
-                managerId: user.uid,
-                customerName: generatedBill.customerName,
-                inCaratLabour: generatedBill.inCaratLabour,
-                inCaratLabourRate: generatedBill.inCaratLabourRate,
-                outCaratLabour: generatedBill.outCaratLabour,
-                outCaratLabourRate: generatedBill.outCaratLabourRate,
-                totalLabourAmount: generatedBill.totalLabourAmount,
-                createdAt: generatedBill.createdAt,
-            };
-            addDocumentNonBlocking(collection(firestore, 'labours'), newLabourRecord);
-        }
-        
-        // 4. Trigger print
-        window.print();
+              const newNotification: Notification = {
+                  id: uuidv4(),
+                  billId: generatedBill.id,
+                  managerId: user.uid,
+                  createdAt: new Date().toISOString(),
+                  customerName: generatedBill.customerName,
+                  paidAmount: generatedBill.paidAmount,
+                  dueAmount: generatedBill.dueAmount,
+                  totalCarat: generatedBill.totalCarat,
+                  paidTo: generatedBill.paidTo,
+                  paymentMode: generatedBill.paymentMode
+              };
+              addDocumentNonBlocking(collection(firestore, 'notifications'), newNotification);
 
-        // 5. Reset the form
-        form.reset(defaultFormValues);
-        setGeneratedBill(null);
+              if (generatedBill.totalLabourAmount && generatedBill.totalLabourAmount > 0) {
+                  const newLabourRecord: Labour = {
+                      id: uuidv4(),
+                      billId: generatedBill.id,
+                      managerId: user.uid,
+                      customerName: generatedBill.customerName,
+                      inCaratLabour: generatedBill.inCaratLabour,
+                      inCaratLabourRate: generatedBill.inCaratLabourRate,
+                      outCaratLabour: generatedBill.outCaratLabour,
+                      outCaratLabourRate: generatedBill.outCaratLabourRate,
+                      totalLabourAmount: generatedBill.totalLabourAmount,
+                      createdAt: generatedBill.createdAt,
+                  };
+                  addDocumentNonBlocking(collection(firestore, 'labours'), newLabourRecord);
+              }
+              
+              toast({
+                title: 'Bill Saved!',
+                description: `The bill for ${generatedBill.customerName} has been saved.`,
+              });
 
-        toast({
-          title: 'Bill Saved & Printed!',
-          description: 'The bill has been saved and the print dialog opened.',
-        });
-    }
-  };
+              // Reset form state only after all operations initiated
+              form.reset(defaultFormValues);
+              setGeneratedBill(null);
+
+              resolve();
+          } catch (error) {
+              console.error("Error saving bill and associated data: ", error);
+              toast({
+                  variant: 'destructive',
+                  title: 'Save Failed',
+                  description: 'An error occurred while saving the bill.',
+              });
+              reject(error);
+          }
+      } else {
+        reject(new Error("No bill data, user, or firestore available."));
+      }
+    });
+};
 
   const handleBillDialogClose = (open: boolean) => {
     if (!open) {
-      setGeneratedBill(null);
+      // If the dialog is closed without saving, we still need to reset the form.
+      if (generatedBill) {
+        form.reset(defaultFormValues);
+        setGeneratedBill(null);
+      }
     }
   }
 
@@ -795,8 +823,8 @@ export function BillingForm() {
           bill={generatedBill}
           open={!!generatedBill}
           onOpenChange={handleBillDialogClose}
-          onSave={handleSaveAndPrint}
-          isSaving={false} // This can be managed if printing has a loading state
+          onSave={handleSaveBill}
+          isSaving={isSubmitting} 
           isSavingDisabled={false}
         />
       )}
@@ -811,5 +839,3 @@ export function BillingForm() {
     </>
   );
 }
-
-    

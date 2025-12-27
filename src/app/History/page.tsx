@@ -282,7 +282,8 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
           bill={selectedBill}
           open={!!selectedBill}
           onOpenChange={handleCloseDialog}
-          onSave={async () => handleCloseDialog()}
+          onSave={async () => { /* This is a dummy function as we're not saving from history view */ }}
+          isSaving={false}
           isSavingDisabled={true}
         />
       )}

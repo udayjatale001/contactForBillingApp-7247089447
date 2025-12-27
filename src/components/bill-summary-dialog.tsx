@@ -62,9 +62,11 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
   };
 
   const handlePrintClick = async () => {
-    if (isSavingDisabled) return;
     setIsSavingForPrint(true);
-    await onSave();
+    // Don't save if it's just a view from history
+    if (!isSavingDisabled) {
+      await onSave();
+    }
     // The print is handled via CSS, so we just trigger it after saving.
     setTimeout(() => {
         window.print();
@@ -73,9 +75,12 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
   }
 
   const handleWhatsAppClick = async () => {
-    if (isSavingDisabled || !bill.contactNumber) return;
+    if (!bill.contactNumber) return;
     setIsSavingForWhatsApp(true);
-    await onSave();
+     // Don't save if it's just a view from history
+    if (!isSavingDisabled) {
+      await onSave();
+    }
 
     const message = generateWhatsAppMessage();
     // Assuming Indian phone numbers without country code, will add 91.
@@ -223,7 +228,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             variant="secondary" 
             onClick={handleWhatsAppClick} 
             className='flex-1' 
-            disabled={isSavingDisabled || !bill.contactNumber || isSavingForPrint || isSavingForWhatsApp}
+            disabled={!bill.contactNumber || isSavingForPrint || isSavingForWhatsApp || isSaving}
           >
             {isSavingForWhatsApp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
             {t('send_via_whatsapp')}
@@ -232,10 +237,10 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             variant="default" 
             onClick={handlePrintClick} 
             className='flex-1' 
-            disabled={isSavingDisabled || isSavingForPrint || isSavingForWhatsApp}
+            disabled={isSavingForPrint || isSavingForWhatsApp || isSaving}
           >
             {isSavingForPrint ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-            {t('save_and_print')}
+            {isSavingDisabled ? t('print') : t('save_and_print')}
           </Button>
         </DialogFooter>
       </DialogContent>
