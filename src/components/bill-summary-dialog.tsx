@@ -30,18 +30,13 @@ interface BillSummaryDialogProps {
 
 export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, isSavingDisabled }: BillSummaryDialogProps) {
   const { t } = useLanguage();
+  const [isSavingForPrint, setIsSavingForPrint] = React.useState(false);
+  const [isSavingForWhatsApp, setIsSavingForWhatsApp] = React.useState(false);
 
   if (!bill) {
     return null;
   }
   
-  const handlePrintClick = () => {
-    onSave().then(() => {
-        // The print is handled via CSS, so we just trigger it after saving.
-        setTimeout(() => window.print(), 100);
-    })
-  }
-
   const generateWhatsAppMessage = () => {
     const header = `*${t('bill_receipt_title')}*\n${t('bill_receipt_subtitle')}\n\n`;
     const billInfo = `*${t('bill_no')}:* #${bill.id.slice(-6).toUpperCase()}\n*${t('date')}:* ${format(new Date(bill.createdAt), 'PP')}\n\n`;
@@ -52,28 +47,43 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     let caratDetails = `*${t('carat_details')}:*\n`;
     if (bill.inCarat) caratDetails += `${t('in_carat')}: ${bill.inCarat}\n`;
     if (bill.outCarat) caratDetails += `${t('out_carat')}: ${bill.outCarat}\n`;
-    if (bill.smallCarat && bill.smallCaratRate) caratDetails += `${bill.smallCaratRate}kg ${t('small_carat_qty')}: ${bill.smallCarat} at per carat ${bill.smallCaratRate}${t('rs_symbol')}\n`;
-    if (bill.bigCarat && bill.bigCaratRate) caratDetails += `${bill.bigCaratRate}kg ${t('big_carat_qty')}: ${bill.bigCarat} at per carat ${bill.bigCaratRate}${t('rs_symbol')}\n\n`;
+    if (bill.smallCarat && bill.smallCaratRate) caratDetails += `${t('small_carat_qty')} (${bill.smallCaratRate}${t('rs_symbol')}/kg): ${bill.smallCarat}kg\n`;
+    if (bill.bigCarat && bill.bigCaratRate) caratDetails += `${t('big_carat_qty')} (${bill.bigCaratRate}${t('rs_symbol')}/kg): ${bill.bigCarat}kg\n\n`;
     
     let amountSummary = `*${t('calculation_summary')}:*\n`;
-    amountSummary += `${t('total_amount')} ${bill.totalAmount.toLocaleString()}${t('rs_symbol')}\n`;
-    amountSummary += `${t('paid_amount')} ${bill.paidAmount.toLocaleString()}${t('rs_symbol')}\n`;
-    amountSummary += `*${t('due_amount')} ${bill.dueAmount.toLocaleString()}${t('rs_symbol')}*\n\n`;
+    amountSummary += `${t('total_amount')}: ${bill.totalAmount.toLocaleString()}${t('rs_symbol')}\n`;
+    amountSummary += `${t('paid_amount')}: ${bill.paidAmount.toLocaleString()}${t('rs_symbol')}\n`;
+    amountSummary += `*${t('due_amount')}: ${bill.dueAmount.toLocaleString()}${t('rs_symbol')}*\n\n`;
     
-    const paymentDetails = `*${t('payment_details')}:*\n${t('payment_method')}: ${bill.paymentMode}\n${t('date')} & ${t('time')}: ${format(new Date(bill.createdAt), 'PPpp')}\n\n`;
+    const paymentDetails = `*${t('payment_details')}:*\n${t('payment_method')}: ${t(bill.paymentMode.toLowerCase() as keyof typeof import('@/lib/locales/en').default)}\n${t('date')} & ${t('time')}: ${format(new Date(bill.createdAt), 'PPpp')}\n\n`;
     const footer = `${t('whatsapp_thank_you')} 😊`;
 
     return encodeURIComponent(header + billInfo + customerDetails + caratDetails + amountSummary + paymentDetails + footer);
   };
 
-  const handleWhatsAppClick = () => {
-    if (bill.contactNumber) {
-      const message = generateWhatsAppMessage();
-      // Assuming Indian phone numbers without country code, will add 91.
-      // If numbers already have it, WhatsApp handles it.
-      const whatsappUrl = `https://wa.me/91${bill.contactNumber}?text=${message}`;
-      window.open(whatsappUrl, '_blank');
-    }
+  const handlePrintClick = async () => {
+    if (isSavingDisabled) return;
+    setIsSavingForPrint(true);
+    await onSave();
+    // The print is handled via CSS, so we just trigger it after saving.
+    setTimeout(() => {
+        window.print();
+        setIsSavingForPrint(false);
+    }, 100);
+  }
+
+  const handleWhatsAppClick = async () => {
+    if (isSavingDisabled || !bill.contactNumber) return;
+    setIsSavingForWhatsApp(true);
+    await onSave();
+
+    const message = generateWhatsAppMessage();
+    // Assuming Indian phone numbers without country code, will add 91.
+    // If numbers already have it, WhatsApp handles it.
+    const whatsappUrl = `https://wa.me/91${bill.contactNumber}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
+    setIsSavingForWhatsApp(false);
+    onOpenChange(false); // Close dialog after opening whatsapp
   };
 
 
@@ -160,14 +170,14 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
 
                   {bill.smallCarat && bill.smallCarat > 0 && bill.smallCaratRate && (
                     <DetailItem
-                      label={`${bill.smallCaratRate}kg ${t('small_carat_qty')}`}
-                      value={`${bill.smallCarat} at per carat ${bill.smallCaratRate}${t('rs_symbol')}`}
+                      label={`${t('small_carat_qty')} (${bill.smallCaratRate}${t('rs_symbol')}/kg)`}
+                      value={`${bill.smallCarat} kg`}
                     />
                   )}
                   {bill.bigCarat && bill.bigCarat > 0 && bill.bigCaratRate && (
                      <DetailItem
-                      label={`${bill.bigCaratRate}kg ${t('big_carat_qty')}`}
-                      value={`${bill.bigCarat} at per carat ${bill.bigCaratRate}${t('rs_symbol')}`}
+                      label={`${t('big_carat_qty')} (${bill.bigCaratRate}${t('rs_symbol')}/kg)`}
+                      value={`${bill.bigCarat} kg`}
                     />
                   )}
                    <Separator className="my-2" />
@@ -185,7 +195,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               <div className="p-4 bg-gray-50 rounded-lg">
                  <h2 className="text-lg font-bold text-gray-700 mb-2">{t('payment_details')}</h2>
                  <div className="space-y-1">
-                    <DetailItem label={t('payment_method')} value={bill.paymentMode} />
+                    <DetailItem label={t('payment_method')} value={t(bill.paymentMode.toLowerCase() as keyof typeof import('@/lib/locales/en').default)} />
                     <DetailItem label={`${t('date')} & ${t('time')}`} value={format(new Date(bill.createdAt), 'PPpp')} />
                  </div>
               </div>
@@ -209,12 +219,22 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                 {t('close')}
             </Button>
           </DialogClose>
-          <Button variant="secondary" onClick={handleWhatsAppClick} className='flex-1' disabled={!bill.contactNumber}>
-            <MessageSquare className="mr-2 h-4 w-4" />
+          <Button 
+            variant="secondary" 
+            onClick={handleWhatsAppClick} 
+            className='flex-1' 
+            disabled={isSavingDisabled || !bill.contactNumber || isSavingForPrint || isSavingForWhatsApp}
+          >
+            {isSavingForWhatsApp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
             {t('send_via_whatsapp')}
           </Button>
-          <Button variant="default" onClick={handlePrintClick} className='flex-1' disabled={isSaving || isSavingDisabled}>
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+          <Button 
+            variant="default" 
+            onClick={handlePrintClick} 
+            className='flex-1' 
+            disabled={isSavingDisabled || isSavingForPrint || isSavingForWhatsApp}
+          >
+            {isSavingForPrint ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
             {t('save_and_print')}
           </Button>
         </DialogFooter>
