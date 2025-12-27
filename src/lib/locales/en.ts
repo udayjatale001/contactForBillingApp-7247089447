@@ -109,7 +109,7 @@ export default {
   bill_no: 'Bill No',
   date: 'Date',
   time: 'Time',
-  send_via_whatsapp: 'Save & Send WhatsApp',
+  send_via_whatsapp: 'Send via WhatsApp',
   signature_seal: 'Signature / Seal',
   thank_you_note: 'Thank You',
   

@@ -109,7 +109,7 @@ export default {
   bill_no: 'बिल नंबर',
   date: 'तारीख',
   time: 'समय',
-  send_via_whatsapp: 'सेव करें और व्हाट्सएप भेजें',
+  send_via_whatsapp: 'व्हाट्सएप पर भेजें',
   signature_seal: 'हस्ताक्षर / मुहर',
   thank_you_note: 'धन्यवाद',
   
