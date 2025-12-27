@@ -101,7 +101,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 print:border-none print:shadow-none print:bg-white">
+      <DialogContent className="sm:max-w-lg p-0 print:p-0 print:max-w-full print:w-full print:border-none print:shadow-none print:bg-white">
         <style>
           {`
             @media print {
@@ -110,10 +110,10 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                 margin: 0;
                 padding: 0;
               }
-              #bill-receipt-container, #bill-receipt-container * {
+              #bill-print-area, #bill-print-area * {
                 visibility: visible;
               }
-               #bill-receipt-container {
+               #bill-print-area {
                 position: absolute;
                 left: 0;
                 top: 0;
@@ -122,18 +122,10 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                 height: auto;
                 min-height: 100vh;
                 display: block;
-                padding: 0;
+                padding: 1.5rem;
                 margin: 0;
                 background: white;
                 overflow: visible;
-              }
-               #bill-receipt {
-                  width: 100%;
-                  border: none;
-                  box-shadow: none;
-                  margin: 0;
-                  padding: 1.5rem;
-                  font-size: 14px;
                }
                .print-hidden {
                  display: none;
@@ -141,8 +133,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             }
           `}
         </style>
-        <div id="bill-receipt-container">
-          <div className="p-6 bg-white rounded-lg" id="bill-receipt">
+        <div id="bill-print-area" className="p-6 bg-white rounded-lg">
             {/* Header */}
             <header className="flex justify-between items-start mb-6 pb-4 border-b">
               <div>
@@ -216,7 +207,6 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               </div>
             </footer>
           </div>
-        </div>
         <DialogFooter className="px-6 pb-4 sm:justify-between pt-4 rounded-b-lg border-t print-hidden bg-gray-50 flex-col sm:flex-row gap-2">
           <DialogClose asChild>
             <Button variant="outline" className='flex-1'>
@@ -247,3 +237,6 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     </Dialog>
   );
 }
+
+
+    

@@ -381,10 +381,11 @@ export function BillingForm() {
 
     try {
       // Save to global and manager-specific collections
-      await Promise.all([
-        addDocumentNonBlocking(collection(firestore, 'tokens'), newToken),
-        addDocumentNonBlocking(collection(firestore, 'managers', user.uid, 'tokens'), newToken)
-      ]);
+      const tokenCollectionRef = collection(firestore, 'tokens');
+      const managerTokenCollectionRef = collection(firestore, 'managers', user.uid, 'tokens');
+
+      setDocumentNonBlocking(doc(tokenCollectionRef, newToken.id), newToken, { merge: true });
+      setDocumentNonBlocking(doc(managerTokenCollectionRef, newToken.id), newToken, { merge: true });
       
       setGeneratedToken(newToken);
       
@@ -421,7 +422,51 @@ export function BillingForm() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            <div className="lg:col-span-2 space-y-6">
+            
+             {/* Summary Card - First on mobile, sticky on desktop */}
+            <div className="lg:col-span-1 lg:order-2">
+                <Card className="lg:sticky lg:top-24">
+                   <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Gem className="text-primary"/>
+                      Calculation Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 text-base">
+                     <div className="flex justify-between">
+                      <span className="text-muted-foreground">Carat Amount:</span>
+                      <span>{totalCaratAmount.toLocaleString()}rs</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Internal Labour:</span>
+                      <span className='text-muted-foreground'>{totalLabourAmount.toLocaleString()}rs</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between font-bold text-lg">
+                      <span className="text-muted-foreground">Total Amount:</span>
+                      <span>{totalAmount.toLocaleString()}rs</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Paid Amount:</span>
+                      <span>{(paymentMode === 'Due' ? 0 : Number(paidAmount) || 0).toLocaleString()}rs</span>
+                    </div>
+                    <Separator />
+                    <div className={cn("flex justify-between font-bold text-xl", dueAmount > 0 ? 'text-destructive' : 'text-primary')}>
+                      <span className="text-muted-foreground">Due Amount:</span>
+                      <span>{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}rs</span>
+                    </div>
+                     {dueAmount < 0 && (
+                         <p className="text-sm text-green-600 font-medium">Change to return: {(-dueAmount).toLocaleString()}rs</p>
+                     )}
+                  </CardContent>
+                  <Button type="submit" className="w-full h-12 rounded-t-none text-lg" disabled={isSubmitting || isLoadingRates}>
+                    {isSubmitting || isLoadingRates ? <Loader2 className="animate-spin" /> : 'Generate Bill'}
+                  </Button>
+                </Card>
+            </div>
+            
+            <div className="lg:col-span-2 space-y-6 lg:order-1">
                 {/* Customer Details */}
                 <Card>
                     <CardHeader>
@@ -775,45 +820,6 @@ export function BillingForm() {
                 </Card>
             </div>
 
-            <Card className="lg:col-span-1 h-fit sticky top-24">
-               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Gem className="text-primary"/>
-                  Calculation Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-base">
-                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Carat Amount:</span>
-                  <span>{totalCaratAmount.toLocaleString()}rs</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Internal Labour:</span>
-                  <span className='text-muted-foreground'>{totalLabourAmount.toLocaleString()}rs</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between font-bold text-lg">
-                  <span className="text-muted-foreground">Total Amount:</span>
-                  <span>{totalAmount.toLocaleString()}rs</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Paid Amount:</span>
-                  <span>{(paymentMode === 'Due' ? 0 : Number(paidAmount) || 0).toLocaleString()}rs</span>
-                </div>
-                <Separator />
-                <div className={cn("flex justify-between font-bold text-xl", dueAmount > 0 ? 'text-destructive' : 'text-primary')}>
-                  <span className="text-muted-foreground">Due Amount:</span>
-                  <span>{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}rs</span>
-                </div>
-                 {dueAmount < 0 && (
-                     <p className="text-sm text-green-600 font-medium">Change to return: {(-dueAmount).toLocaleString()}rs</p>
-                 )}
-              </CardContent>
-              <Button type="submit" className="w-full h-12 rounded-t-none text-lg" disabled={isSubmitting || isLoadingRates}>
-                {isSubmitting || isLoadingRates ? <Loader2 className="animate-spin" /> : 'Generate Bill'}
-              </Button>
-            </Card>
           </div>
         </form>
       </Form>
@@ -838,5 +844,7 @@ export function BillingForm() {
     </>
   );
 }
+
+    
 
     
