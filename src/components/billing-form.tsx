@@ -221,9 +221,9 @@ export function BillingForm() {
                 description: `The bill for ${generatedBill.customerName} has been saved.`,
               });
 
-              // Reset form state only after all operations initiated
-              form.reset(defaultFormValues);
-              setGeneratedBill(null);
+              // CRITICAL CHANGE: Do NOT reset form here. Let the close handler do it.
+              // form.reset(defaultFormValues);
+              // setGeneratedBill(null);
 
               resolve();
           } catch (error) {
@@ -242,12 +242,11 @@ export function BillingForm() {
 };
 
   const handleBillDialogClose = (open: boolean) => {
+    // This function will now ONLY handle the closing of the dialog.
+    // The onSave logic no longer automatically closes it.
     if (!open) {
-      // If the dialog is closed without saving, we still need to reset the form.
-      if (generatedBill) {
-        form.reset(defaultFormValues);
         setGeneratedBill(null);
-      }
+        form.reset(defaultFormValues);
     }
   }
 
@@ -839,3 +838,5 @@ export function BillingForm() {
     </>
   );
 }
+
+    
