@@ -31,7 +31,7 @@ export default {
   logged_out_successfully: 'सफलतापूर्वक लॉगआउट हो गया।',
   logout_failed: 'लॉगआउट विफल',
   logout_error_desc: 'लॉगआउट करते समय एक त्रुटि हुई।',
-  koushal: 'कौशल',
+  customer_details: 'ग्राहक विवरण',
 
   // About Page
   about_this_app: 'इस ऐप के बारे में',
@@ -41,7 +41,6 @@ export default {
   contact_devs: 'ऐप और वेबसाइट डेवलपमेंट के लिए संपर्क करें:',
 
   // Billing Form
-  customer_details: 'ग्राहक विवरण',
   customer_name: 'ग्राहक का नाम',
   enter_customer_name: 'ग्राहक का नाम दर्ज करें',
   contact_number: 'संपर्क नंबर',

@@ -31,7 +31,7 @@ export default {
   logged_out_successfully: 'Logged out successfully.',
   logout_failed: 'Logout Failed',
   logout_error_desc: 'An error occurred while logging out.',
-  koushal: 'Koushal',
+  customer_details: 'Customer Details',
 
   // About Page
   about_this_app: 'About This App',
@@ -41,8 +41,6 @@ export default {
   contact_devs: 'For app and website development, contact:',
 
   // Billing Form
-  customer_details: 'Customer Details',
-  customer_name: 'Customer Name',
   enter_customer_name: "Enter customer's name",
   contact_number: 'Contact Number',
   enter_contact_number: 'e.g., 9876543210',

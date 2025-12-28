@@ -116,8 +116,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     },
     {
       href: '/koushal',
-      label: t('koushal'),
-      icon: User,
+      label: t('customer_details'),
+      icon: Users,
       ownerOnly: false,
     },
   ];
