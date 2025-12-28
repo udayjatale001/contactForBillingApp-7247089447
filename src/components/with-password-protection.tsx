@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { ComponentType, useState, useEffect, useCallback } from 'react';
@@ -24,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const AUTHORIZED_MOBILE_NUMBER = '9826926999';
 const PASSWORD_STORAGE_KEY = 'admin-password';
@@ -34,6 +36,7 @@ export default function withPasswordProtection<P extends object>(
 ) {
   const WithPasswordProtection = (props: P) => {
     const { toast } = useToast();
+    const router = useRouter();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [showPasswordDialog, setShowPasswordDialog] = useState(true);
     const [passwordInput, setPasswordInput] = useState('');
@@ -124,6 +127,17 @@ export default function withPasswordProtection<P extends object>(
         setShowPasswordDialog(true); // Go back to the main password dialog
     };
 
+    const handleDialogClose = (isOpen: boolean) => {
+      // If the user tries to close the dialog without authenticating,
+      // we can either force it to stay open or navigate away.
+      // For a better UX, let's allow it to close, but the page content remains hidden.
+      if (!isOpen && !isAuthenticated) {
+        setShowPasswordDialog(false);
+        // Optionally, you could redirect them
+        // router.push('/'); 
+      }
+    };
+
 
     if (isAuthenticated) {
       return <WrappedComponent {...props} />;
@@ -132,7 +146,7 @@ export default function withPasswordProtection<P extends object>(
     return (
       <>
         {/* Main Password Dialog */}
-        <Dialog open={showPasswordDialog} onOpenChange={(isOpen) => !isOpen && setShowPasswordDialog(true)}>
+        <Dialog open={showPasswordDialog} onOpenChange={handleDialogClose}>
           <DialogContent className="sm:max-w-[425px]">
             <form onSubmit={handleSubmit}>
               <DialogHeader>
