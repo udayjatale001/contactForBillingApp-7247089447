@@ -34,7 +34,7 @@ export default {
   // About Page
   about_this_app: 'About This App',
   about_p1: 'This application is designed to manage and simplify the banana ripening chamber business. It helps chamber owners maintain accurate records of In-Carat and Out-Carat bananas stored in the chamber.',
-  about_p2: 'The system calculates charges based on carat size: Small Carat (e.g., ₹17 per carat) and Big Carat (e.g., ₹20 per carat). Bananas are stored for a standard period of 3 days, and the app automatically manages billing based on quantity, carat size, and storage duration. It provides clear billing details and helps track inventory, payments, and overall business transactions efficiently.',
+  about_p2: 'The system calculates charges based on carat size: Small Carat (e.g., 17rs per carat) and Big Carat (e.g., 20rs per carat). Bananas are stored for a standard period of 3 days, and the app automatically manages billing based on quantity, carat size, and storage duration. It provides clear billing details and helps track inventory, payments, and overall business transactions efficiently.',
   about_p3: 'This application is built to ensure transparency, accuracy, and smooth day-to-day chamber operations.',
   contact_devs: 'For app and website development, contact:',
 
