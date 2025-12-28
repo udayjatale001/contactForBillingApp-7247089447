@@ -233,6 +233,7 @@ export default function KoushalPage() {
                     <TableRow>
                       <TableHead>Customer Name</TableHead>
                       <TableHead>Contact</TableHead>
+                      <TableHead>Address</TableHead>
                       <TableHead>Total Amount</TableHead>
                       <TableHead>Total Carat</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -243,6 +244,7 @@ export default function KoushalPage() {
                       <TableRow key={customer.id}>
                         <TableCell className="font-medium">{customer.name}</TableCell>
                         <TableCell>{customer.contactNumber || 'N/A'}</TableCell>
+                        <TableCell>{customer.address || 'N/A'}</TableCell>
                         <TableCell className="text-green-600 font-medium">{customer.totalBilledAmount.toLocaleString()}rs</TableCell>
                         <TableCell>{customer.totalCarat.toLocaleString()}</TableCell>
                         <TableCell className="text-right">
