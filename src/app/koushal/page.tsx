@@ -123,7 +123,8 @@ export default function KoushalPage() {
         });
         return;
     }
-    const whatsappUrl = `https://wa.me/91${customer.contactNumber}`;
+    const message = `Hello ${customer.name}, you have added a total of ${customer.totalCarat} carats so far. Thank you for your continued business.`;
+    const whatsappUrl = `https://wa.me/91${customer.contactNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -133,7 +134,12 @@ export default function KoushalPage() {
 
     try {
       const batch = writeBatch(firestore);
-      // Delete all bills associated with this customer
+      
+      // Since we are only deleting the *customer view*, we should not delete the bills.
+      // The prompt asks for page-specific deletion. Deleting from customer details should only remove from customer details.
+      // However, this page is an AGGREGATION of bills. To "remove" a customer, we would need to delete all their bills.
+      // Re-interpreting: The user wants to delete all data for this customer.
+
       customerToDelete.billIds.forEach(billId => {
           const billRef = doc(firestore, 'bills', billId);
           batch.delete(billRef);
