@@ -26,7 +26,7 @@ import {
   Calendar as CalendarIcon,
   X,
 } from 'lucide-react';
-import { formatDistanceToNow, format, isSameDay, startOfDay, endOfDay } from 'date-fns';
+import { formatDistanceToNow, format, startOfDay, endOfDay, sub } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -71,20 +71,21 @@ function NotificationsPage() {
 
   const notificationsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    if (globalDate) {
-        const startDate = startOfDay(globalDate).toISOString();
-        const endDate = endOfDay(globalDate).toISOString();
-        return query(
-            collection(firestore, 'notifications'),
-            where('createdAt', '>=', startDate),
-            where('createdAt', '<=', endDate),
-            orderBy('createdAt', 'desc')
-        );
-    }
-    return query(
+    let q = query(
       collection(firestore, 'notifications'),
       orderBy('createdAt', 'desc')
     );
+
+    if (globalDate) {
+        const startDate = startOfDay(globalDate).toISOString();
+        const endDate = endOfDay(globalDate).toISOString();
+        q = query(q, where('createdAt', '>=', startDate), where('createdAt', '<=', endDate));
+    } else {
+        const twentyFourHoursAgo = sub(new Date(), { hours: 24 }).toISOString();
+        q = query(q, where('createdAt', '>=', twentyFourHoursAgo));
+    }
+
+    return q;
   }, [firestore, globalDate]);
 
   const { data: notifications, isLoading: isLoadingNotifications } =
@@ -267,9 +268,9 @@ function NotificationsPage() {
     return (
       <div className="text-center py-16">
         <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-        <h3 className="mt-4 text-lg font-semibold">No activity yet</h3>
+        <h3 className="mt-4 text-lg font-semibold">No activity found</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          New notifications will appear here as bills are created.
+          No records found for the selected period. New notifications will appear here.
         </p>
       </div>
     );
@@ -314,12 +315,12 @@ function NotificationsPage() {
                         <Button
                             variant={'outline'}
                             className={cn(
-                            'w-full md:w-[240px] justify-start text-left font-normal',
+                            'w-full md:w-[280px] justify-start text-left font-normal',
                             !globalDate && 'text-muted-foreground'
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {globalDate ? format(globalDate, 'PPP') : <span>Pick a date</span>}
+                            {globalDate ? format(globalDate, 'PPP') : <span>Last 24 Hours</span>}
                         </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="end">

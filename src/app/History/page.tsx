@@ -44,7 +44,7 @@ import { collection, query, where, orderBy, getDoc, doc, deleteDoc, writeBatch, 
 import { BillSummaryDialog } from '@/components/bill-summary-dialog';
 import { TokenSummaryDialog } from '@/components/token-summary-dialog';
 import { cn } from '@/lib/utils';
-import { isSameDay, format, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfDay, endOfDay, sub } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -77,21 +77,22 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
   const billsQuery = useMemoFirebase(() => {
     if (!firestore || !collectionPath) return null;
     
-    if (globalDate) {
-        const startDate = startOfDay(globalDate).toISOString();
-        const endDate = endOfDay(globalDate).toISOString();
-        return query(
-            collection(firestore, collectionPath),
-            where('createdAt', '>=', startDate),
-            where('createdAt', '<=', endDate),
-            orderBy('createdAt', 'desc')
-        );
-    }
-    
-    return query(
+    let q = query(
       collection(firestore, collectionPath),
       orderBy('createdAt', 'desc')
     );
+    
+    if (globalDate) {
+        const startDate = startOfDay(globalDate).toISOString();
+        const endDate = endOfDay(globalDate).toISOString();
+        q = query(q, where('createdAt', '>=', startDate), where('createdAt', '<=', endDate));
+    } else {
+        // Default to last 24 hours if no date is selected
+        const twentyFourHoursAgo = sub(new Date(), { hours: 24 }).toISOString();
+        q = query(q, where('createdAt', '>=', twentyFourHoursAgo));
+    }
+    
+    return q;
   }, [firestore, collectionPath, globalDate]);
 
   const { data: bills, isLoading } = useCollection<Bill>(billsQuery);
@@ -196,12 +197,12 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
                         <Button
                             variant={'outline'}
                             className={cn(
-                            'w-full md:w-[240px] justify-start text-left font-normal',
+                            'w-full md:w-[280px] justify-start text-left font-normal',
                             !globalDate && 'text-muted-foreground'
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {globalDate ? format(globalDate, 'PPP') : <span>Pick a date</span>}
+                            {globalDate ? format(globalDate, 'PPP') : <span>Last 24 Hours</span>}
                         </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="end">
@@ -279,7 +280,7 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
                   <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
                   <h3 className="mt-4 text-lg font-semibold">No Bills Found</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                      Your search did not return any results.
+                      No records found for the selected period.
                   </p>
               </div>
             )}
@@ -343,20 +344,20 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
 
   const tokensQuery = useMemoFirebase(() => {
     if (!firestore || !collectionPath) return null;
-    if (globalDate) {
-        const startDate = startOfDay(globalDate).toISOString();
-        const endDate = endOfDay(globalDate).toISOString();
-        return query(
-            collection(firestore, collectionPath),
-            where('createdAt', '>=', startDate),
-            where('createdAt', '<=', endDate),
-            orderBy('createdAt', 'desc')
-        );
-    }
-    return query(
+    let q = query(
       collection(firestore, collectionPath),
       orderBy('createdAt', 'desc')
     );
+    
+    if (globalDate) {
+        const startDate = startOfDay(globalDate).toISOString();
+        const endDate = endOfDay(globalDate).toISOString();
+        q = query(q, where('createdAt', '>=', startDate), where('createdAt', '<=', endDate));
+    } else {
+        const twentyFourHoursAgo = sub(new Date(), { hours: 24 }).toISOString();
+        q = query(q, where('createdAt', '>=', twentyFourHoursAgo));
+    }
+    return q;
   }, [firestore, collectionPath, globalDate]);
 
   const { data: tokens, isLoading } = useCollection<Token>(tokensQuery);
@@ -447,12 +448,12 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
                         <Button
                             variant={'outline'}
                             className={cn(
-                            'w-full md:w-[240px] justify-start text-left font-normal',
+                            'w-full md:w-[280px] justify-start text-left font-normal',
                             !globalDate && 'text-muted-foreground'
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {globalDate ? format(globalDate, 'PPP') : <span>Pick a date</span>}
+                            {globalDate ? format(globalDate, 'PPP') : <span>Last 24 Hours</span>}
                         </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="end">
@@ -524,7 +525,7 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
                   <Ticket className="mx-auto h-12 w-12 text-muted-foreground" />
                   <h3 className="mt-4 text-lg font-semibold">No Tokens Found</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                      Tokens are saved when you click "Print Token" on the billing page.
+                      No records found for the selected period.
                   </p>
               </div>
             )}
