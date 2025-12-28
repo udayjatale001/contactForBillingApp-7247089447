@@ -31,6 +31,7 @@ export default {
   logged_out_successfully: 'Logged out successfully.',
   logout_failed: 'Logout Failed',
   logout_error_desc: 'An error occurred while logging out.',
+  koushal: 'Koushal',
 
   // About Page
   about_this_app: 'About This App',

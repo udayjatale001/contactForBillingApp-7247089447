@@ -31,6 +31,7 @@ export default {
   logged_out_successfully: 'सफलतापूर्वक लॉगआउट हो गया।',
   logout_failed: 'लॉगआउट विफल',
   logout_error_desc: 'लॉगआउट करते समय एक त्रुटि हुई।',
+  koushal: 'कौशल',
 
   // About Page
   about_this_app: 'इस ऐप के बारे में',

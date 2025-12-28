@@ -114,6 +114,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       icon: Info,
       ownerOnly: false,
     },
+    {
+      href: '/koushal',
+      label: t('koushal'),
+      icon: User,
+      ownerOnly: false,
+    },
   ];
 
   const menuItems = React.useMemo(() => {
