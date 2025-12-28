@@ -63,7 +63,7 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint }: Token
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xs w-full p-0 print:border-none print:shadow-none print:bg-white">
+      <DialogContent className="max-w-xs w-full p-0 print:border-none print:shadow-none print:bg-white sm:max-h-[90vh] flex flex-col">
         <style>
           {`
             @media print {
@@ -100,7 +100,7 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint }: Token
             }
           `}
         </style>
-        <div id="token-receipt-container">
+        <div id="token-receipt-container" className="flex-1 overflow-y-auto">
           <div className="p-4 bg-white rounded-lg border-2 border-dashed border-gray-400" id="token-receipt">
             {/* Header */}
             <header className="text-center mb-3 pb-2 border-b-2 border-dashed border-gray-300">
