@@ -15,7 +15,7 @@ import {
   useUser,
   useFirestore,
 } from '@/firebase';
-import { collection, query, orderBy, doc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, orderBy, doc, deleteDoc, writeBatch, where } from 'firebase/firestore';
 import type { Notification } from '@/lib/types';
 import {
   Loader2,
@@ -26,7 +26,7 @@ import {
   Calendar as CalendarIcon,
   X,
 } from 'lucide-react';
-import { formatDistanceToNow, format, isSameDay } from 'date-fns';
+import { formatDistanceToNow, format, isSameDay, startOfDay, endOfDay } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -52,14 +52,15 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { Checkbox } from '@/components/ui/checkbox';
 import withPasswordProtection from '@/components/with-password-protection';
 import { ParsedNotification } from '@/components/parsed-notification';
+import { useDateFilter } from '@/context/date-filter-context';
 
 function NotificationsPage() {
   const firestore = useFirestore();
   const { isUserLoading } = useUser();
   const { toast } = useToast();
+  const { globalDate } = useDateFilter();
 
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
   const [notificationToDelete, setNotificationToDelete] = React.useState<
     Notification | undefined
   >();
@@ -70,11 +71,21 @@ function NotificationsPage() {
 
   const notificationsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    if (globalDate) {
+        const startDate = startOfDay(globalDate).toISOString();
+        const endDate = endOfDay(globalDate).toISOString();
+        return query(
+            collection(firestore, 'notifications'),
+            where('createdAt', '>=', startDate),
+            where('createdAt', '<=', endDate),
+            orderBy('createdAt', 'desc')
+        );
+    }
     return query(
       collection(firestore, 'notifications'),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore]);
+  }, [firestore, globalDate]);
 
   const { data: notifications, isLoading: isLoadingNotifications } =
     useCollection<Notification>(notificationsQuery);
@@ -82,20 +93,15 @@ function NotificationsPage() {
   const filteredNotifications = React.useMemo(() => {
     if (!notifications) return [];
     
-    let dateFilteredNotifications = notifications;
-    if (selectedDate) {
-        dateFilteredNotifications = notifications.filter((notification) => isSameDay(new Date(notification.createdAt), selectedDate));
-    }
-    
     if (searchTerm) {
-        return dateFilteredNotifications.filter((notification) => {
+        return notifications.filter((notification) => {
             const searchLower = searchTerm.toLowerCase();
             return notification.customerName?.toLowerCase().includes(searchLower);
         });
     }
     
-    return dateFilteredNotifications;
-  }, [notifications, searchTerm, selectedDate]);
+    return notifications;
+  }, [notifications, searchTerm]);
   
   React.useEffect(() => {
     // When filters change, we need to remove selected IDs that are no longer visible.
@@ -301,43 +307,6 @@ function NotificationsPage() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
                     />
-                  </div>
-                  <div className="flex gap-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={'outline'}
-                          className={cn(
-                            'w-full justify-start text-left font-normal',
-                            !selectedDate && 'text-muted-foreground'
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {selectedDate ? (
-                            format(selectedDate, 'PPP')
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={setSelectedDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    {selectedDate && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSelectedDate(undefined)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 </div>
                  {filteredNotifications.length > 0 && (

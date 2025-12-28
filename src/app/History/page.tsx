@@ -44,7 +44,7 @@ import { collection, query, where, orderBy, getDoc, doc, deleteDoc, writeBatch, 
 import { BillSummaryDialog } from '@/components/bill-summary-dialog';
 import { TokenSummaryDialog } from '@/components/token-summary-dialog';
 import { cn } from '@/lib/utils';
-import { isSameDay, format } from 'date-fns';
+import { isSameDay, format, startOfDay, endOfDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -56,14 +56,15 @@ import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useDateFilter } from '@/context/date-filter-context';
 
 
 function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}) {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { globalDate } = useDateFilter();
   
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
   const [selectedBill, setSelectedBill] = React.useState<Bill | null>(null);
   const [billToDelete, setBillToDelete] = React.useState<Bill | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -75,24 +76,31 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
 
   const billsQuery = useMemoFirebase(() => {
     if (!firestore || !collectionPath) return null;
+    
+    if (globalDate) {
+        const startDate = startOfDay(globalDate).toISOString();
+        const endDate = endOfDay(globalDate).toISOString();
+        return query(
+            collection(firestore, collectionPath),
+            where('createdAt', '>=', startDate),
+            where('createdAt', '<=', endDate),
+            orderBy('createdAt', 'desc')
+        );
+    }
+    
     return query(
       collection(firestore, collectionPath),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, collectionPath]);
+  }, [firestore, collectionPath, globalDate]);
 
   const { data: bills, isLoading } = useCollection<Bill>(billsQuery);
 
   const filteredBills = React.useMemo(() => {
     if (!bills) return [];
-    let dateFilteredBills = bills;
-
-    if (selectedDate) {
-        dateFilteredBills = bills.filter(bill => isSameDay(new Date(bill.createdAt), selectedDate));
-    }
-
+    
     if (searchTerm) {
-        return dateFilteredBills.filter(bill => {
+        return bills.filter(bill => {
             const searchLower = searchTerm.toLowerCase();
             const nameMatch = bill.customerName.toLowerCase().includes(searchLower);
             const billNoMatch = bill.id.slice(-6).toLowerCase().includes(searchLower);
@@ -100,8 +108,8 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
         });
     }
     
-    return dateFilteredBills;
-  }, [bills, searchTerm, selectedDate]);
+    return bills;
+  }, [bills, searchTerm]);
   
   const handleRowClick = (bill: Bill) => {
     setSelectedBill(bill);
@@ -181,43 +189,6 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
                   />
-                </div>
-                <div className="flex gap-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={'outline'}
-                        className={cn(
-                          'w-full md:w-auto justify-start text-left font-normal',
-                          !selectedDate && 'text-muted-foreground'
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {selectedDate ? (
-                          format(selectedDate, 'PPP')
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={setSelectedDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  {selectedDate && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSelectedDate(undefined)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
                 </div>
               </div>
             </div>
@@ -329,9 +300,9 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
 function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}) {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { globalDate } = useDateFilter();
   
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
   const [tokenToDelete, setTokenToDelete] = React.useState<Token | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [selectedToken, setSelectedToken] = React.useState<Token | null>(null);
@@ -343,31 +314,36 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
 
   const tokensQuery = useMemoFirebase(() => {
     if (!firestore || !collectionPath) return null;
+    if (globalDate) {
+        const startDate = startOfDay(globalDate).toISOString();
+        const endDate = endOfDay(globalDate).toISOString();
+        return query(
+            collection(firestore, collectionPath),
+            where('createdAt', '>=', startDate),
+            where('createdAt', '<=', endDate),
+            orderBy('createdAt', 'desc')
+        );
+    }
     return query(
       collection(firestore, collectionPath),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, collectionPath]);
+  }, [firestore, collectionPath, globalDate]);
 
   const { data: tokens, isLoading } = useCollection<Token>(tokensQuery);
 
   const filteredTokens = React.useMemo(() => {
     if (!tokens) return [];
     
-    let dateFilteredTokens = tokens;
-    if (selectedDate) {
-        dateFilteredTokens = tokens.filter(token => isSameDay(new Date(token.createdAt), selectedDate));
-    }
-    
     if (searchTerm) {
-        return dateFilteredTokens.filter(token => {
+        return tokens.filter(token => {
             const searchLower = searchTerm.toLowerCase();
             return token.customerName.toLowerCase().includes(searchLower);
         });
     }
 
-    return dateFilteredTokens;
-  }, [tokens, searchTerm, selectedDate]);
+    return tokens;
+  }, [tokens, searchTerm]);
   
   const handleRowClick = (token: Token) => {
     setSelectedToken(token);
@@ -435,43 +411,6 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
                   />
-                </div>
-                <div className="flex gap-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={'outline'}
-                        className={cn(
-                          'w-full md:w-auto justify-start text-left font-normal',
-                          !selectedDate && 'text-muted-foreground'
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {selectedDate ? (
-                          format(selectedDate, 'PPP')
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={setSelectedDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  {selectedDate && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSelectedDate(undefined)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
                 </div>
               </div>
             </div>

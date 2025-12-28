@@ -40,6 +40,7 @@ import {
   doc,
   deleteDoc,
   writeBatch,
+  where,
 } from 'firebase/firestore';
 import type { Labour } from '@/lib/types';
 import {
@@ -51,7 +52,7 @@ import {
   X,
   Wrench,
 } from 'lucide-react';
-import { format, isSameDay } from 'date-fns';
+import { format, isSameDay, startOfDay, endOfDay } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -65,14 +66,15 @@ import { cn } from '@/lib/utils';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useDateFilter } from '@/context/date-filter-context';
 
 export default function LabourerPage() {
   const { isUserLoading, user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { globalDate } = useDateFilter();
 
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
   const [recordToDelete, setRecordToDelete] = React.useState<
     Labour | undefined
   >();
@@ -83,11 +85,21 @@ export default function LabourerPage() {
 
   const laboursQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    if (globalDate) {
+        const startDate = startOfDay(globalDate).toISOString();
+        const endDate = endOfDay(globalDate).toISOString();
+        return query(
+            collection(firestore, 'labours'),
+            where('createdAt', '>=', startDate),
+            where('createdAt', '<=', endDate),
+            orderBy('createdAt', 'desc')
+        );
+    }
     return query(
       collection(firestore, 'labours'),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore]);
+  }, [firestore, globalDate]);
 
   const { data: labourRecords, isLoading: isLoadingLabours } =
     useCollection<Labour>(laboursQuery);
@@ -95,19 +107,14 @@ export default function LabourerPage() {
   const filteredRecords = React.useMemo(() => {
     if (!labourRecords) return [];
     
-    let dateFilteredRecords = labourRecords;
-    if (selectedDate) {
-        dateFilteredRecords = labourRecords.filter((record) => isSameDay(new Date(record.createdAt), selectedDate));
-    }
-    
     if (searchTerm) {
-        return dateFilteredRecords.filter((record) =>
+        return labourRecords.filter((record) =>
             record.customerName.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }
     
-    return dateFilteredRecords;
-  }, [labourRecords, searchTerm, selectedDate]);
+    return labourRecords;
+  }, [labourRecords, searchTerm]);
   
   React.useEffect(() => {
     const visibleIds = new Set(filteredRecords.map(r => r.id));
@@ -244,43 +251,6 @@ export default function LabourerPage() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10"
                     />
-                  </div>
-                  <div className="flex gap-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={'outline'}
-                          className={cn(
-                            'w-full md:w-auto justify-start text-left font-normal',
-                            !selectedDate && 'text-muted-foreground'
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {selectedDate ? (
-                            format(selectedDate, 'PPP')
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={setSelectedDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    {selectedDate && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSelectedDate(undefined)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 </div>
                  {filteredRecords.length > 0 && (

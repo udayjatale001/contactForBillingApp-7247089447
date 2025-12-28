@@ -9,17 +9,35 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Phone, Languages } from 'lucide-react';
+import { Mail, Phone, Languages, Calendar as CalendarIcon, X } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useLanguage } from '@/context/language-context';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useDateFilter } from '@/context/date-filter-context';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { format, setHours, setMinutes } from 'date-fns';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function AboutPage() {
   const { t, language, setLanguage } = useLanguage();
+  const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
 
   const handleLanguageChange = (checked: boolean) => {
     setLanguage(checked ? 'hi' : 'en');
+  };
+  
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    if (value && globalDate) {
+      const [hours, minutes] = value.split(':');
+      const newDate = setHours(setMinutes(globalDate, parseInt(minutes)), parseInt(hours));
+      setGlobalDate(newDate);
+    }
   };
 
   return (
@@ -38,18 +56,68 @@ export default function AboutPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground px-4 md:px-8">
-           <Separator className="my-4" />
-          <div className="flex items-center justify-center space-x-2 my-6">
-            <Label htmlFor="language-toggle" className="text-lg font-semibold text-foreground">
-              {t('language_toggle_label')}
-            </Label>
-            <Switch
-              id="language-toggle"
-              checked={language === 'hi'}
-              onCheckedChange={handleLanguageChange}
-              aria-label="Toggle language between English and Hindi"
-            />
-             <Languages className="h-5 w-5 text-foreground" />
+          <Separator className="my-4" />
+          <div className="flex flex-col items-center justify-center space-y-4 my-6">
+             <div className="flex items-center space-x-2">
+                <Label htmlFor="language-toggle" className="text-lg font-semibold text-foreground">
+                  {t('language_toggle_label')}
+                </Label>
+                <Switch
+                  id="language-toggle"
+                  checked={language === 'hi'}
+                  onCheckedChange={handleLanguageChange}
+                  aria-label="Toggle language between English and Hindi"
+                />
+                 <Languages className="h-5 w-5 text-foreground" />
+              </div>
+              <div>
+                <Label className="text-lg font-semibold text-foreground">Global Date Filter</Label>
+                 <div className="flex gap-2 mt-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={'outline'}
+                          className={cn(
+                            'w-[280px] justify-start text-left font-normal',
+                            !globalDate && 'text-muted-foreground'
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {globalDate ? format(globalDate, 'PPP HH:mm') : <span>Pick a date & time</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={globalDate}
+                          onSelect={(date) => setGlobalDate(date || new Date())}
+                          initialFocus
+                        />
+                         <div className="p-2 border-t">
+                            <Input 
+                                type="time" 
+                                value={globalDate ? format(globalDate, 'HH:mm') : ''}
+                                onChange={handleTimeChange}
+                            />
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    {globalDate && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={clearGlobalDate}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                </div>
+                 <Alert className="mt-4 text-center">
+                    <AlertDescription>
+                        Selected date & time will be applied to the entire app.
+                    </AlertDescription>
+                </Alert>
+              </div>
           </div>
           <Separator className="my-4" />
           <div className="space-y-4 text-center max-w-3xl mx-auto">

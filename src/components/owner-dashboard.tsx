@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import {
@@ -69,6 +70,7 @@ import * as XLSX from 'xlsx';
 import { useLanguage } from '@/context/language-context';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
+import { useDateFilter } from '@/context/date-filter-context';
 
 const ALL_MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -185,13 +187,13 @@ export function OwnerDashboard() {
   const firestore = useFirestore();
   const { t } = useLanguage();
   const { toast } = useToast();
+  const { globalDate } = useDateFilter();
+
   const [remindersState, setRemindersState] = React.useState<{ [key: string]: 'sending' | 'sent' | 'error' }>({});
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
   const [dismissedCustomers, setDismissedCustomers] = React.useState<string[]>([]);
   
   const [selectedYear, setSelectedYear] = React.useState<string>(new Date().getFullYear().toString());
-  const [selectedMonth, setSelectedMonth] = React.useState<string>((new Date().getMonth() + 1).toString().padStart(2, '0'));
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
   const [use24HourWindow, setUse24HourWindow] = React.useState(true);
 
   const [isExporting, setIsExporting] = React.useState(false);
@@ -228,7 +230,6 @@ export function OwnerDashboard() {
     todaysRevenue,
     todaysLabourCost,
     todaysNetProfit,
-    inactiveCustomers,
     monthlyData,
     yearlyData,
     monthlyLabourData,
@@ -246,7 +247,6 @@ export function OwnerDashboard() {
       todaysRevenue: 0,
       todaysLabourCost: 0,
       todaysNetProfit: 0,
-      inactiveCustomers: 0,
       monthlyData: ALL_MONTHS.map(month => ({ month, total: 0 })),
       yearlyData: [],
       monthlyLabourData: ALL_MONTHS.map(month => ({ month, total: 0 })),
@@ -263,8 +263,13 @@ export function OwnerDashboard() {
     const now = new Date();
     const twentyFourHoursAgo = subHours(now, 24);
     const midnight = startOfDay(now);
-    const todayFilterStart = use24HourWindow ? twentyFourHoursAgo : midnight;
+    
+    let todayFilterStart = use24HourWindow ? twentyFourHoursAgo : midnight;
 
+    if (globalDate) {
+        todayFilterStart = startOfDay(globalDate);
+    }
+    
     const todaysBills = allBills.filter(bill => new Date(bill.createdAt) >= todayFilterStart);
 
 
@@ -276,17 +281,10 @@ export function OwnerDashboard() {
     allBills.forEach(bill => yearsInData.add(getYear(new Date(bill.createdAt)).toString()));
     const allAvailableYears = Array.from(yearsInData).sort((a,b) => Number(b) - Number(a));
 
-
-    // Filter bills based on selected month and year
-    const filteredBills = allBills.filter(bill => {
-      const billDate = new Date(bill.createdAt);
-      if (selectedDate) {
-        return isSameDay(billDate, selectedDate);
-      }
-      const yearMatches = selectedYear === 'all' || getYear(billDate).toString() === selectedYear;
-      const monthMatches = selectedMonth === 'all' || (getMonth(billDate) + 1).toString().padStart(2, '0') === selectedMonth;
-      return yearMatches && monthMatches;
-    });
+    const filteredBills = globalDate 
+        ? allBills.filter(bill => isSameDay(new Date(bill.createdAt), globalDate))
+        : allBills;
+    
 
     const totalAmount = filteredBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
     const totalRevenue = filteredBills.reduce((acc, bill) => acc + bill.paidAmount, 0);
@@ -294,39 +292,13 @@ export function OwnerDashboard() {
     const totalSales = filteredBills.length;
     const totalLabour = filteredBills.reduce((acc, bill) => acc + (bill.totalLabourAmount || 0), 0);
     
-    // Inactive customers for the selected period
-    const customerLastActivity: { [key: string]: Date } = {};
-    filteredBills.forEach(bill => {
-      const billDate = new Date(bill.createdAt);
-      const customerNameKey = bill.customerName.trim().toLowerCase();
-       if (!customerLastActivity[customerNameKey] || billDate > customerLastActivity[customerNameKey]) {
-          customerLastActivity[customerNameKey] = billDate;
-      }
-    });
-
-    let periodStart: Date;
-    if (selectedDate) {
-        periodStart = selectedDate;
-    } else if (selectedYear !== 'all' && selectedMonth !== 'all') {
-      periodStart = new Date(parseInt(selectedYear), parseInt(selectedMonth) - 1, 1);
-    } else if (selectedYear !== 'all') {
-       periodStart = new Date(parseInt(selectedYear), 0, 1);
-    } else {
-        periodStart = new Date(0); // Epoch for all time
-    }
-    
-    const uniqueCustomersInPeriod = Object.keys(customerLastActivity).length;
-    const activeCustomersInPeriod = Object.values(customerLastActivity).filter(d => d >= periodStart).length;
-    const inactiveCount = uniqueCustomersInPeriod - activeCustomersInPeriod;
-
-
     // --- Chart Data Calculations ---
     const yearlySales: { [key: string]: number } = {};
     const yearlyLabour: { [key: string]: number } = {};
     const monthlySalesForYear: { [key: string]: number } = Object.fromEntries(ALL_MONTHS.map(m => [m, 0]));
     const monthlyLabourForYear: { [key: string]: number } = Object.fromEntries(ALL_MONTHS.map(m => [m, 0]));
     
-    const yearForMonthlyChart = selectedDate ? getYear(selectedDate).toString() : (selectedYear === 'all' ? now.getFullYear().toString() : selectedYear) ;
+    const yearForMonthlyChart = globalDate ? getYear(globalDate).toString() : selectedYear;
     const billsForMonthlyChart = allBills.filter(bill => getYear(new Date(bill.createdAt)).toString() === yearForMonthlyChart);
 
     billsForMonthlyChart.forEach(bill => {
@@ -400,7 +372,6 @@ export function OwnerDashboard() {
       todaysRevenue,
       todaysLabourCost,
       todaysNetProfit,
-      inactiveCustomers: inactiveCount,
       monthlyData: formattedMonthlyData,
       yearlyData: formattedYearlyData,
       monthlyLabourData: formattedMonthlyLabourData,
@@ -409,7 +380,7 @@ export function OwnerDashboard() {
       recentBills: filteredBills.slice(0, 5),
       availableYears: allAvailableYears,
     };
-  }, [allBills, selectedYear, selectedMonth, selectedDate, dismissedCustomers, use24HourWindow]);
+  }, [allBills, globalDate, selectedYear, dismissedCustomers, use24HourWindow]);
 
   const handleDismissCustomer = (customerName: string) => {
     setDismissedCustomers(prev => [...prev, customerName]);
@@ -509,35 +480,6 @@ export function OwnerDashboard() {
     window.open(whatsappUrl, '_blank');
   };
 
-  const handleSendReminder = async (customer: AggregatedDueCustomer) => {
-    setRemindersState(prev => ({ ...prev, [customer.customerName]: 'sending' }));
-    toast({
-        title: 'Sending Reminder...',
-        description: `Composing and sending a reminder to ${customer.customerName}.`,
-    });
-
-    try {
-        await composeReminderMessage({
-            customerName: customer.customerName,
-            lastActivityDate: format(new Date(customer.lastBillDate), 'yyyy-MM-dd'),
-        });
-        
-        setRemindersState(prev => ({ ...prev, [customer.customerName]: 'sent' }));
-        toast({
-            title: 'Reminder Sent!',
-            description: `A reminder has been successfully sent to ${customer.customerName}.`,
-        });
-    } catch (error) {
-        setRemindersState(prev => ({ ...prev, [customer.customerName]: 'error' }));
-        toast({
-            variant: 'destructive',
-            title: 'Failed to Send Reminder',
-            description: 'An error occurred while sending the reminder.',
-        });
-        console.error(`Failed to send reminder to ${customer.customerName}:`, error);
-    }
-  };
-
   const isLoading = isUserLoading || isLoadingBills || isOwner === null;
 
   if (isLoading) {
@@ -587,17 +529,19 @@ export function OwnerDashboard() {
             <div className="flex items-center justify-between">
                 <CardTitle className='flex items-center gap-2 text-base'>
                     <TrendingUp className='h-5 w-5' />
-                    Today's Snapshot
+                    {globalDate ? `${format(globalDate, 'PPP')} Snapshot` : "Today's Snapshot"}
                 </CardTitle>
-                <div className="flex items-center space-x-2">
-                    <Label htmlFor="today-mode" className='text-xs text-muted-foreground'>Since Midnight</Label>
-                    <Switch
-                        id="today-mode"
-                        checked={use24HourWindow}
-                        onCheckedChange={setUse24HourWindow}
-                        />
-                    <Label htmlFor="today-mode" className='text-xs text-muted-foreground'>Last 24 Hours</Label>
-                </div>
+                {!globalDate && (
+                    <div className="flex items-center space-x-2">
+                        <Label htmlFor="today-mode" className='text-xs text-muted-foreground'>Since Midnight</Label>
+                        <Switch
+                            id="today-mode"
+                            checked={use24HourWindow}
+                            onCheckedChange={setUse24HourWindow}
+                            />
+                        <Label htmlFor="today-mode" className='text-xs text-muted-foreground'>Last 24 Hours</Label>
+                    </div>
+                )}
             </div>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
@@ -632,104 +576,6 @@ export function OwnerDashboard() {
       </Card>
 
 
-      {/* Global Filters */}
-       <Card>
-        <CardHeader className='pb-2'>
-            <CardTitle className='flex items-center gap-2 text-base'>
-                <CalendarIcon className='h-5 w-5' />
-                Filter by Period
-            </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col md:flex-row items-center gap-4">
-           <div className='flex-1 w-full'>
-                <p className='text-sm text-muted-foreground mb-1'>Year</p>
-                <Select 
-                    value={selectedYear} 
-                    onValueChange={(value) => {
-                        setSelectedYear(value);
-                        setSelectedDate(undefined);
-                    }}
-                    disabled={!!selectedDate}
-                >
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select Year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Years</SelectItem>
-                        {availableYears.map(year => (
-                            <SelectItem key={year} value={year}>{year}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-           </div>
-            <div className='flex-1 w-full'>
-                 <p className='text-sm text-muted-foreground mb-1'>Month</p>
-                <Select 
-                    value={selectedMonth} 
-                    onValueChange={(value) => {
-                        setSelectedMonth(value);
-                        setSelectedDate(undefined);
-                    }}
-                    disabled={selectedYear === 'all' || !!selectedDate}
-                >
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select Month" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Months</SelectItem>
-                         {ALL_MONTHS.map((month, index) => (
-                            <SelectItem key={month} value={(index + 1).toString().padStart(2, '0')}>
-                                {month}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className='text-center text-sm text-muted-foreground md:py-4'>OR</div>
-             <div className='flex-1 w-full'>
-                 <p className='text-sm text-muted-foreground mb-1'>Specific Date</p>
-                <div className="flex gap-2">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant={'outline'}
-                          className={cn(
-                            'w-full justify-start text-left font-normal',
-                            !selectedDate && 'text-muted-foreground'
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {selectedDate ? (
-                            format(selectedDate, 'PPP')
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={setSelectedDate}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    {selectedDate && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setSelectedDate(undefined)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                </div>
-            </div>
-        </CardContent>
-      </Card>
-
-
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
@@ -740,7 +586,7 @@ export function OwnerDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{totalAmount.toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">
-              Total value of bills in period
+              Total value of bills
             </p>
           </CardContent>
         </Card>
@@ -752,7 +598,7 @@ export function OwnerDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{totalRevenue.toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">
-              Paid amount in selected period
+              Total paid amount
             </p>
           </CardContent>
         </Card>
@@ -764,7 +610,7 @@ export function OwnerDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{totalDue.toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">
-              Outstanding amount in period
+              Total outstanding amount
             </p>
           </CardContent>
         </Card>
@@ -776,7 +622,7 @@ export function OwnerDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{totalLabour.toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">
-              Labour charges in selected period
+              Total labour charges
             </p>
           </CardContent>
         </Card>
@@ -787,7 +633,7 @@ export function OwnerDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+{totalSales}</div>
-            <p className="text-xs text-muted-foreground">Bills in selected period</p>
+            <p className="text-xs text-muted-foreground">Total bills generated</p>
           </CardContent>
         </Card>
         
@@ -802,7 +648,7 @@ export function OwnerDashboard() {
             <CardHeader>
                 <CardTitle>Customer Reminders</CardTitle>
                 <CardDescription>
-                    Customers with outstanding payments in the selected period.
+                    Customers with outstanding payments.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -857,7 +703,7 @@ export function OwnerDashboard() {
                         <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
                         <h3 className="mt-4 text-lg font-semibold">No pending customer payments</h3>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            All accounts are settled for this period.
+                            All accounts are settled.
                         </p>
                     </div>
                 )}
@@ -873,10 +719,20 @@ export function OwnerDashboard() {
                     <div>
                         <CardTitle>Analytics</CardTitle>
                         <CardDescription>
-                            Detailed reports for sales and labour.
+                            Detailed reports for sales and labour. Select a year to see monthly data.
                         </CardDescription>
                     </div>
-                     <div className="flex items-center gap-2">
+                     <div className="flex items-center gap-4">
+                        <Select value={selectedYear} onValueChange={setSelectedYear}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Select Year" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {availableYears.map(year => (
+                                    <SelectItem key={year} value={year}>{year}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                        <TabsList>
                             <TabsTrigger value="sales">Sales Report</TabsTrigger>
                             <TabsTrigger value="labour">Labour Report</TabsTrigger>
@@ -889,19 +745,13 @@ export function OwnerDashboard() {
                     <CardHeader className="pt-0">
                          <div className="flex justify-end items-center gap-2">
                            <TabsList>
-                                <TabsTrigger value="monthly" disabled={selectedYear === 'all' && !selectedDate}>Monthly</TabsTrigger>
+                                <TabsTrigger value="monthly">Monthly</TabsTrigger>
                                 <TabsTrigger value="yearly">Yearly</TabsTrigger>
                             </TabsList>
                         </div>
                     </CardHeader>
                     <TabsContent value="monthly">
                         <CardContent className="pl-2">
-                            {(selectedYear === 'all' && !selectedDate) ? (
-                                <div className="flex flex-col items-center justify-center h-[350px] text-center">
-                                    <AlertCircle className="h-10 w-10 text-muted-foreground" />
-                                    <p className="mt-4 text-sm text-muted-foreground">Please select a specific year to view the monthly report.</p>
-                                </div>
-                            ) : (
                             <ResponsiveContainer width="100%" height={350}>
                             <BarChart data={monthlyData}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false}/>
@@ -911,7 +761,6 @@ export function OwnerDashboard() {
                                 <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                             </BarChart>
                             </ResponsiveContainer>
-                            )}
                         </CardContent>
                     </TabsContent>
                     <TabsContent value="yearly">
@@ -934,19 +783,13 @@ export function OwnerDashboard() {
                     <CardHeader className="pt-0">
                          <div className="flex justify-end items-center gap-2">
                            <TabsList>
-                                <TabsTrigger value="monthly" disabled={selectedYear === 'all' && !selectedDate}>Monthly</TabsTrigger>
+                                <TabsTrigger value="monthly">Monthly</TabsTrigger>
                                 <TabsTrigger value="yearly">Yearly</TabsTrigger>
                             </TabsList>
                         </div>
                     </CardHeader>
                     <TabsContent value="monthly">
                         <CardContent className="pl-2">
-                            {(selectedYear === 'all' && !selectedDate) ? (
-                                <div className="flex flex-col items-center justify-center h-[350px] text-center">
-                                    <AlertCircle className="h-10 w-10 text-muted-foreground" />
-                                    <p className="mt-4 text-sm text-muted-foreground">Please select a specific year to view the monthly report.</p>
-                                </div>
-                            ) : (
                             <ResponsiveContainer width="100%" height={350}>
                             <BarChart data={monthlyLabourData}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false}/>
@@ -956,7 +799,6 @@ export function OwnerDashboard() {
                                 <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                             </BarChart>
                             </ResponsiveContainer>
-                            )}
                         </CardContent>
                     </TabsContent>
                     <TabsContent value="yearly">
@@ -983,7 +825,7 @@ export function OwnerDashboard() {
           <CardHeader>
             <CardTitle>Recent Bills</CardTitle>
             <CardDescription>
-              Latest 5 bills in the selected period.
+              Latest 5 bills generated.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1027,11 +869,3 @@ export function OwnerDashboard() {
     </div>
   );
 }
-    
-
-    
-
-
-
-    
-

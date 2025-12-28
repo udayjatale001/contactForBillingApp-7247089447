@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { RootStateProvider } from '@/components/root-state-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { LanguageProvider } from '@/context/language-context';
+import { DateFilterProvider } from '@/context/date-filter-context';
 
 export const metadata: Metadata = {
   title: 'Ananad Sagar Billing App',
@@ -35,9 +36,11 @@ export default function RootLayout({
       </head>
       <body className={cn('font-body antialiased', fontSans.variable)}>
         <LanguageProvider>
-          <FirebaseClientProvider>
-            <RootStateProvider>{children}</RootStateProvider>
-          </FirebaseClientProvider>
+          <DateFilterProvider>
+            <FirebaseClientProvider>
+              <RootStateProvider>{children}</RootStateProvider>
+            </FirebaseClientProvider>
+          </DateFilterProvider>
         </LanguageProvider>
         <Toaster />
       </body>
