@@ -74,9 +74,9 @@ export function BillingForm() {
       paymentMode: 'Cash' as 'Cash' | 'Online Payment' | 'Due',
       paidTo: 'Gopal Temkar' as 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gajananad Murtankar',
       inCaratLabour: undefined,
-      inCaratLabourRate: appSettings?.labourRate,
+      inCaratLabourRate: 1.5,
       outCaratLabour: undefined,
-      outCaratLabourRate: appSettings?.labourRate,
+      outCaratLabourRate: 1.5,
   };
 
   const form = useForm<BillingFormValues>({
@@ -85,17 +85,17 @@ export function BillingForm() {
     mode: 'onBlur',
   });
   
+  const { setValue } = form;
+
   React.useEffect(() => {
     if (appSettings) {
         setValue('smallCaratRate', appSettings.smallCaratRate, { shouldValidate: true });
         setValue('bigCaratRate', appSettings.bigCaratRate, { shouldValidate: true });
-        setValue('inCaratLabourRate', appSettings.labourRate, { shouldValidate: true });
-        setValue('outCaratLabourRate', appSettings.labourRate, { shouldValidate: true });
     }
-  }, [appSettings, form.setValue]);
+  }, [appSettings, setValue]);
 
 
-  const { watch, setValue, trigger, getValues } = form;
+  const { watch, trigger, getValues } = form;
   
   // Watch all relevant fields
   const watchedValues = watch();
@@ -134,10 +134,10 @@ export function BillingForm() {
   
   const totalLabourAmount = React.useMemo(() => {
     const inLabourQty = Number(inCaratLabour) || 0;
-    const inLabourRate = Number(inCaratLabourRate) || 0;
+    const inLabourRateValue = Number(inCaratLabourRate) || 0;
     const outLabourQty = Number(outCaratLabour) || 0;
-    const outLabourRate = Number(outCaratLabourRate) || 0;
-    return (inLabourQty * inLabourRate) + (outLabourQty * outLabourRate);
+    const outLabourRateValue = Number(outCaratLabourRate) || 0;
+    return (inLabourQty * inLabourRateValue) + (outLabourQty * outLabourRateValue);
   }, [inCaratLabour, inCaratLabourRate, outCaratLabour, outCaratLabourRate]);
 
   // The customer-facing total amount should only be the carat amount.
@@ -834,4 +834,3 @@ export function BillingForm() {
     </>
   );
 }
-
