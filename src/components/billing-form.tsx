@@ -538,7 +538,7 @@ export function BillingForm() {
                             <FormItem>
                                 <FormLabel>In Carat</FormLabel>
                                 <FormControl>
-                                <Input type="number" placeholder="e.g., 500" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                <Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -551,7 +551,7 @@ export function BillingForm() {
                             <FormItem>
                                 <FormLabel>Out Carat</FormLabel>
                                 <FormControl>
-                                <Input type="number" placeholder="e.g., 100" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                <Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
