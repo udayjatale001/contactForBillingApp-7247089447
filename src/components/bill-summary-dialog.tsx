@@ -102,7 +102,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-full p-0 print:p-0 print:max-w-full print:w-full print:border-none print:shadow-none print:bg-white">
+      <DialogContent className="max-w-md w-full p-0 print:max-w-full print:w-full print:border-none print:shadow-none print:bg-white print:m-0 sm:max-h-[90vh] flex flex-col">
         <style>
           {`
             @media print {
@@ -134,7 +134,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             }
           `}
         </style>
-        <div id="bill-print-area" className="p-4 sm:p-6 bg-white rounded-lg">
+        <div id="bill-print-area" className="p-4 sm:p-6 bg-white rounded-t-lg overflow-y-auto flex-1">
             {/* Header */}
             <header className="flex justify-between items-start mb-4 sm:mb-6 pb-4 border-b">
               <div>
@@ -209,7 +209,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               </div>
             </footer>
           </div>
-        <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 rounded-b-lg border-t print-hidden bg-gray-50 flex flex-col sm:flex-row gap-2">
+        <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 rounded-b-lg border-t print-hidden bg-gray-50 flex flex-col sm:flex-row gap-2 flex-shrink-0">
           <DialogClose asChild>
             <Button variant="outline" className='w-full sm:w-auto'>
                 <X className="mr-2 h-4 w-4" />
