@@ -557,7 +557,7 @@ export function OwnerDashboard() {
 
 
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Amount</CardTitle>
@@ -590,13 +590,13 @@ export function OwnerDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{totalDue.toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">
-              Total outstanding amount
+              Total outstanding
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Labour Paid</CardTitle>
+            <CardTitle className="text-sm font-medium">Labour Paid</CardTitle>
             <Wrench className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -606,7 +606,7 @@ export function OwnerDashboard() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className='col-span-2 md:col-span-1'>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Sales</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
@@ -847,5 +847,3 @@ export function OwnerDashboard() {
     </div>
   );
 }
-
-    
