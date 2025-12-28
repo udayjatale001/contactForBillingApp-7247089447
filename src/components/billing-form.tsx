@@ -482,11 +482,40 @@ export function BillingForm() {
                             )}
                         />
                         
+                        <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="inCarat"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>In Carat</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="outCarat"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Out Carat</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                        </div>
+
                         <FormField
                           control={form.control}
                           name="createdAt"
                           render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="md:col-span-2">
                               <FormLabel>Bill Date & Time</FormLabel>
                               <div className='flex flex-col sm:flex-row gap-2'>
                                 <Popover>
@@ -531,34 +560,6 @@ export function BillingForm() {
                           )}
                         />
                         
-                        <div className="md:col-span-2 grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="inCarat"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>In Carat</FormLabel>
-                                    <FormControl>
-                                    <Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="outCarat"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Out Carat</FormLabel>
-                                    <FormControl>
-                                    <Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                        </div>
                     </CardContent>
                      <CardFooter>
                         <Button
