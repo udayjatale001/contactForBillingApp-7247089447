@@ -91,3 +91,8 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Ensure horizontal scroll doesn't happen on small screens */
+html, body {
+  overflow-x: hidden;
+}

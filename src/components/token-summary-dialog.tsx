@@ -22,9 +22,9 @@ interface TokenSummaryDialogProps {
 }
 
 const DetailItem = ({ label, value }: { label: string, value: React.ReactNode }) => (
-    <div className="flex justify-between items-center py-2">
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="text-sm font-semibold text-gray-800">{value}</p>
+    <div className="flex justify-between items-center py-1 sm:py-2">
+      <p className="text-xs sm:text-sm text-gray-500">{label}</p>
+      <p className="text-xs sm:text-sm font-semibold text-gray-800 text-right">{value}</p>
     </div>
 );
 
@@ -62,7 +62,7 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint }: Token
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm p-0 print:border-none print:shadow-none print:bg-white">
+      <DialogContent className="max-w-xs w-full p-0 print:border-none print:shadow-none print:bg-white">
         <style>
           {`
             @media print {
@@ -93,21 +93,21 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint }: Token
                   border: none;
                   box-shadow: none;
                   margin: 0;
-                  padding: 1.5rem;
-                  font-size: 14px;
+                  padding: 1rem;
+                  font-size: 12px;
                }
             }
           `}
         </style>
         <div id="token-receipt-container">
-          <div className="p-6 bg-white rounded-lg border-2 border-dashed border-gray-400" id="token-receipt">
+          <div className="p-4 bg-white rounded-lg border-2 border-dashed border-gray-400" id="token-receipt">
             {/* Header */}
-            <header className="text-center mb-4 pb-3 border-b-2 border-dashed border-gray-300">
-                <h1 className="text-xl font-bold text-gray-800">{t('bill_receipt_title')}</h1>
+            <header className="text-center mb-3 pb-2 border-b-2 border-dashed border-gray-300">
+                <h1 className="text-lg font-bold text-gray-800">{t('bill_receipt_title')}</h1>
                 <p className="text-xs text-gray-500">{t('customer_token')}</p>
             </header>
 
-            <main className="space-y-3">
+            <main className="space-y-1">
               <DetailItem label={t('token_no')} value={`#${token.id.slice(-6).toUpperCase()}`} />
               <DetailItem label={t('date')} value={format(new Date(token.createdAt), 'PP')} />
               <DetailItem label={t('time')} value={format(new Date(token.createdAt), 'p')} />
@@ -115,9 +115,9 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint }: Token
               {token.roomNumber && <DetailItem label={t('room_number')} value={token.roomNumber} />}
               {token.contactNumber && <DetailItem label={t('contact_number')} value={token.contactNumber} />}
               
-              <div className="pt-3 mt-3 border-t-2 border-dashed border-gray-300">
+              <div className="pt-2 mt-2 border-t-2 border-dashed border-gray-300">
                 {typeof token.inCarat === 'number' && (
-                    <div className="flex justify-between text-base font-bold">
+                    <div className="flex justify-between text-sm font-bold">
                         <span>{t('in_carat')}:</span>
                         <span>{token.inCarat}</span>
                     </div>
@@ -126,7 +126,7 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint }: Token
             </main>
           </div>
         </div>
-        <DialogFooter className="px-6 pb-4 sm:justify-between pt-4 rounded-b-lg border-t print-hidden bg-gray-50 flex-col sm:flex-row gap-2">
+        <DialogFooter className="px-4 py-3 sm:justify-between rounded-b-lg border-t print-hidden bg-gray-50 flex-col sm:flex-row gap-2">
           <DialogClose asChild>
             <Button variant="outline" className='flex-1'>
                 <X className="mr-2 h-4 w-4" />
@@ -151,5 +151,3 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint }: Token
     </Dialog>
   );
 }
-
-    

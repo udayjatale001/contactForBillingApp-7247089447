@@ -188,7 +188,7 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
                       <Button
                         variant={'outline'}
                         className={cn(
-                          'w-full justify-start text-left font-normal',
+                          'w-full md:w-auto justify-start text-left font-normal',
                           !selectedDate && 'text-muted-foreground'
                         )}
                       >
@@ -228,50 +228,52 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
                   <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
               </div>
             ) : filteredBills && filteredBills.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Total Amount</TableHead>
-                    <TableHead>Paid Amount</TableHead>
-                    <TableHead>Due Amount</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBills.map((bill) => (
-                    <TableRow
-                      key={bill.id}
-                      onClick={() => handleRowClick(bill)}
-                      className="cursor-pointer"
-                    >
-                      <TableCell>{bill.customerName}</TableCell>
-                      <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
-                      <TableCell>{bill.paidAmount.toLocaleString()}rs</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}
-                        >
-                          {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{format(new Date(bill.createdAt), 'PPpp')}</TableCell>
-                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => handleDeleteClick(e, bill)}
-                          title="Delete Bill"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Total Amount</TableHead>
+                      <TableHead>Paid Amount</TableHead>
+                      <TableHead>Due Amount</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredBills.map((bill) => (
+                      <TableRow
+                        key={bill.id}
+                        onClick={() => handleRowClick(bill)}
+                        className="cursor-pointer"
+                      >
+                        <TableCell>{bill.customerName}</TableCell>
+                        <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
+                        <TableCell>{bill.paidAmount.toLocaleString()}rs</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}
+                          >
+                            {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{format(new Date(bill.createdAt), 'PPpp')}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => handleDeleteClick(e, bill)}
+                            title="Delete Bill"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             ) : (
               <div className="text-center py-16">
                   <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -440,7 +442,7 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
                       <Button
                         variant={'outline'}
                         className={cn(
-                          'w-full justify-start text-left font-normal',
+                          'w-full md:w-auto justify-start text-left font-normal',
                           !selectedDate && 'text-muted-foreground'
                         )}
                       >
@@ -480,44 +482,46 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
                   <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
               </div>
             ) : filteredTokens && filteredTokens.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>In Carat</TableHead>
-                    <TableHead>Room No.</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTokens.map((token) => (
-                    <TableRow 
-                      key={token.id}
-                      onClick={() => handleRowClick(token)}
-                      className="cursor-pointer"
-                    >
-                      <TableCell>{token.customerName}</TableCell>
-                      <TableCell>{token.inCarat || 'N/A'}</TableCell>
-                      <TableCell>{token.roomNumber || 'N/A'}</TableCell>
-                      <TableCell>{token.contactNumber || 'N/A'}</TableCell>
-                      <TableCell>{format(new Date(token.createdAt), 'PPpp')}</TableCell>
-                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => handleDeleteClick(e, token)}
-                          title="Delete Token"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>In Carat</TableHead>
+                      <TableHead>Room No.</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTokens.map((token) => (
+                      <TableRow 
+                        key={token.id}
+                        onClick={() => handleRowClick(token)}
+                        className="cursor-pointer"
+                      >
+                        <TableCell>{token.customerName}</TableCell>
+                        <TableCell>{token.inCarat || 'N/A'}</TableCell>
+                        <TableCell>{token.roomNumber || 'N/A'}</TableCell>
+                        <TableCell>{token.contactNumber || 'N/A'}</TableCell>
+                        <TableCell>{format(new Date(token.createdAt), 'PPpp')}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => handleDeleteClick(e, token)}
+                            title="Delete Token"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <span className="sr-only">Delete</span>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             ) : (
               <div className="text-center py-16">
                   <Ticket className="mx-auto h-12 w-12 text-muted-foreground" />

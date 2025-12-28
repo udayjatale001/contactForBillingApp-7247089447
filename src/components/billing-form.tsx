@@ -221,10 +221,6 @@ export function BillingForm() {
                 description: `The bill for ${generatedBill.customerName} has been saved.`,
               });
 
-              // CRITICAL CHANGE: Do NOT reset form here. Let the close handler do it.
-              // form.reset(defaultFormValues);
-              // setGeneratedBill(null);
-
               resolve();
           } catch (error) {
               console.error("Error saving bill and associated data: ", error);
@@ -242,8 +238,6 @@ export function BillingForm() {
 };
 
   const handleBillDialogClose = (open: boolean) => {
-    // This function will now ONLY handle the closing of the dialog.
-    // The onSave logic no longer automatically closes it.
     if (!open) {
         setGeneratedBill(null);
         form.reset(defaultFormValues);
@@ -256,11 +250,8 @@ export function BillingForm() {
   };
   
   const handleCustomerNameBlur = async () => {
-    // Manually trigger validation for the field
     await trigger('customerName');
-    // Get the current value
     const currentValue = getValues('customerName');
-    // Capitalize and set the new value
     setValue('customerName', capitalizeFirstLetter(currentValue), { shouldValidate: true });
   };
 
@@ -277,7 +268,6 @@ export function BillingForm() {
       return;
     }
     
-    // This check is sufficient. Zod resolver will prevent submission if there are errors.
     if (data.paidAmount && totalAmount > 0 && data.paidAmount > totalAmount) {
         setIsSubmitting(false);
         toast({
@@ -522,7 +512,7 @@ export function BillingForm() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Bill Date & Time</FormLabel>
-                              <div className='flex gap-2'>
+                              <div className='flex flex-col sm:flex-row gap-2'>
                                 <Popover>
                                   <PopoverTrigger asChild>
                                     <FormControl>
@@ -554,7 +544,7 @@ export function BillingForm() {
                                 <FormControl>
                                     <Input 
                                         type="time" 
-                                        className='w-[120px]'
+                                        className='w-full sm:w-[120px]'
                                         value={field.value ? format(field.value, 'HH:mm') : ''}
                                         onChange={(e) => handleTimeChange(e, field.value)}
                                     />
@@ -781,7 +771,7 @@ export function BillingForm() {
                                     <RadioGroup
                                     onValueChange={field.onChange}
                                     defaultValue={field.value}
-                                    className="flex items-center space-x-4"
+                                    className="flex flex-wrap items-center gap-x-4 gap-y-2"
                                     >
                                     <FormItem className="flex items-center space-x-2 space-y-0">
                                         <FormControl>
@@ -844,7 +834,3 @@ export function BillingForm() {
     </>
   );
 }
-
-    
-
-    

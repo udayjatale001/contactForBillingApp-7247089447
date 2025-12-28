@@ -251,7 +251,7 @@ export default function LabourerPage() {
                         <Button
                           variant={'outline'}
                           className={cn(
-                            'w-full justify-start text-left font-normal',
+                            'w-full md:w-auto justify-start text-left font-normal',
                             !selectedDate && 'text-muted-foreground'
                           )}
                         >
@@ -306,6 +306,7 @@ export default function LabourerPage() {
                   <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
               </div>
             ) : filteredRecords && filteredRecords.length > 0 ? (
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -368,6 +369,7 @@ export default function LabourerPage() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             ) : (
               <div className="text-center py-16">
                   <Wrench className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -437,5 +439,3 @@ export default function LabourerPage() {
     </>
   );
 }
-
-    
