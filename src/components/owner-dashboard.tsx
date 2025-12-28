@@ -368,7 +368,7 @@ export function OwnerDashboard() {
       monthlyLabourData: formattedMonthlyLabourData,
       yearlyLabourData: formattedYearlyLabourData,
       dueBills: customersWithDue,
-      recentBills: filteredBills.slice(0, 5),
+      recentBills: allBills.slice(0, 5),
       availableYears: allAvailableYears,
     };
   }, [allBills, globalDate, selectedYear, dismissedCustomers]);
@@ -847,3 +847,5 @@ export function OwnerDashboard() {
     </div>
   );
 }
+
+    

@@ -59,7 +59,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDateFilter } from '@/context/date-filter-context';
 
 
-function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}) {
+const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
@@ -319,9 +319,9 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
       </AlertDialog>
     </>
   )
-}
+});
 
-function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}) {
+const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
@@ -559,7 +559,7 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
       )}
     </>
   )
-}
+});
 
 
 function HistoryPage() {
@@ -617,3 +617,5 @@ function HistoryPage() {
 }
 
 export default HistoryPage;
+
+    

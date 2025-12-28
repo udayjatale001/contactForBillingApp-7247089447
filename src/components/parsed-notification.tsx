@@ -10,7 +10,7 @@ interface ParsedNotificationProps {
   notification: Notification;
 }
 
-export function ParsedNotification({ notification }: ParsedNotificationProps) {
+const MemoizedParsedNotification = React.memo(function ParsedNotification({ notification }: ParsedNotificationProps) {
   if (!notification) {
     return null;
   }
@@ -73,4 +73,8 @@ export function ParsedNotification({ notification }: ParsedNotificationProps) {
       </div>
     </div>
   );
-}
+});
+
+export { MemoizedParsedNotification as ParsedNotification };
+
+    
