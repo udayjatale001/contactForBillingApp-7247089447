@@ -261,7 +261,7 @@ export function OwnerDashboard() {
     
     const todayFilterStart = startOfDay(globalDate || new Date());
     
-    const todaysBills = allBills.filter(bill => new Date(bill.createdAt) >= todayFilterStart);
+    const todaysBills = allBills.filter(bill => isSameDay(new Date(bill.createdAt), todayFilterStart));
 
 
     const todaysRevenue = todaysBills.reduce((acc, bill) => acc + bill.paidAmount, 0);

@@ -85,19 +85,15 @@ export default function LabourerPage() {
 
   const laboursQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    if (globalDate) {
-        const startDate = startOfDay(globalDate).toISOString();
-        const endDate = endOfDay(globalDate).toISOString();
-        return query(
-            collection(firestore, 'labours'),
-            where('createdAt', '>=', startDate),
-            where('createdAt', '<=', endDate),
-            orderBy('createdAt', 'desc')
-        );
-    }
+    const dateToFilter = globalDate || new Date();
+    const startDate = startOfDay(dateToFilter);
+    const endDate = endOfDay(dateToFilter);
+    
     return query(
-      collection(firestore, 'labours'),
-      orderBy('createdAt', 'desc')
+        collection(firestore, 'labours'),
+        where('createdAt', '>=', startDate.toISOString()),
+        where('createdAt', '<=', endDate.toISOString()),
+        orderBy('createdAt', 'desc')
     );
   }, [firestore, globalDate]);
 
@@ -263,7 +259,7 @@ export default function LabourerPage() {
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {globalDate ? format(globalDate, 'PPP') : <span>Pick a date</span>}
+                            {globalDate ? format(globalDate, 'PPP') : <span>Today</span>}
                         </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="end">
@@ -374,7 +370,7 @@ export default function LabourerPage() {
                   <Wrench className="mx-auto h-12 w-12 text-muted-foreground" />
                   <h3 className="mt-4 text-lg font-semibold">No Labour Records Found</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                      Your search did not return any results. Records are created automatically with each bill.
+                      No records found for the selected period. Records are created automatically with each bill.
                   </p>
               </div>
             )}
@@ -438,3 +434,5 @@ export default function LabourerPage() {
     </>
   );
 }
+
+    

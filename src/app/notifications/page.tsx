@@ -73,13 +73,13 @@ function NotificationsPage() {
     if (!firestore) return null;
     
     const dateToFilter = globalDate || new Date();
-    const startDate = startOfDay(dateToFilter).toISOString();
-    const endDate = endOfDay(dateToFilter).toISOString();
+    const startDate = startOfDay(dateToFilter);
+    const endDate = endOfDay(dateToFilter);
 
     return query(
       collection(firestore, 'notifications'),
-      where('createdAt', '>=', startDate),
-      where('createdAt', '<=', endDate),
+      where('createdAt', '>=', startDate.toISOString()),
+      where('createdAt', '<=', endDate.toISOString()),
       orderBy('createdAt', 'desc')
     );
   }, [firestore, globalDate]);
@@ -415,3 +415,5 @@ function NotificationsPage() {
 }
 
 export default withPasswordProtection(NotificationsPage);
+
+    

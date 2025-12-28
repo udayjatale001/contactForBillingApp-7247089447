@@ -25,10 +25,10 @@ interface BillSummaryDialogProps {
   onOpenChange: (open: boolean) => void;
   onSave: () => Promise<void>;
   isSaving: boolean;
-  isSavingDisabled: boolean;
+  isViewing?: boolean; // New prop
 }
 
-export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, isSavingDisabled }: BillSummaryDialogProps) {
+export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, isViewing = false }: BillSummaryDialogProps) {
   const { t } = useLanguage();
   const [isSavingForPrint, setIsSavingForPrint] = React.useState(false);
   const [isSavingForWhatsApp, setIsSavingForWhatsApp] = React.useState(false);
@@ -64,7 +64,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
   const handlePrintClick = async () => {
     setIsSavingForPrint(true);
     // Don't save if it's just a view from history
-    if (!isSavingDisabled) {
+    if (!isViewing) {
       await onSave();
     }
     // The print is handled via CSS, so we just trigger it after saving.
@@ -78,7 +78,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     if (!bill.contactNumber) return;
     setIsSavingForWhatsApp(true);
      // Don't save if it's just a view from history
-    if (!isSavingDisabled) {
+    if (!isViewing) {
       await onSave();
     }
 
@@ -231,7 +231,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               disabled={isSavingForPrint || isSavingForWhatsApp || isSaving}
             >
               {isSavingForPrint ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-              {isSavingDisabled ? t('print') : t('save_and_print')}
+              {isViewing ? t('print') : t('save_and_print')}
             </Button>
           </div>
         </DialogFooter>

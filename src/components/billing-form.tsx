@@ -820,7 +820,7 @@ export function BillingForm() {
           onOpenChange={handleBillDialogClose}
           onSave={handleSaveBill}
           isSaving={isSubmitting} 
-          isSavingDisabled={false}
+          isViewing={false}
         />
       )}
       {generatedToken && (
@@ -834,3 +834,5 @@ export function BillingForm() {
     </>
   );
 }
+
+    

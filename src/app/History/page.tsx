@@ -76,18 +76,19 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
 
   const billsQuery = useMemoFirebase(() => {
     if (!firestore || !collectionPath) return null;
-    
+
     const dateToFilter = globalDate || new Date();
-    const startDate = startOfDay(dateToFilter).toISOString();
-    const endDate = endOfDay(dateToFilter).toISOString();
+    const startDate = startOfDay(dateToFilter);
+    const endDate = endOfDay(dateToFilter);
 
     return query(
-        collection(firestore, collectionPath),
-        where('createdAt', '>=', startDate),
-        where('createdAt', '<=', endDate),
-        orderBy('createdAt', 'desc')
+      collection(firestore, collectionPath),
+      where('createdAt', '>=', startDate.toISOString()),
+      where('createdAt', '<=', endDate.toISOString()),
+      orderBy('createdAt', 'desc')
     );
   }, [firestore, collectionPath, globalDate]);
+
 
   const { data: bills, isLoading } = useCollection<Bill>(billsQuery);
 
@@ -288,7 +289,7 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
           onOpenChange={handleCloseDialog}
           onSave={async () => { /* This is a dummy function as we're not saving from history view */ }}
           isSaving={false}
-          isSavingDisabled={true}
+          isViewing
         />
       )}
       
@@ -340,13 +341,13 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
     if (!firestore || !collectionPath) return null;
     
     const dateToFilter = globalDate || new Date();
-    const startDate = startOfDay(dateToFilter).toISOString();
-    const endDate = endOfDay(dateToFilter).toISOString();
+    const startDate = startOfDay(dateToFilter);
+    const endDate = endOfDay(dateToFilter);
     
     return query(
         collection(firestore, collectionPath),
-        where('createdAt', '>=', startDate),
-        where('createdAt', '<=', endDate),
+        where('createdAt', '>=', startDate.toISOString()),
+        where('createdAt', '<=', endDate.toISOString()),
         orderBy('createdAt', 'desc')
     );
   }, [firestore, collectionPath, globalDate]);
