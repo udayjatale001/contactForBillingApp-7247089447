@@ -60,6 +60,11 @@ export default function CustomersPage() {
     const customerMap = new Map<string, Customer>();
 
     allBills.forEach((bill) => {
+      // FIX: Ensure we only process bills with a customerName to prevent runtime errors.
+      if (!bill.customerName || typeof bill.customerName !== 'string') {
+        return; 
+      }
+      
       const customerNameKey = bill.customerName.trim().toLowerCase();
       let customer = customerMap.get(customerNameKey);
 
@@ -292,4 +297,3 @@ export default function CustomersPage() {
     </>
   );
 }
-
