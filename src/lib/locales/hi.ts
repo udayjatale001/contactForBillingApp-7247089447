@@ -21,6 +21,7 @@ export default {
   // Sidebar
   create_bill: 'बिल बनाएं',
   billing_history: 'बिलिंग इतिहास',
+  customers: 'ग्राहक',
   labour: 'लेबर',
   notifications: 'सूचनाएं',
   admin: 'एडमिन',
@@ -125,7 +126,6 @@ export default {
   all_bills_desc: 'सभी उत्पन्न बिलों का एक पूरा रिकॉर्ड। देखने के लिए पंक्ति पर क्लिक करें, या हटाने के लिए हटाएं आइकन पर क्लिक करें।',
   all_tokens: 'सभी टोकन',
   all_tokens_desc: 'सभी मुद्रित टोकन का एक रिकॉर्ड। ये बिलों से अलग सहेजे जाते हैं।',
-  customer: 'ग्राहक',
   actions: 'कार्रवाई',
   no_bills_found: 'कोई बिल नहीं मिला',
   no_bills_found_desc: 'आपकी खोज ने कोई परिणाम नहीं दिया।',

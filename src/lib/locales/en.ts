@@ -21,6 +21,7 @@ export default {
   // Sidebar
   create_bill: 'Create Bill',
   billing_history: 'Billing History',
+  customers: 'Customers',
   labour: 'Labour',
   notifications: 'Notifications',
   admin: 'Admin',
@@ -125,7 +126,6 @@ export default {
   all_bills_desc: 'A complete record of all generated bills. Click row to view, or delete icon to remove.',
   all_tokens: 'All Tokens',
   all_tokens_desc: 'A record of all printed tokens. These are saved separately from bills.',
-  customer: 'Customer',
   actions: 'Actions',
   no_bills_found: 'No Bills Found',
   no_bills_found_desc: 'Your search did not return any results.',

@@ -15,6 +15,7 @@ import {
   Bell,
   Wrench,
   Globe,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -87,6 +88,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       href: '/History',
       label: t('billing_history'),
       icon: FileText,
+      ownerOnly: false,
+    },
+    {
+      href: '/customers',
+      label: t('customers'),
+      icon: Users,
       ownerOnly: false,
     },
     {
