@@ -161,8 +161,8 @@ export default function KoushalPage() {
                         <TableCell className="font-medium">{bill.customerName}</TableCell>
                         <TableCell>{bill.contactNumber || 'N/A'}</TableCell>
                         <TableCell>{bill.address || 'N/A'}</TableCell>
-                        <TableCell className="text-green-600 font-medium">{bill.totalAmount.toLocaleString()}rs</TableCell>
-                        <TableCell>{bill.totalCarat.toLocaleString()}</TableCell>
+                        <TableCell className="text-green-600 font-medium">{(bill.totalAmount || 0).toLocaleString()}rs</TableCell>
+                        <TableCell>{(bill.totalCarat || 0).toLocaleString()}</TableCell>
                         <TableCell className="text-right">
                           <Button variant="ghost" size="icon" onClick={() => handleWhatsAppClick(bill)} disabled={!bill.contactNumber} title="Send WhatsApp">
                             <MessageSquare className="h-4 w-4 text-green-600" />
@@ -217,3 +217,5 @@ export default function KoushalPage() {
     </>
   );
 }
+
+    
