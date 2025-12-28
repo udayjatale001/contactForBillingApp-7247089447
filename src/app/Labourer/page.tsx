@@ -94,15 +94,19 @@ export default function LabourerPage() {
 
   const filteredRecords = React.useMemo(() => {
     if (!labourRecords) return [];
-    return labourRecords.filter((record) => {
-      const nameMatch = record.customerName
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const dateMatch = selectedDate
-        ? isSameDay(new Date(record.createdAt), selectedDate)
-        : true;
-      return nameMatch && dateMatch;
-    });
+    
+    let dateFilteredRecords = labourRecords;
+    if (selectedDate) {
+        dateFilteredRecords = labourRecords.filter((record) => isSameDay(new Date(record.createdAt), selectedDate));
+    }
+    
+    if (searchTerm) {
+        return dateFilteredRecords.filter((record) =>
+            record.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }
+    
+    return dateFilteredRecords;
   }, [labourRecords, searchTerm, selectedDate]);
   
   React.useEffect(() => {

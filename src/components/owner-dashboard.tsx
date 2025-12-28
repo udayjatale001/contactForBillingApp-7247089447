@@ -1,4 +1,3 @@
-
 'use client';
 import * as React from 'react';
 import {
@@ -58,7 +57,7 @@ import {
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, getDoc, getDocs } from 'firebase/firestore';
 import type { Bill, AppSettings, Labour } from '@/lib/types';
-import { format, getYear, getMonth, subHours, isSameDay } from 'date-fns';
+import { format, getYear, getMonth, subHours, isSameDay, startOfDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
 import { Input } from './ui/input';
@@ -68,6 +67,8 @@ import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import * as XLSX from 'xlsx';
 import { useLanguage } from '@/context/language-context';
+import { Switch } from './ui/switch';
+import { Label } from './ui/label';
 
 const ALL_MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -191,6 +192,7 @@ export function OwnerDashboard() {
   const [selectedYear, setSelectedYear] = React.useState<string>(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = React.useState<string>((new Date().getMonth() + 1).toString().padStart(2, '0'));
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
+  const [use24HourWindow, setUse24HourWindow] = React.useState(true);
 
   const [isExporting, setIsExporting] = React.useState(false);
 
@@ -260,17 +262,20 @@ export function OwnerDashboard() {
 
     const now = new Date();
     const twentyFourHoursAgo = subHours(now, 24);
+    const midnight = startOfDay(now);
+    const todayFilterStart = use24HourWindow ? twentyFourHoursAgo : midnight;
 
-    const todaysBills = allBills.filter(bill => new Date(bill.createdAt) >= twentyFourHoursAgo);
+    const todaysBills = allBills.filter(bill => new Date(bill.createdAt) >= todayFilterStart);
+
 
     const todaysRevenue = todaysBills.reduce((acc, bill) => acc + bill.paidAmount, 0);
     const todaysLabourCost = todaysBills.reduce((acc, bill) => acc + (bill.totalLabourAmount || 0), 0);
     const todaysNetProfit = todaysRevenue - todaysLabourCost;
 
-    // Static year range from 2025 to 3000
-    const startYear = 2025;
-    const endYear = 3000;
-    const allAvailableYears = Array.from({ length: endYear - startYear + 1 }, (_, i) => (startYear + i).toString());
+    const yearsInData = new Set<string>();
+    allBills.forEach(bill => yearsInData.add(getYear(new Date(bill.createdAt)).toString()));
+    const allAvailableYears = Array.from(yearsInData).sort((a,b) => Number(b) - Number(a));
+
 
     // Filter bills based on selected month and year
     const filteredBills = allBills.filter(bill => {
@@ -321,7 +326,7 @@ export function OwnerDashboard() {
     const monthlySalesForYear: { [key: string]: number } = Object.fromEntries(ALL_MONTHS.map(m => [m, 0]));
     const monthlyLabourForYear: { [key: string]: number } = Object.fromEntries(ALL_MONTHS.map(m => [m, 0]));
     
-    const yearForMonthlyChart = selectedDate ? getYear(selectedDate).toString() : selectedYear;
+    const yearForMonthlyChart = selectedDate ? getYear(selectedDate).toString() : (selectedYear === 'all' ? now.getFullYear().toString() : selectedYear) ;
     const billsForMonthlyChart = allBills.filter(bill => getYear(new Date(bill.createdAt)).toString() === yearForMonthlyChart);
 
     billsForMonthlyChart.forEach(bill => {
@@ -334,9 +339,6 @@ export function OwnerDashboard() {
       month,
       total: monthlySalesForYear[month] || 0,
     }));
-    
-    const yearsInData = new Set<string>();
-    allBills.forEach(bill => yearsInData.add(getYear(new Date(bill.createdAt)).toString()));
     
     allBills.forEach(bill => {
         const year = getYear(new Date(bill.createdAt)).toString();
@@ -407,7 +409,7 @@ export function OwnerDashboard() {
       recentBills: filteredBills.slice(0, 5),
       availableYears: allAvailableYears,
     };
-  }, [allBills, selectedYear, selectedMonth, selectedDate, dismissedCustomers]);
+  }, [allBills, selectedYear, selectedMonth, selectedDate, dismissedCustomers, use24HourWindow]);
 
   const handleDismissCustomer = (customerName: string) => {
     setDismissedCustomers(prev => [...prev, customerName]);
@@ -582,15 +584,26 @@ export function OwnerDashboard() {
        {/* Today's Profit Section */}
       <Card>
         <CardHeader className='pb-2'>
-            <CardTitle className='flex items-center gap-2 text-base'>
-                <TrendingUp className='h-5 w-5' />
-                Today (Last 24 Hours)
-            </CardTitle>
+            <div className="flex items-center justify-between">
+                <CardTitle className='flex items-center gap-2 text-base'>
+                    <TrendingUp className='h-5 w-5' />
+                    Today's Snapshot
+                </CardTitle>
+                <div className="flex items-center space-x-2">
+                    <Label htmlFor="today-mode" className='text-xs text-muted-foreground'>Since Midnight</Label>
+                    <Switch
+                        id="today-mode"
+                        checked={use24HourWindow}
+                        onCheckedChange={setUse24HourWindow}
+                        />
+                    <Label htmlFor="today-mode" className='text-xs text-muted-foreground'>Last 24 Hours</Label>
+                </div>
+            </div>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
+                    <CardTitle className="text-sm font-medium">Revenue</CardTitle>
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -599,7 +612,7 @@ export function OwnerDashboard() {
             </Card>
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Today's Labour Cost</CardTitle>
+                    <CardTitle className="text-sm font-medium">Labour Cost</CardTitle>
                     <Wrench className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -608,7 +621,7 @@ export function OwnerDashboard() {
             </Card>
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Today's Net Profit</CardTitle>
+                    <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -1014,7 +1027,6 @@ export function OwnerDashboard() {
     </div>
   );
 }
-
     
 
     
@@ -1022,3 +1034,4 @@ export function OwnerDashboard() {
 
 
     
+

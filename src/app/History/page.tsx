@@ -85,15 +85,22 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
 
   const filteredBills = React.useMemo(() => {
     if (!bills) return [];
-    return bills.filter(bill => {
-      const searchLower = searchTerm.toLowerCase();
-      const nameMatch = bill.customerName.toLowerCase().includes(searchLower);
-      const billNoMatch = bill.id.slice(-6).toLowerCase().includes(searchLower);
-      const dateMatch = selectedDate
-        ? isSameDay(new Date(bill.createdAt), selectedDate)
-        : true;
-      return (nameMatch || billNoMatch) && dateMatch;
-    });
+    let dateFilteredBills = bills;
+
+    if (selectedDate) {
+        dateFilteredBills = bills.filter(bill => isSameDay(new Date(bill.createdAt), selectedDate));
+    }
+
+    if (searchTerm) {
+        return dateFilteredBills.filter(bill => {
+            const searchLower = searchTerm.toLowerCase();
+            const nameMatch = bill.customerName.toLowerCase().includes(searchLower);
+            const billNoMatch = bill.id.slice(-6).toLowerCase().includes(searchLower);
+            return nameMatch || billNoMatch;
+        });
+    }
+    
+    return dateFilteredBills;
   }, [bills, searchTerm, selectedDate]);
   
   const handleRowClick = (bill: Bill) => {
@@ -344,14 +351,20 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
 
   const filteredTokens = React.useMemo(() => {
     if (!tokens) return [];
-    return tokens.filter(token => {
-      const searchLower = searchTerm.toLowerCase();
-      const nameMatch = token.customerName.toLowerCase().includes(searchLower);
-      const dateMatch = selectedDate
-        ? isSameDay(new Date(token.createdAt), selectedDate)
-        : true;
-      return nameMatch && dateMatch;
-    });
+    
+    let dateFilteredTokens = tokens;
+    if (selectedDate) {
+        dateFilteredTokens = tokens.filter(token => isSameDay(new Date(token.createdAt), selectedDate));
+    }
+    
+    if (searchTerm) {
+        return dateFilteredTokens.filter(token => {
+            const searchLower = searchTerm.toLowerCase();
+            return token.customerName.toLowerCase().includes(searchLower);
+        });
+    }
+
+    return dateFilteredTokens;
   }, [tokens, searchTerm, selectedDate]);
   
   const handleRowClick = (token: Token) => {

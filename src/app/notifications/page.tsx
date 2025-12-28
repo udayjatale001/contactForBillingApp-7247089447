@@ -81,15 +81,20 @@ function NotificationsPage() {
 
   const filteredNotifications = React.useMemo(() => {
     if (!notifications) return [];
-    return notifications.filter((notification) => {
-       const nameMatch = notification.customerName
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const dateMatch = selectedDate
-        ? isSameDay(new Date(notification.createdAt), selectedDate)
-        : true;
-      return nameMatch && dateMatch;
-    });
+    
+    let dateFilteredNotifications = notifications;
+    if (selectedDate) {
+        dateFilteredNotifications = notifications.filter((notification) => isSameDay(new Date(notification.createdAt), selectedDate));
+    }
+    
+    if (searchTerm) {
+        return dateFilteredNotifications.filter((notification) => {
+            const searchLower = searchTerm.toLowerCase();
+            return notification.customerName?.toLowerCase().includes(searchLower);
+        });
+    }
+    
+    return dateFilteredNotifications;
   }, [notifications, searchTerm, selectedDate]);
   
   React.useEffect(() => {
