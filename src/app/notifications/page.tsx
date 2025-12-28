@@ -220,11 +220,11 @@ function NotificationsPage() {
             <div
               key={notification.id}
               className={cn(
-                "flex items-start justify-between gap-4 group p-4 rounded-lg border transition-colors",
+                "flex items-start justify-between gap-2 sm:gap-4 group p-4 rounded-lg border transition-colors",
                 selectedIds.has(notification.id) ? 'bg-primary/10 border-primary/20' : 'bg-card'
                 )}
             >
-              <div className="flex items-start gap-4 flex-1">
+              <div className="flex items-start gap-3 sm:gap-4 flex-1 overflow-hidden">
                  <Checkbox 
                     checked={selectedIds.has(notification.id)} 
                     onCheckedChange={(checked) => handleSelectOne(notification.id, !!checked)}
@@ -232,12 +232,12 @@ function NotificationsPage() {
                     aria-label={`Select notification ${notification.id}`}
                     className='mt-1'
                 />
-                <div className="bg-secondary p-3 rounded-full mt-1">
+                <div className="bg-secondary p-3 rounded-full mt-1 hidden sm:block">
                   <Bell className="h-5 w-5 text-secondary-foreground" />
                 </div>
-                <div className="flex-1 space-y-1">
+                <div className="flex-1 space-y-1 overflow-hidden">
                   <ParsedNotification notification={notification} />
-                  <p className="text-sm text-muted-foreground pt-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground pt-1 truncate">
                     {format(new Date(notification.createdAt), 'PPpp')} (
                     {formatDistanceToNow(new Date(notification.createdAt), {
                       addSuffix: true,
@@ -415,5 +415,4 @@ function NotificationsPage() {
 }
 
 export default withPasswordProtection(NotificationsPage);
-
     

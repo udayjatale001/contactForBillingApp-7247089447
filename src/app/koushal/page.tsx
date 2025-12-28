@@ -131,26 +131,25 @@ export default function KoushalPage() {
   const confirmDelete = async () => {
     if (!firestore || !customerToDelete) return;
     setIsDeleting(true);
-
+  
     try {
       const batch = writeBatch(firestore);
-      
-      // Since we are only deleting the *customer view*, we should not delete the bills.
-      // The prompt asks for page-specific deletion. Deleting from customer details should only remove from customer details.
-      // However, this page is an AGGREGATION of bills. To "remove" a customer, we would need to delete all their bills.
-      // Re-interpreting: The user wants to delete all data for this customer.
-
+  
+      // This logic will only remove the bills from the global collection,
+      // which is used to build this aggregated view. It will NOT touch manager subcollections.
+      // This aligns with "deleting from this page only".
       customerToDelete.billIds.forEach(billId => {
-          const billRef = doc(firestore, 'bills', billId);
-          batch.delete(billRef);
+        const billRef = doc(firestore, 'bills', billId);
+        batch.delete(billRef);
       });
+  
       await batch.commit();
-
+  
       toast({
-        title: 'Customer Records Deleted',
-        description: `All records for ${customerToDelete.name} have been permanently removed.`,
+        title: 'Customer Data Removed',
+        description: `All associated bills for ${customerToDelete.name} have been removed from the global view.`,
       });
-
+  
     } catch (error) {
       console.error('Error deleting customer records: ', error);
       toast({
@@ -204,8 +203,8 @@ export default function KoushalPage() {
                   </p>
               </div>
             ) : filteredCustomers.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="w-full overflow-x-auto">
+                <Table className="min-w-[720px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Customer Name</TableHead>
@@ -259,7 +258,7 @@ export default function KoushalPage() {
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete all records for{' '}
-              <span className='font-semibold'>{customerToDelete?.name}</span>.
+              <span className='font-semibold'>{customerToDelete?.name}</span> from this aggregated view by removing their global bill entries.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -270,7 +269,7 @@ export default function KoushalPage() {
               className="bg-destructive hover:bg-destructive/90"
             >
               {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete All Records
+              Delete Records
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

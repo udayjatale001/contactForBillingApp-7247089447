@@ -210,8 +210,8 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
                   <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
               </div>
             ) : filteredBills && filteredBills.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="w-full overflow-x-auto">
+                <Table className="min-w-[640px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Customer</TableHead>
@@ -460,8 +460,8 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
                   <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
               </div>
             ) : filteredTokens && filteredTokens.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="w-full overflow-x-auto">
+                <Table className="min-w-[640px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Customer</TableHead>

@@ -301,8 +301,8 @@ export default function LabourerPage() {
                   <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
               </div>
             ) : filteredRecords && filteredRecords.length > 0 ? (
-              <div className="overflow-x-auto">
-              <Table>
+              <div className="w-full overflow-x-auto">
+              <Table className="min-w-[640px]">
                 <TableHeader>
                   <TableRow>
                      <TableHead className="w-[50px]">
@@ -434,5 +434,4 @@ export default function LabourerPage() {
     </>
   );
 }
-
     
