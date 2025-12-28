@@ -53,8 +53,9 @@ export default function KoushalPage() {
 
   const filteredBills = React.useMemo(() => {
     if (!allBills) return [];
+    if (!searchTerm) return allBills;
     return allBills.filter((bill) =>
-      bill.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+      bill.customerName && bill.customerName.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [allBills, searchTerm]);
 
@@ -216,5 +217,3 @@ export default function KoushalPage() {
     </>
   );
 }
-
-    
