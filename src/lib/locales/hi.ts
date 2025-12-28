@@ -105,7 +105,7 @@ export default {
 
   // Bill Summary Dialog
   bill_receipt_title: 'आनंद सागर राइपनिंग चैंबर',
-  bill_receipt_subtitle: 'इछापुर रोड, शाहपुर',
+  bill_receipt_subtitle: 'इच्छापुर रोड, शाहपुर',
   bill_no: 'बिल नंबर',
   date: 'तारीख',
   time: 'समय',
