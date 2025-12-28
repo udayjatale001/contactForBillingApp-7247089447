@@ -126,28 +126,30 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint }: Token
             </main>
           </div>
         </div>
-        <DialogFooter className="px-4 py-3 sm:justify-between rounded-b-lg border-t print-hidden bg-gray-50 flex-col sm:flex-row gap-2">
-          <DialogClose asChild>
-            <Button variant="outline" className='flex-1'>
-                <X className="mr-2 h-4 w-4" />
-                {t('close')}
+        <DialogFooter className="px-4 py-3 rounded-b-lg border-t print-hidden bg-gray-50 flex flex-col sm:flex-row gap-2">
+            <DialogClose asChild>
+              <Button variant="outline" className='flex-1'>
+                  <X className="mr-2 h-4 w-4" />
+                  {t('close')}
+              </Button>
+            </DialogClose>
+            <Button 
+              variant="secondary" 
+              onClick={handleWhatsAppClick} 
+              className='flex-1' 
+              disabled={!token.contactNumber}
+            >
+              <MessageSquare className="mr-2 h-4 w-4" />
+              {t('send_via_whatsapp')}
             </Button>
-          </DialogClose>
-           <Button 
-            variant="secondary" 
-            onClick={handleWhatsAppClick} 
-            className='flex-1' 
-            disabled={!token.contactNumber}
-          >
-            <MessageSquare className="mr-2 h-4 w-4" />
-            {t('send_via_whatsapp')}
-          </Button>
-          <Button variant="default" onClick={onPrint} className='flex-1'>
-            <Printer className="mr-2 h-4 w-4" />
-            {t('print')}
-          </Button>
+            <Button variant="default" onClick={onPrint} className='flex-1'>
+              <Printer className="mr-2 h-4 w-4" />
+              {t('print')}
+            </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
+    

@@ -508,9 +508,9 @@ export function OwnerDashboard() {
       {/* Export Button */}
        <Card>
         <CardHeader>
-             <CardTitle className='flex items-center justify-between'>
+             <CardTitle className='flex flex-col md:flex-row items-start md:items-center justify-between gap-4'>
                 <span>Data Management</span>
-                 <Button onClick={handleExport} disabled={isExporting}>
+                 <Button onClick={handleExport} disabled={isExporting} className='w-full md:w-auto'>
                     {isExporting ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
@@ -526,7 +526,7 @@ export function OwnerDashboard() {
        {/* Today's Profit Section */}
       <Card>
         <CardHeader className='pb-2'>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
                 <CardTitle className='flex items-center gap-2 text-base'>
                     <TrendingUp className='h-5 w-5' />
                     {globalDate ? `${format(globalDate, 'PPP')} Snapshot` : "Today's Snapshot"}
@@ -651,7 +651,7 @@ export function OwnerDashboard() {
                     Customers with outstanding payments.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
                 {dueBills.length > 0 ? (
                     <Table>
                         <TableHeader>
@@ -715,16 +715,16 @@ export function OwnerDashboard() {
       <Tabs defaultValue="sales">
         <Card>
             <CardHeader>
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <CardTitle>Analytics</CardTitle>
                         <CardDescription>
                             Detailed reports for sales and labour. Select a year to see monthly data.
                         </CardDescription>
                     </div>
-                     <div className="flex items-center gap-4">
-                        <Select value={selectedYear} onValueChange={setSelectedYear}>
-                            <SelectTrigger className="w-[180px]">
+                     <div className="flex items-center gap-4 w-full md:w-auto">
+                        <Select value={selectedYear} onValueChange={setSelectedYear} >
+                            <SelectTrigger className="w-full md:w-[180px]">
                                 <SelectValue placeholder="Select Year" />
                             </SelectTrigger>
                             <SelectContent>
@@ -819,53 +819,53 @@ export function OwnerDashboard() {
         </Card>
       </Tabs>
       
-      <div className="grid gap-4 lg:grid-cols-7">
-        {/* Recent Bills */}
-        <Card className="lg:col-span-7">
-          <CardHeader>
-            <CardTitle>Recent Bills</CardTitle>
-            <CardDescription>
-              Latest 5 bills generated.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {recentBills && recentBills.length > 0 ? (
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead>Due</TableHead>
-                        <TableHead>Date</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {recentBills.map(bill => (
-                        <TableRow key={bill.id}>
-                            <TableCell className="font-medium">{bill.customerName}</TableCell>
-                            <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
-                            <TableCell>
-                            <Badge variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}>
-                                {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
-                            </Badge>
-                            </TableCell>
-                            <TableCell>{format(new Date(bill.createdAt), 'PPp')}</TableCell>                        
-                        </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            ) : (
-                 <div className="text-center py-16">
-                    <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-semibold">No Bills Found</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        No bills were generated in this period.
-                    </p>
-                </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Recent Bills */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Bills</CardTitle>
+          <CardDescription>
+            Latest 5 bills generated.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          {recentBills && recentBills.length > 0 ? (
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead>Due</TableHead>
+                      <TableHead>Date</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {recentBills.map(bill => (
+                      <TableRow key={bill.id}>
+                          <TableCell className="font-medium">{bill.customerName}</TableCell>
+                          <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
+                          <TableCell>
+                          <Badge variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}>
+                              {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
+                          </Badge>
+                          </TableCell>
+                          <TableCell>{format(new Date(bill.createdAt), 'PPp')}</TableCell>                        
+                      </TableRow>
+                      ))}
+                  </TableBody>
+              </Table>
+          ) : (
+                <div className="text-center py-16">
+                  <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <h3 className="mt-4 text-lg font-semibold">No Bills Found</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                      No bills were generated in this period.
+                  </p>
+              </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
+    

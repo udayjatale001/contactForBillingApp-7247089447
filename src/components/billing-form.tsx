@@ -413,50 +413,7 @@ export function BillingForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             
-             {/* Summary Card - First on mobile, sticky on desktop */}
-            <div className="lg:col-span-1 lg:order-2">
-                <Card className="lg:sticky lg:top-24">
-                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Gem className="text-primary"/>
-                      Calculation Summary
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 text-base">
-                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Carat Amount:</span>
-                      <span>{totalCaratAmount.toLocaleString()}rs</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Internal Labour:</span>
-                      <span className='text-muted-foreground'>{totalLabourAmount.toLocaleString()}rs</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between font-bold text-lg">
-                      <span className="text-muted-foreground">Total Amount:</span>
-                      <span>{totalAmount.toLocaleString()}rs</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Paid Amount:</span>
-                      <span>{(paymentMode === 'Due' ? 0 : Number(paidAmount) || 0).toLocaleString()}rs</span>
-                    </div>
-                    <Separator />
-                    <div className={cn("flex justify-between font-bold text-xl", dueAmount > 0 ? 'text-destructive' : 'text-primary')}>
-                      <span className="text-muted-foreground">Due Amount:</span>
-                      <span>{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}rs</span>
-                    </div>
-                     {dueAmount < 0 && (
-                         <p className="text-sm text-green-600 font-medium">Change to return: {(-dueAmount).toLocaleString()}rs</p>
-                     )}
-                  </CardContent>
-                  <Button type="submit" className="w-full h-12 rounded-t-none text-lg" disabled={isSubmitting || isLoadingRates}>
-                    {isSubmitting || isLoadingRates ? <Loader2 className="animate-spin" /> : 'Generate Bill'}
-                  </Button>
-                </Card>
-            </div>
-            
-            <div className="lg:col-span-2 space-y-6 lg:order-1">
+            <div className="lg:col-span-2 space-y-6">
                 {/* Customer Details */}
                 <Card>
                     <CardHeader>
@@ -810,6 +767,49 @@ export function BillingForm() {
                 </Card>
             </div>
 
+            {/* Summary Card */}
+            <div className="lg:col-span-1">
+                <Card className="lg:sticky lg:top-24">
+                   <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Gem className="text-primary"/>
+                      Calculation Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 text-base">
+                     <div className="flex justify-between">
+                      <span className="text-muted-foreground">Carat Amount:</span>
+                      <span>{totalCaratAmount.toLocaleString()}rs</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Internal Labour:</span>
+                      <span className='text-muted-foreground'>{totalLabourAmount.toLocaleString()}rs</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between font-bold text-lg">
+                      <span className="text-muted-foreground">Total Amount:</span>
+                      <span>{totalAmount.toLocaleString()}rs</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Paid Amount:</span>
+                      <span>{(paymentMode === 'Due' ? 0 : Number(paidAmount) || 0).toLocaleString()}rs</span>
+                    </div>
+                    <Separator />
+                    <div className={cn("flex justify-between font-bold text-xl", dueAmount > 0 ? 'text-destructive' : 'text-primary')}>
+                      <span className="text-muted-foreground">Due Amount:</span>
+                      <span>{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}rs</span>
+                    </div>
+                     {dueAmount < 0 && (
+                         <p className="text-sm text-green-600 font-medium">Change to return: {(-dueAmount).toLocaleString()}rs</p>
+                     )}
+                  </CardContent>
+                  <Button type="submit" className="w-full h-12 rounded-t-none text-lg" disabled={isSubmitting || isLoadingRates}>
+                    {isSubmitting || isLoadingRates ? <Loader2 className="animate-spin" /> : 'Generate Bill'}
+                  </Button>
+                </Card>
+            </div>
+
           </div>
         </form>
       </Form>
@@ -834,3 +834,5 @@ export function BillingForm() {
     </>
   );
 }
+
+    

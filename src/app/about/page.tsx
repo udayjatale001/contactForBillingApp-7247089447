@@ -57,7 +57,7 @@ export default function AboutPage() {
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground px-4 md:px-8">
           <Separator className="my-4" />
-          <div className="flex flex-col items-center justify-center space-y-4 my-6">
+          <div className="flex flex-col items-center justify-center space-y-6 my-6">
              <div className="flex items-center space-x-2">
                 <Label htmlFor="language-toggle" className="text-lg font-semibold text-foreground">
                   {t('language_toggle_label')}
@@ -72,13 +72,13 @@ export default function AboutPage() {
               </div>
               <div>
                 <Label className="text-lg font-semibold text-foreground">Global Date Filter</Label>
-                 <div className="flex gap-2 mt-2">
+                 <div className="flex flex-col sm:flex-row gap-2 mt-2">
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
                           variant={'outline'}
                           className={cn(
-                            'w-[280px] justify-start text-left font-normal',
+                            'w-full sm:w-[280px] justify-start text-left font-normal',
                             !globalDate && 'text-muted-foreground'
                           )}
                         >
@@ -134,7 +134,7 @@ export default function AboutPage() {
            <Separator className="my-6" />
            <div className="text-center">
              <h3 className="text-lg font-semibold text-foreground mb-4">{t('contact_devs')}</h3>
-             <div className="flex flex-col md:flex-row justify-center items-center gap-6 text-foreground">
+             <div className="flex flex-col md:flex-row justify-center items-center gap-4 md:gap-6 text-foreground">
                 <a href="mailto:help.hope8236@gmail.com" className="flex items-center gap-2 hover:text-primary transition-colors">
                     <Mail className="h-5 w-5" />
                     <span>help.hope8236@gmail.com</span>
@@ -156,3 +156,5 @@ export default function AboutPage() {
     </div>
   );
 }
+
+    

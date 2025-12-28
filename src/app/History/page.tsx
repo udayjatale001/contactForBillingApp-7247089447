@@ -539,7 +539,7 @@ function HistoryPage() {
       </div>
 
       <Tabs defaultValue="bills" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="bills">Bill History</TabsTrigger>
           <TabsTrigger value="tokens">Token History</TabsTrigger>
         </TabsList>
@@ -567,3 +567,5 @@ function HistoryPage() {
 }
 
 export default HistoryPage;
+
+    

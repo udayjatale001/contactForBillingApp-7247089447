@@ -207,33 +207,37 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               </div>
             </footer>
           </div>
-        <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 sm:justify-between sm:pt-4 rounded-b-lg border-t print-hidden bg-gray-50 flex-col sm:flex-row gap-2">
+        <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 rounded-b-lg border-t print-hidden bg-gray-50 flex flex-col sm:flex-row gap-2">
           <DialogClose asChild>
-            <Button variant="outline" className='flex-1'>
+            <Button variant="outline" className='w-full sm:w-auto'>
                 <X className="mr-2 h-4 w-4" />
                 {t('close')}
             </Button>
           </DialogClose>
-          <Button 
-            variant="secondary" 
-            onClick={handleWhatsAppClick} 
-            className='flex-1' 
-            disabled={!bill.contactNumber || isSavingForPrint || isSavingForWhatsApp || isSaving}
-          >
-            {isSavingForWhatsApp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
-            {t('send_via_whatsapp')}
-          </Button>
-          <Button 
-            variant="default" 
-            onClick={handlePrintClick} 
-            className='flex-1' 
-            disabled={isSavingForPrint || isSavingForWhatsApp || isSaving}
-          >
-            {isSavingForPrint ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-            {isSavingDisabled ? t('print') : t('save_and_print')}
-          </Button>
+          <div className="flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto">
+            <Button 
+              variant="secondary" 
+              onClick={handleWhatsAppClick} 
+              className='flex-1' 
+              disabled={!bill.contactNumber || isSavingForPrint || isSavingForWhatsApp || isSaving}
+            >
+              {isSavingForWhatsApp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
+              {t('send_via_whatsapp')}
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={handlePrintClick} 
+              className='flex-1' 
+              disabled={isSavingForPrint || isSavingForWhatsApp || isSaving}
+            >
+              {isSavingForPrint ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+              {isSavingDisabled ? t('print') : t('save_and_print')}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
+    
