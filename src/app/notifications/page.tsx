@@ -58,7 +58,7 @@ function NotificationsPage() {
   const firestore = useFirestore();
   const { isUserLoading } = useUser();
   const { toast } = useToast();
-  const { globalDate } = useDateFilter();
+  const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [notificationToDelete, setNotificationToDelete] = React.useState<
@@ -308,6 +308,35 @@ function NotificationsPage() {
                       className="pl-10"
                     />
                   </div>
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                        <Button
+                            variant={'outline'}
+                            className={cn(
+                            'w-full md:w-[240px] justify-start text-left font-normal',
+                            !globalDate && 'text-muted-foreground'
+                            )}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {globalDate ? format(globalDate, 'PPP') : <span>Pick a date</span>}
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                            mode="single"
+                            selected={globalDate ?? undefined}
+                            onSelect={(date) => setGlobalDate(date || new Date())}
+                            initialFocus
+                        />
+                        </PopoverContent>
+                    </Popover>
+                    {globalDate && (
+                        <Button variant="ghost" size="icon" onClick={clearGlobalDate}>
+                        <X className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
                 </div>
                  {filteredNotifications.length > 0 && (
                     <div className="flex items-center space-x-2 pt-4">

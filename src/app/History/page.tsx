@@ -62,7 +62,7 @@ import { useDateFilter } from '@/context/date-filter-context';
 function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}) {
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { globalDate } = useDateFilter();
+  const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
   
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedBill, setSelectedBill] = React.useState<Bill | null>(null);
@@ -190,6 +190,35 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
                     className="pl-10"
                   />
                 </div>
+                <div className="flex items-center gap-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                        <Button
+                            variant={'outline'}
+                            className={cn(
+                            'w-full md:w-[240px] justify-start text-left font-normal',
+                            !globalDate && 'text-muted-foreground'
+                            )}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {globalDate ? format(globalDate, 'PPP') : <span>Pick a date</span>}
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                            mode="single"
+                            selected={globalDate ?? undefined}
+                            onSelect={(date) => setGlobalDate(date || new Date())}
+                            initialFocus
+                        />
+                        </PopoverContent>
+                    </Popover>
+                    {globalDate && (
+                        <Button variant="ghost" size="icon" onClick={clearGlobalDate}>
+                        <X className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -300,7 +329,7 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
 function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}) {
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { globalDate } = useDateFilter();
+  const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
   
   const [searchTerm, setSearchTerm] = React.useState('');
   const [tokenToDelete, setTokenToDelete] = React.useState<Token | null>(null);
@@ -411,6 +440,35 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
                   />
+                </div>
+                 <div className="flex items-center gap-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                        <Button
+                            variant={'outline'}
+                            className={cn(
+                            'w-full md:w-[240px] justify-start text-left font-normal',
+                            !globalDate && 'text-muted-foreground'
+                            )}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {globalDate ? format(globalDate, 'PPP') : <span>Pick a date</span>}
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                            mode="single"
+                            selected={globalDate ?? undefined}
+                            onSelect={(date) => setGlobalDate(date || new Date())}
+                            initialFocus
+                        />
+                        </PopoverContent>
+                    </Popover>
+                    {globalDate && (
+                        <Button variant="ghost" size="icon" onClick={clearGlobalDate}>
+                        <X className="h-4 w-4" />
+                        </Button>
+                    )}
                 </div>
               </div>
             </div>
@@ -567,5 +625,3 @@ function HistoryPage() {
 }
 
 export default HistoryPage;
-
-    

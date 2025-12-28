@@ -72,7 +72,7 @@ export default function LabourerPage() {
   const { isUserLoading, user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { globalDate } = useDateFilter();
+  const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [recordToDelete, setRecordToDelete] = React.useState<
@@ -252,6 +252,35 @@ export default function LabourerPage() {
                       className="pl-10"
                     />
                   </div>
+                   <div className="flex items-center gap-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                        <Button
+                            variant={'outline'}
+                            className={cn(
+                            'w-full md:w-[240px] justify-start text-left font-normal',
+                            !globalDate && 'text-muted-foreground'
+                            )}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {globalDate ? format(globalDate, 'PPP') : <span>Pick a date</span>}
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                            mode="single"
+                            selected={globalDate ?? undefined}
+                            onSelect={(date) => setGlobalDate(date || new Date())}
+                            initialFocus
+                        />
+                        </PopoverContent>
+                    </Popover>
+                    {globalDate && (
+                        <Button variant="ghost" size="icon" onClick={clearGlobalDate}>
+                        <X className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
                 </div>
                  {filteredRecords.length > 0 && (
                     <div className="flex items-center space-x-2 pt-4">
