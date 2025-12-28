@@ -3,7 +3,7 @@ export default {
   // General
   app_title: 'आनंद सागर बिलिंग ऐप',
   billing_app: 'बिलिंग ऐप',
-  developed_by: 'डेवलपर: उदय जताले और कौशल महाजन',
+  developed_by: 'डेवलपर: उदय जटाले और कौशल महाजन',
   language_toggle_label: 'English',
   print: 'प्रिंट',
   close: 'बंद करें',
