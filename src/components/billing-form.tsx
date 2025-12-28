@@ -68,9 +68,9 @@ export function BillingForm() {
       inCarat: undefined,
       outCarat: undefined,
       smallCarat: undefined,
-      smallCaratRate: appSettings?.smallCaratRate,
+      smallCaratRate: 17,
       bigCarat: undefined,
-      bigCaratRate: appSettings?.bigCaratRate,
+      bigCaratRate: 20,
       paidAmount: undefined,
       paymentMode: 'Cash' as 'Cash' | 'Online Payment' | 'Due',
       paidTo: 'Gopal Temkar' as 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gajananad Murtankar',
@@ -90,8 +90,11 @@ export function BillingForm() {
 
   React.useEffect(() => {
     if (appSettings) {
-        setValue('smallCaratRate', appSettings.smallCaratRate, { shouldValidate: true });
-        setValue('bigCaratRate', appSettings.bigCaratRate, { shouldValidate: true });
+        // We set the default values in the form declaration now.
+        // This effect can still be useful if we want to override with fetched settings
+        // but for now we keep the hardcoded defaults.
+        // setValue('smallCaratRate', appSettings.smallCaratRate, { shouldValidate: true });
+        // setValue('bigCaratRate', appSettings.bigCaratRate, { shouldValidate: true });
     }
   }, [appSettings, setValue]);
 
@@ -482,7 +485,7 @@ export function BillingForm() {
                             )}
                         />
                         
-                        <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                        <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
                                 name="inCarat"
@@ -490,7 +493,7 @@ export function BillingForm() {
                                 <FormItem>
                                     <FormLabel>In Carat</FormLabel>
                                     <FormControl>
-                                    <Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    <Input type="number" placeholder='' {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -503,7 +506,7 @@ export function BillingForm() {
                                 <FormItem>
                                     <FormLabel>Out Carat</FormLabel>
                                     <FormControl>
-                                    <Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    <Input type="number" placeholder='' {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -549,7 +552,7 @@ export function BillingForm() {
                                 <FormControl>
                                     <Input 
                                         type="time" 
-                                        className='w-full sm:w-[120px]'
+                                        className='w-full sm:w-auto flex-grow sm:flex-grow-0 sm:w-[120px]'
                                         value={field.value ? format(field.value, 'HH:mm') : ''}
                                         onChange={(e) => handleTimeChange(e, field.value)}
                                     />
@@ -750,7 +753,7 @@ export function BillingForm() {
                                     <RadioGroup
                                     onValueChange={field.onChange}
                                     defaultValue={field.value}
-                                    className="flex flex-wrap items-center gap-x-4 gap-y-2"
+                                    className="flex flex-col sm:flex-row flex-wrap items-center gap-x-4 gap-y-2"
                                     >
                                     <FormItem className="flex items-center space-x-2 space-y-0">
                                         <FormControl>
