@@ -4,7 +4,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as React from 'react';
-import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home, Wrench, Phone, Calendar as CalendarIcon, Printer } from 'lucide-react';
+import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home, Wrench, Phone, Calendar as CalendarIcon, Printer, MapPin } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { collection, doc } from 'firebase/firestore';
 import { format, setHours, setMinutes } from 'date-fns';
@@ -63,6 +63,7 @@ export function BillingForm() {
       customerName: '',
       roomNumber: '',
       contactNumber: '',
+      address: '',
       createdAt: new Date(),
       inCarat: undefined,
       outCarat: undefined,
@@ -299,6 +300,7 @@ export function BillingForm() {
             customerName: data.customerName,
             ...(data.roomNumber && { roomNumber: data.roomNumber }),
             ...(data.contactNumber && { contactNumber: data.contactNumber }),
+            ...(data.address && { address: data.address }),
             ...(data.inCarat && { inCarat: data.inCarat }),
             ...(data.outCarat && { outCarat: data.outCarat }),
             totalCarat: (data.smallCarat || 0) + (data.bigCarat || 0),
@@ -365,6 +367,7 @@ export function BillingForm() {
       customerName: data.customerName,
       roomNumber: data.roomNumber,
       contactNumber: data.contactNumber,
+      address: data.address,
       inCarat: data.inCarat,
       createdAt: new Date().toISOString(),
     };
@@ -457,6 +460,22 @@ export function BillingForm() {
                                 <FormLabel>Room Number</FormLabel>
                                 <FormControl>
                                     <Input placeholder="e.g., 09" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="address"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Address</FormLabel>
+                                <FormControl>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Input placeholder="Enter customer's address" className="pl-10" {...field} />
+                                    </div>
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -834,5 +853,3 @@ export function BillingForm() {
     </>
   );
 }
-
-    

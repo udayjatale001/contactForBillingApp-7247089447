@@ -27,6 +27,10 @@
           "type": "string",
           "description": "Contact number of the customer."
         },
+        "address": {
+          "type": "string",
+          "description": "Address of the customer."
+        },
         "inCarat": {
           "type": "number",
           "description": "The amount of carat that came in."
@@ -242,6 +246,7 @@
         "customerName": { "type": "string" },
         "roomNumber": { "type": "string" },
         "contactNumber": { "type": "string" },
+        "address": { "type": "string" },
         "inCarat": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -256,6 +261,7 @@
           "id": { "type": "string", "description": "Unique identifier for the customer record." },
           "name": { "type": "string", "description": "Name of the customer." },
           "contactNumber": { "type": "string", "description": "Last known contact number of the customer." },
+          "address": { "type": "string", "description": "Last known address of the customer." },
           "totalBilledAmount": { "type": "number", "description": "The sum of all total amounts from the customer's bills." },
           "totalPaidAmount": { "type": "number", "description": "The sum of all paid amounts from the customer's bills." },
           "totalDueAmount": { "type": "number", "description": "The current outstanding balance for the customer." },

@@ -40,7 +40,8 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint }: Token
     const tokenInfo = `*${t('token_no')}:* #${token.id.slice(-6).toUpperCase()}\n*${t('date')}:* ${format(new Date(token.createdAt), 'PP')}\n\n`;
     const customerDetails = `*${t('customer_details')}:*\n${t('customer_name')}: ${token.customerName}\n` +
       (token.roomNumber ? `${t('room_number')}: ${token.roomNumber}\n` : '') +
-      (token.contactNumber ? `${t('contact_number')}: ${token.contactNumber}\n` : '') + '\n';
+      (token.contactNumber ? `${t('contact_number')}: ${token.contactNumber}\n` : '') +
+      (token.address ? `Address: ${token.address}\n` : '') + '\n';
     
     let caratDetails = '';
     if (typeof token.inCarat === 'number') {
@@ -114,6 +115,7 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint }: Token
               <DetailItem label={t('customer_name')} value={token.customerName} />
               {token.roomNumber && <DetailItem label={t('room_number')} value={token.roomNumber} />}
               {token.contactNumber && <DetailItem label={t('contact_number')} value={token.contactNumber} />}
+              {token.address && <DetailItem label='Address' value={token.address} />}
               
               <div className="pt-2 mt-2 border-t-2 border-dashed border-gray-300">
                 {typeof token.inCarat === 'number' && (
@@ -151,5 +153,3 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint }: Token
     </Dialog>
   );
 }
-
-    

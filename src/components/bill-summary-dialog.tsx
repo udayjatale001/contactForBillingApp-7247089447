@@ -42,7 +42,8 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     const billInfo = `*${t('bill_no')}:* #${bill.id.slice(-6).toUpperCase()}\n*${t('date')}:* ${format(new Date(bill.createdAt), 'PP')}\n\n`;
     const customerDetails = `*${t('customer_details')}:*\n${t('customer_name')}: ${bill.customerName}\n` +
       (bill.roomNumber ? `${t('room_number')}: ${bill.roomNumber}\n` : '') +
-      (bill.contactNumber ? `${t('contact_number')}: ${bill.contactNumber}\n` : '') + '\n';
+      (bill.contactNumber ? `${t('contact_number')}: ${bill.contactNumber}\n` : '') +
+      (bill.address ? `Address: ${bill.address}\n` : '') + '\n';
 
     let caratDetails = `*${t('carat_details')}:*\n`;
     if (bill.inCarat) caratDetails += `${t('in_carat')}: ${bill.inCarat}\n`;
@@ -154,6 +155,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                   <DetailItem label={t('customer_name')} value={bill.customerName} />
                   {bill.roomNumber && <DetailItem label={t('room_number')} value={bill.roomNumber} />}
                   {bill.contactNumber && <DetailItem label={t('contact_number')} value={bill.contactNumber} />}
+                  {bill.address && <DetailItem label='Address' value={bill.address} />}
                 </div>
               </div>
 
@@ -239,5 +241,3 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     </Dialog>
   );
 }
-
-    

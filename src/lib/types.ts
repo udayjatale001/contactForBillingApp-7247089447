@@ -11,6 +11,7 @@ export const billingSchema = z.object({
     .refine((val) => val === '' || val === undefined || /^\d{10}$/.test(val), {
       message: 'Contact number must be exactly 10 digits.',
     }),
+  address: z.string().optional(),
   createdAt: z.date().optional(), // New field for bill date
   inCarat: z.coerce
     .number()
@@ -61,6 +62,7 @@ export type Bill = {
   customerName: string;
   roomNumber?: string;
   contactNumber?: string;
+  address?: string;
   inCarat?: number;
   outCarat?: number;
   totalCarat: number;
@@ -127,6 +129,7 @@ export type Token = {
     customerName: string;
     roomNumber?: string;
     contactNumber?: string;
+    address?: string;
     inCarat?: number;
     createdAt: string; // ISO string
 }
@@ -136,6 +139,7 @@ export type Customer = {
   id: string; // Unique ID, e.g., combination of managerId and customerName
   name: string;
   contactNumber?: string;
+  address?: string;
   totalBilledAmount: number;
   totalPaidAmount: number;
   totalDueAmount: number;
