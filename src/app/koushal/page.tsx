@@ -144,10 +144,10 @@ export default function KoushalPage() {
       const batch = writeBatch(firestore);
       const billIds = new Set<string>();
       
-      billsSnapshot.forEach((doc) => {
-        batch.delete(doc.ref);
+      billsSnapshot.forEach((docSnap) => {
+        batch.delete(docSnap.ref);
         // Also delete from manager's subcollection
-        const bill = doc.data() as Bill;
+        const bill = docSnap.data() as Bill;
         billIds.add(bill.id);
         const managerBillRef = firestore && doc(firestore, 'managers', bill.managerId, 'bills', bill.id);
         if(managerBillRef) batch.delete(managerBillRef);
@@ -233,9 +233,7 @@ export default function KoushalPage() {
                     <TableRow>
                       <TableHead>Customer Name</TableHead>
                       <TableHead>Contact</TableHead>
-                      <TableHead>Total Billed</TableHead>
-                      <TableHead>Total Paid</TableHead>
-                      <TableHead>Total Due</TableHead>
+                      <TableHead>Total Amount</TableHead>
                       <TableHead>Total Carat</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -245,13 +243,7 @@ export default function KoushalPage() {
                       <TableRow key={customer.id}>
                         <TableCell className="font-medium">{customer.name}</TableCell>
                         <TableCell>{customer.contactNumber || 'N/A'}</TableCell>
-                        <TableCell>{customer.totalBilledAmount.toLocaleString()}rs</TableCell>
-                        <TableCell>{customer.totalPaidAmount.toLocaleString()}rs</TableCell>
-                        <TableCell>
-                           <Badge variant={customer.totalDueAmount > 0 ? 'destructive' : 'outline'}>
-                            {customer.totalDueAmount > 0 ? `${customer.totalDueAmount.toLocaleString()}rs` : 'Paid'}
-                          </Badge>
-                        </TableCell>
+                        <TableCell className="text-green-600 font-medium">{customer.totalBilledAmount.toLocaleString()}rs</TableCell>
                         <TableCell>{customer.totalCarat.toLocaleString()}</TableCell>
                         <TableCell className="text-right">
                           <Button variant="ghost" size="icon" onClick={() => handleWhatsAppClick(customer)} disabled={!customer.contactNumber} title="Send WhatsApp">
@@ -307,5 +299,3 @@ export default function KoushalPage() {
     </>
   );
 }
-
-    
