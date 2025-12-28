@@ -128,13 +128,8 @@ export default function withPasswordProtection<P extends object>(
     };
 
     const handleDialogClose = (isOpen: boolean) => {
-      // If the user tries to close the dialog without authenticating,
-      // we can either force it to stay open or navigate away.
-      // For a better UX, let's allow it to close, but the page content remains hidden.
       if (!isOpen && !isAuthenticated) {
-        setShowPasswordDialog(false);
-        // Optionally, you could redirect them
-        // router.push('/'); 
+        router.push('/');
       }
     };
 
