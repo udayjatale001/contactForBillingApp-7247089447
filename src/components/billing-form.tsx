@@ -72,7 +72,7 @@ export function BillingForm() {
       bigCaratRate: appSettings?.bigCaratRate,
       paidAmount: undefined,
       paymentMode: 'Cash' as 'Cash' | 'Online Payment' | 'Due',
-      paidTo: 'Gopal Temkar' as 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gaju Dada',
+      paidTo: 'Gopal Temkar' as 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gajananad Murtankar',
       inCaratLabour: undefined,
       inCaratLabourRate: appSettings?.labourRate,
       outCaratLabour: undefined,
@@ -711,7 +711,7 @@ export function BillingForm() {
                                     <SelectItem value="Gopal Temkar">Gopal Temkar</SelectItem>
                                     <SelectItem value="Yuvaraj Temkar">Yuvaraj Temkar</SelectItem>
                                     <SelectItem value="Suyash Temkar">Suyash Temkar</SelectItem>
-                                    <SelectItem value="Gaju Dada">Gaju Dada</SelectItem>
+                                    <SelectItem value="Gajananad Murtankar">Gajananad Murtankar</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -835,4 +835,3 @@ export function BillingForm() {
   );
 }
 
-    
