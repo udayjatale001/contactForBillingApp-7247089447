@@ -117,45 +117,31 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
   };
 
   const confirmDelete = async () => {
-    if (!firestore || !billToDelete || !user) return;
+    if (!firestore || !billToDelete || !user || isOwner) return;
 
     setIsDeleting(true);
 
     try {
-        const batch = writeBatch(firestore);
-
-        const globalBillRef = doc(firestore, 'bills', billToDelete.id);
-        batch.delete(globalBillRef);
-
+        // Only delete from the manager's subcollection, not the global one.
         const managerBillRef = doc(firestore, 'managers', billToDelete.managerId, 'bills', billToDelete.id);
-        batch.delete(managerBillRef);
-        
-        const notificationsQuery = query(collection(firestore, 'notifications'), where('billId', '==', billToDelete.id));
-        const notificationsSnapshot = await getDocs(notificationsQuery);
-        notificationsSnapshot.forEach(doc => batch.delete(doc.ref));
-
-        const laboursQuery = query(collection(firestore, 'labours'), where('billId', '==', billToDelete.id));
-        const laboursSnapshot = await getDocs(laboursQuery);
-        laboursSnapshot.forEach(doc => batch.delete(doc.ref));
-
-        await batch.commit();
+        await deleteDoc(managerBillRef);
 
         toast({
-            title: 'Bill Deleted',
-            description: `The bill for ${billToDelete.customerName} has been permanently removed.`,
+            title: 'Bill Removed',
+            description: `The bill for ${billToDelete.customerName} has been removed from your history.`,
         });
 
     } catch (error) {
-        console.error("Error deleting bill and associated data: ", error);
+        console.error("Error deleting bill from history: ", error);
         const permissionError = new FirestorePermissionError({
-            path: `bills/${billToDelete.id}`, // Generic path for error
+            path: `managers/${billToDelete.managerId}/bills/${billToDelete.id}`, // Specific path for error
             operation: 'delete',
         });
         errorEmitter.emit('permission-error', permissionError);
         toast({
             variant: 'destructive',
             title: 'Deletion Failed',
-            description: 'Could not delete the bill. You may not have permission.',
+            description: 'Could not remove the bill from your history. You may not have permission.',
         });
     } finally {
         setIsDeleting(false);
@@ -255,15 +241,17 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
                         </TableCell>
                         <TableCell>{format(new Date(bill.createdAt), 'PPpp')}</TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => handleDeleteClick(e, bill)}
-                            title="Delete Bill"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                            <span className="sr-only">Delete</span>
-                          </Button>
+                          {!isOwner && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => handleDeleteClick(e, bill)}
+                              title="Delete Bill"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <span className="sr-only">Delete</span>
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -294,15 +282,15 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
       )}
       
        <AlertDialog
-        open={!!billToDelete}
+        open={!!billToDelete && !isOwner}
         onOpenChange={() => setBillToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the bill for{' '}
-              <span className='font-semibold'>{billToDelete?.customerName}</span> and all associated records.
+              This action cannot be undone. This will remove the bill for{' '}
+              <span className='font-semibold'>{billToDelete?.customerName}</span> from your history view. It will not delete the global record.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -313,7 +301,7 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
               className="bg-destructive hover:bg-destructive/90"
             >
               {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete Bill
+              Remove From History
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

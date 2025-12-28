@@ -27,15 +27,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { Bill, Customer } from '@/lib/types';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs, writeBatch, doc } from 'firebase/firestore';
+import { collection, query, getDocs, writeBatch, doc, deleteDoc } from 'firebase/firestore';
 import { Loader2, Search, Users, MessageSquare, Trash2, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
 
 export default function KoushalPage() {
   const { isUserLoading } = useUser();
@@ -43,7 +41,7 @@ export default function KoushalPage() {
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = React.useState('');
-  const [customerToDelete, setCustomerToDelete] = React.useState<Customer | null>(null);
+  const [billToDelete, setBillToDelete] = React.useState<Bill | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
 
   const billsQuery = useMemoFirebase(() => {
@@ -53,137 +51,54 @@ export default function KoushalPage() {
 
   const { data: allBills, isLoading: isLoadingBills, error: billsError } = useCollection<Bill>(billsQuery);
 
-  const aggregatedCustomers = React.useMemo(() => {
+  const filteredBills = React.useMemo(() => {
     if (!allBills) return [];
-
-    const customerMap = new Map<string, Customer>();
-
-    allBills.forEach((bill) => {
-      if (!bill.customerName) return; // Skip bills without a customer name
-      
-      const customerNameKey = bill.customerName.trim().toLowerCase();
-      let customer = customerMap.get(customerNameKey);
-
-      if (!customer) {
-        customer = {
-          id: customerNameKey,
-          name: bill.customerName,
-          contactNumber: bill.contactNumber,
-          address: bill.address,
-          totalBilledAmount: 0,
-          totalPaidAmount: 0,
-          totalDueAmount: 0,
-          totalCarat: 0,
-          lastActivity: bill.createdAt,
-        };
-      }
-
-      customer.totalBilledAmount += bill.totalAmount;
-      customer.totalPaidAmount += bill.paidAmount;
-      customer.totalDueAmount += bill.dueAmount;
-      customer.totalCarat += bill.totalCarat;
-
-      // Update contact/address and last activity date if the current bill is newer
-      if (new Date(bill.createdAt) > new Date(customer.lastActivity)) {
-        customer.lastActivity = bill.createdAt;
-        if (bill.contactNumber) customer.contactNumber = bill.contactNumber;
-        if (bill.address) customer.address = bill.address;
-      }
-      
-      customerMap.set(customerNameKey, customer);
-    });
-
-    return Array.from(customerMap.values()).sort((a, b) => 
-      new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
+    return allBills.filter((bill) =>
+      bill.customerName.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [allBills]);
+  }, [allBills, searchTerm]);
 
-  const filteredCustomers = React.useMemo(() => {
-    if (!aggregatedCustomers) return [];
-    return aggregatedCustomers.filter((customer) =>
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [aggregatedCustomers, searchTerm]);
-
-  const handleDeleteClick = (customer: Customer) => {
-    setCustomerToDelete(customer);
+  const handleDeleteClick = (bill: Bill) => {
+    setBillToDelete(bill);
   };
   
-  const handleWhatsAppClick = (customer: Customer) => {
-    if (!customer.contactNumber) {
+  const handleWhatsAppClick = (bill: Bill) => {
+    if (!bill.contactNumber) {
         toast({
             variant: 'destructive',
             title: 'No Contact Number',
-            description: `Cannot send message to ${customer.name} as there is no number on file.`,
+            description: `Cannot send message to ${bill.customerName} as there is no number on file.`,
         });
         return;
     }
-    const whatsappUrl = `https://wa.me/91${customer.contactNumber}`;
+    const whatsappUrl = `https://wa.me/91${bill.contactNumber}`;
     window.open(whatsappUrl, '_blank');
   };
 
   const confirmDelete = async () => {
-    if (!firestore || !customerToDelete) return;
+    if (!firestore || !billToDelete) return;
     setIsDeleting(true);
 
     try {
-      const customerNameKey = customerToDelete.name.trim().toLowerCase();
-      const billsToDeleteQuery = query(
-        collection(firestore, 'bills'),
-        where('customerName', '==', customerToDelete.name)
-      );
-      
-      const billsSnapshot = await getDocs(billsToDeleteQuery);
-      if (billsSnapshot.empty) {
-        toast({ title: 'No records found to delete.' });
-        setIsDeleting(false);
-        setCustomerToDelete(null);
-        return;
-      }
-
-      const batch = writeBatch(firestore);
-      const billIds = new Set<string>();
-      
-      billsSnapshot.forEach((docSnap) => {
-        batch.delete(docSnap.ref);
-        // Also delete from manager's subcollection
-        const bill = docSnap.data() as Bill;
-        billIds.add(bill.id);
-        const managerBillRef = firestore && doc(firestore, 'managers', bill.managerId, 'bills', bill.id);
-        if(managerBillRef) batch.delete(managerBillRef);
-      });
-
-      // Find and delete associated notifications and labours
-      if (billIds.size > 0) {
-        const notificationsQuery = query(collection(firestore, 'notifications'), where('billId', 'in', Array.from(billIds)));
-        const laboursQuery = query(collection(firestore, 'labours'), where('billId', 'in', Array.from(billIds)));
-
-        const [notificationsSnapshot, laboursSnapshot] = await Promise.all([
-            getDocs(notificationsQuery),
-            getDocs(laboursQuery)
-        ]);
-
-        notificationsSnapshot.forEach(doc => batch.delete(doc.ref));
-        laboursSnapshot.forEach(doc => batch.delete(doc.ref));
-      }
-      
-      await batch.commit();
+      // Only delete the single bill record from the global collection
+      const billRef = doc(firestore, 'bills', billToDelete.id);
+      await deleteDoc(billRef);
 
       toast({
-        title: 'Customer Data Deleted',
-        description: `All records for ${customerToDelete.name} have been permanently removed.`,
+        title: 'Bill Record Deleted',
+        description: `The bill record for ${billToDelete.customerName} has been permanently removed.`,
       });
 
     } catch (error) {
-      console.error('Error deleting customer data: ', error);
+      console.error('Error deleting bill record: ', error);
       toast({
         variant: 'destructive',
         title: 'Deletion Failed',
-        description: 'Could not delete customer records. You may not have permission.',
+        description: 'Could not delete the bill record. You may not have permission.',
       });
     } finally {
       setIsDeleting(false);
-      setCustomerToDelete(null);
+      setBillToDelete(null);
     }
   };
 
@@ -201,7 +116,7 @@ export default function KoushalPage() {
           <CardHeader>
             <CardTitle>Customer Overview</CardTitle>
             <CardDescription>
-              A complete list of all customers and their aggregated transaction data.
+              A complete list of all customer bill records.
             </CardDescription>
             <div className="relative pt-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -226,7 +141,7 @@ export default function KoushalPage() {
                       Could not fetch billing data. Please check your connection and security rules.
                   </p>
               </div>
-            ) : filteredCustomers.length > 0 ? (
+            ) : filteredBills.length > 0 ? (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -240,18 +155,18 @@ export default function KoushalPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredCustomers.map((customer) => (
-                      <TableRow key={customer.id}>
-                        <TableCell className="font-medium">{customer.name}</TableCell>
-                        <TableCell>{customer.contactNumber || 'N/A'}</TableCell>
-                        <TableCell>{customer.address || 'N/A'}</TableCell>
-                        <TableCell className="text-green-600 font-medium">{customer.totalBilledAmount.toLocaleString()}rs</TableCell>
-                        <TableCell>{customer.totalCarat.toLocaleString()}</TableCell>
+                    {filteredBills.map((bill) => (
+                      <TableRow key={bill.id}>
+                        <TableCell className="font-medium">{bill.customerName}</TableCell>
+                        <TableCell>{bill.contactNumber || 'N/A'}</TableCell>
+                        <TableCell>{bill.address || 'N/A'}</TableCell>
+                        <TableCell className="text-green-600 font-medium">{bill.totalAmount.toLocaleString()}rs</TableCell>
+                        <TableCell>{bill.totalCarat.toLocaleString()}</TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => handleWhatsAppClick(customer)} disabled={!customer.contactNumber} title="Send WhatsApp">
+                          <Button variant="ghost" size="icon" onClick={() => handleWhatsAppClick(bill)} disabled={!bill.contactNumber} title="Send WhatsApp">
                             <MessageSquare className="h-4 w-4 text-green-600" />
                           </Button>
-                           <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(customer)} title="Delete Customer">
+                           <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(bill)} title="Delete Bill Record">
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </TableCell>
@@ -274,15 +189,15 @@ export default function KoushalPage() {
       </div>
 
       <AlertDialog
-        open={!!customerToDelete}
-        onOpenChange={() => setCustomerToDelete(null)}
+        open={!!billToDelete}
+        onOpenChange={() => setBillToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete all bills and records associated with{' '}
-              <span className='font-semibold'>{customerToDelete?.name}</span>.
+              This action cannot be undone. This will permanently delete this single bill record for{' '}
+              <span className='font-semibold'>{billToDelete?.customerName}</span>. It will not affect other bills for this customer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -293,7 +208,7 @@ export default function KoushalPage() {
               className="bg-destructive hover:bg-destructive/90"
             >
               {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete All Records
+              Delete Bill Record
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -301,3 +216,5 @@ export default function KoushalPage() {
     </>
   );
 }
+
+    
