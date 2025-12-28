@@ -130,3 +130,15 @@ export type Token = {
     inCarat?: number;
     createdAt: string; // ISO string
 }
+
+// Represents an aggregated customer record for the Customers page
+export type Customer = {
+  id: string; // Unique ID, e.g., combination of managerId and customerName
+  name: string;
+  contactNumber?: string;
+  totalBilledAmount: number;
+  totalPaidAmount: number;
+  totalDueAmount: number;
+  totalCarat: number;
+  lastActivity: string; // ISO string of the last bill date
+};

@@ -246,6 +246,23 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "managerId", "customerName", "createdAt"]
+    },
+    "Customer": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Customer",
+        "type": "object",
+        "description": "Represents an aggregated view of a customer's transaction history.",
+        "properties": {
+          "id": { "type": "string", "description": "Unique identifier for the customer record." },
+          "name": { "type": "string", "description": "Name of the customer." },
+          "contactNumber": { "type": "string", "description": "Last known contact number of the customer." },
+          "totalBilledAmount": { "type": "number", "description": "The sum of all total amounts from the customer's bills." },
+          "totalPaidAmount": { "type": "number", "description": "The sum of all paid amounts from the customer's bills." },
+          "totalDueAmount": { "type": "number", "description": "The current outstanding balance for the customer." },
+          "totalCarat": { "type": "number", "description": "The sum of all carats from the customer's bills." },
+          "lastActivity": { "type": "string", "description": "The date of the customer's most recent bill.", "format": "date-time" }
+        },
+        "required": [ "id", "name", "totalBilledAmount", "totalPaidAmount", "totalDueAmount", "totalCarat", "lastActivity" ]
     }
   },
   "auth": {
