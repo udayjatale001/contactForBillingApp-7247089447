@@ -109,15 +109,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       ownerOnly: false,
     },
     {
-      href: '/about',
-      label: t('about'),
-      icon: Info,
-      ownerOnly: false,
-    },
-    {
       href: '/koushal',
       label: t('customer_details'),
       icon: Users,
+      ownerOnly: false,
+    },
+    {
+      href: '/about',
+      label: t('about'),
+      icon: Info,
       ownerOnly: false,
     },
   ];
