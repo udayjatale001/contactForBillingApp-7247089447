@@ -58,7 +58,7 @@ import {
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, getDoc, getDocs } from 'firebase/firestore';
 import type { Bill, AppSettings, Labour } from '@/lib/types';
-import { format, getYear, getMonth, subHours, isSameDay, startOfDay } from 'date-fns';
+import { format, getYear, getMonth, isSameDay, startOfDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
 import { Input } from './ui/input';
@@ -194,7 +194,6 @@ export function OwnerDashboard() {
   const [dismissedCustomers, setDismissedCustomers] = React.useState<string[]>([]);
   
   const [selectedYear, setSelectedYear] = React.useState<string>(new Date().getFullYear().toString());
-  const [use24HourWindow, setUse24HourWindow] = React.useState(true);
 
   const [isExporting, setIsExporting] = React.useState(false);
 
@@ -259,16 +258,8 @@ export function OwnerDashboard() {
     if (!allBills) {
       return initialResult;
     }
-
-    const now = new Date();
-    const twentyFourHoursAgo = subHours(now, 24);
-    const midnight = startOfDay(now);
     
-    let todayFilterStart = use24HourWindow ? twentyFourHoursAgo : midnight;
-
-    if (globalDate) {
-        todayFilterStart = startOfDay(globalDate);
-    }
+    const todayFilterStart = startOfDay(globalDate || new Date());
     
     const todaysBills = allBills.filter(bill => new Date(bill.createdAt) >= todayFilterStart);
 
@@ -283,7 +274,7 @@ export function OwnerDashboard() {
 
     const filteredBills = globalDate 
         ? allBills.filter(bill => isSameDay(new Date(bill.createdAt), globalDate))
-        : allBills;
+        : allBills.filter(bill => isSameDay(new Date(bill.createdAt), new Date()));
     
 
     const totalAmount = filteredBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
@@ -380,7 +371,7 @@ export function OwnerDashboard() {
       recentBills: filteredBills.slice(0, 5),
       availableYears: allAvailableYears,
     };
-  }, [allBills, globalDate, selectedYear, dismissedCustomers, use24HourWindow]);
+  }, [allBills, globalDate, selectedYear, dismissedCustomers]);
 
   const handleDismissCustomer = (customerName: string) => {
     setDismissedCustomers(prev => [...prev, customerName]);
@@ -531,17 +522,6 @@ export function OwnerDashboard() {
                     <TrendingUp className='h-5 w-5' />
                     {globalDate ? `${format(globalDate, 'PPP')} Snapshot` : "Today's Snapshot"}
                 </CardTitle>
-                {!globalDate && (
-                    <div className="flex items-center space-x-2">
-                        <Label htmlFor="today-mode" className='text-xs text-muted-foreground'>Since Midnight</Label>
-                        <Switch
-                            id="today-mode"
-                            checked={use24HourWindow}
-                            onCheckedChange={setUse24HourWindow}
-                            />
-                        <Label htmlFor="today-mode" className='text-xs text-muted-foreground'>Last 24 Hours</Label>
-                    </div>
-                )}
             </div>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
@@ -867,5 +847,3 @@ export function OwnerDashboard() {
     </div>
   );
 }
-
-    

@@ -26,7 +26,7 @@ import {
   Calendar as CalendarIcon,
   X,
 } from 'lucide-react';
-import { formatDistanceToNow, format, startOfDay, endOfDay, sub } from 'date-fns';
+import { formatDistanceToNow, format, startOfDay, endOfDay } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -71,21 +71,17 @@ function NotificationsPage() {
 
   const notificationsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    let q = query(
+    
+    const dateToFilter = globalDate || new Date();
+    const startDate = startOfDay(dateToFilter).toISOString();
+    const endDate = endOfDay(dateToFilter).toISOString();
+
+    return query(
       collection(firestore, 'notifications'),
+      where('createdAt', '>=', startDate),
+      where('createdAt', '<=', endDate),
       orderBy('createdAt', 'desc')
     );
-
-    if (globalDate) {
-        const startDate = startOfDay(globalDate).toISOString();
-        const endDate = endOfDay(globalDate).toISOString();
-        q = query(q, where('createdAt', '>=', startDate), where('createdAt', '<=', endDate));
-    } else {
-        const twentyFourHoursAgo = sub(new Date(), { hours: 24 }).toISOString();
-        q = query(q, where('createdAt', '>=', twentyFourHoursAgo));
-    }
-
-    return q;
   }, [firestore, globalDate]);
 
   const { data: notifications, isLoading: isLoadingNotifications } =
@@ -320,7 +316,7 @@ function NotificationsPage() {
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {globalDate ? format(globalDate, 'PPP') : <span>Last 24 Hours</span>}
+                            {globalDate ? format(globalDate, 'PPP') : <span>Today</span>}
                         </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="end">

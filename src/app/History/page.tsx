@@ -44,7 +44,7 @@ import { collection, query, where, orderBy, getDoc, doc, deleteDoc, writeBatch, 
 import { BillSummaryDialog } from '@/components/bill-summary-dialog';
 import { TokenSummaryDialog } from '@/components/token-summary-dialog';
 import { cn } from '@/lib/utils';
-import { format, startOfDay, endOfDay, sub } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -77,22 +77,16 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
   const billsQuery = useMemoFirebase(() => {
     if (!firestore || !collectionPath) return null;
     
-    let q = query(
-      collection(firestore, collectionPath),
-      orderBy('createdAt', 'desc')
+    const dateToFilter = globalDate || new Date();
+    const startDate = startOfDay(dateToFilter).toISOString();
+    const endDate = endOfDay(dateToFilter).toISOString();
+
+    return query(
+        collection(firestore, collectionPath),
+        where('createdAt', '>=', startDate),
+        where('createdAt', '<=', endDate),
+        orderBy('createdAt', 'desc')
     );
-    
-    if (globalDate) {
-        const startDate = startOfDay(globalDate).toISOString();
-        const endDate = endOfDay(globalDate).toISOString();
-        q = query(q, where('createdAt', '>=', startDate), where('createdAt', '<=', endDate));
-    } else {
-        // Default to last 24 hours if no date is selected
-        const twentyFourHoursAgo = sub(new Date(), { hours: 24 }).toISOString();
-        q = query(q, where('createdAt', '>=', twentyFourHoursAgo));
-    }
-    
-    return q;
   }, [firestore, collectionPath, globalDate]);
 
   const { data: bills, isLoading } = useCollection<Bill>(billsQuery);
@@ -202,7 +196,7 @@ function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {globalDate ? format(globalDate, 'PPP') : <span>Last 24 Hours</span>}
+                            {globalDate ? format(globalDate, 'PPP') : <span>Today</span>}
                         </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="end">
@@ -344,20 +338,17 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
 
   const tokensQuery = useMemoFirebase(() => {
     if (!firestore || !collectionPath) return null;
-    let q = query(
-      collection(firestore, collectionPath),
-      orderBy('createdAt', 'desc')
-    );
     
-    if (globalDate) {
-        const startDate = startOfDay(globalDate).toISOString();
-        const endDate = endOfDay(globalDate).toISOString();
-        q = query(q, where('createdAt', '>=', startDate), where('createdAt', '<=', endDate));
-    } else {
-        const twentyFourHoursAgo = sub(new Date(), { hours: 24 }).toISOString();
-        q = query(q, where('createdAt', '>=', twentyFourHoursAgo));
-    }
-    return q;
+    const dateToFilter = globalDate || new Date();
+    const startDate = startOfDay(dateToFilter).toISOString();
+    const endDate = endOfDay(dateToFilter).toISOString();
+    
+    return query(
+        collection(firestore, collectionPath),
+        where('createdAt', '>=', startDate),
+        where('createdAt', '<=', endDate),
+        orderBy('createdAt', 'desc')
+    );
   }, [firestore, collectionPath, globalDate]);
 
   const { data: tokens, isLoading } = useCollection<Token>(tokensQuery);
@@ -453,7 +444,7 @@ function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any
                             )}
                         >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {globalDate ? format(globalDate, 'PPP') : <span>Last 24 Hours</span>}
+                            {globalDate ? format(globalDate, 'PPP') : <span>Today</span>}
                         </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="end">
