@@ -125,8 +125,10 @@ function PayDueDialog({
     if (!open) {
       // Reset input when dialog is closed
       setPaymentAmount('');
+    } else if (customer) {
+      setPaymentAmount(customer.totalDueAmount.toString());
     }
-  }, [open]);
+  }, [open, customer]);
 
   if (!customer) return null;
 
@@ -818,7 +820,7 @@ export function OwnerDashboard() {
             <CardHeader>
                 <CardTitle>Customers with Outstanding Payments</CardTitle>
                 <CardDescription>
-                    Manage and clear outstanding dues from customers.
+                    Manage and clear outstanding dues from customers. Click a row to process a payment.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -848,23 +850,25 @@ export function OwnerDashboard() {
                                      <p className="text-base font-bold text-destructive">{customer.totalDueAmount.toLocaleString()}rs</p>
                                      <p className="text-xs text-muted-foreground">Due</p>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={(e) => {e.stopPropagation(); handleWhatsAppReminder(customer)}}
-                                    disabled={!customer.contactNumber}
-                                >
-                                    <MessageSquare className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={(e) => {e.stopPropagation(); setDeleteCustomer(customer)}}
-                                >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
+                                <div className="flex flex-col">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={(e) => {e.stopPropagation(); handleWhatsAppReminder(customer)}}
+                                        disabled={!customer.contactNumber}
+                                    >
+                                        <MessageSquare className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={(e) => {e.stopPropagation(); setDeleteCustomer(customer)}}
+                                    >
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </div>
                             </div>
                        </div>
                     ))
