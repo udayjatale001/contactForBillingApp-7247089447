@@ -236,7 +236,7 @@ export default function LabourerPage() {
               </div>
             ) : filteredRecords && filteredRecords.length > 0 ? (
               <div className="w-full overflow-x-auto">
-              <Table className="min-w-[640px]">
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Customer</TableHead>
