@@ -197,14 +197,10 @@ export function BillingForm() {
             // All reads must happen before any writes
             let customerDue = 0;
             const customerRef = doc(firestore, 'customers', generatedBill.customerName.toLowerCase());
+            const customerDoc = await transaction.get(customerRef);
             
-            try {
-                const customerDoc = await transaction.get(customerRef);
-                if (customerDoc.exists()) {
-                    customerDue = customerDoc.data().totalDueAmount || 0;
-                }
-            } catch (error) {
-                console.info("Customer doesn't exist, will be created.");
+            if (customerDoc.exists()) {
+                customerDue = customerDoc.data().totalDueAmount || 0;
             }
     
             // Now perform all writes
@@ -575,59 +571,6 @@ export function BillingForm() {
                                 )}
                             />
                         </div>
-
-                        <FormField
-                          control={form.control}
-                          name="createdAt"
-                          render={({ field }) => (
-                            <FormItem className="md:col-span-2">
-                              <FormLabel>Bill Date & Time</FormLabel>
-                              <div className='flex flex-col sm:flex-row gap-2'>
-                                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                                  <PopoverTrigger asChild>
-                                    <FormControl>
-                                      <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                          "w-full text-left font-normal",
-                                          !field.value && "text-muted-foreground"
-                                        )}
-                                      >
-                                        {field.value ? (
-                                          format(field.value, "PP")
-                                        ) : (
-                                          <span>Pick a date</span>
-                                        )}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                      </Button>
-                                    </FormControl>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                      mode="single"
-                                      selected={field.value}
-                                      onSelect={(date) => {
-                                        field.onChange(date);
-                                        setIsCalendarOpen(false);
-                                      }}
-                                      initialFocus
-                                    />
-                                  </PopoverContent>
-                                </Popover>
-                                <FormControl>
-                                    <Input 
-                                        type="time" 
-                                        className='w-full sm:w-auto flex-grow sm:flex-grow-0 sm:w-[120px]'
-                                        value={field.value ? format(field.value, 'HH:mm') : ''}
-                                        onChange={(e) => handleTimeChange(e, field.value)}
-                                    />
-                                </FormControl>
-                              </div>
-                               <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
                     </CardContent>
                      <CardFooter>
                         <Button
@@ -858,7 +801,7 @@ export function BillingForm() {
             </div>
 
             {/* Summary Card */}
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 space-y-6">
                 <Card className="lg:sticky lg:top-24">
                    <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -898,6 +841,65 @@ export function BillingForm() {
                     {isSubmitting || isLoadingRates ? <Loader2 className="animate-spin" /> : 'Generate Bill'}
                   </Button>
                 </Card>
+                
+                 {/* Bill Date & Time */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className='flex items-center gap-2'><CalendarIcon />Bill Date & Time</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <FormField
+                          control={form.control}
+                          name="createdAt"
+                          render={({ field }) => (
+                            <FormItem>
+                              <div className='flex flex-col sm:flex-row gap-2'>
+                                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                                  <PopoverTrigger asChild>
+                                    <FormControl>
+                                      <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                          "w-full text-left font-normal",
+                                          !field.value && "text-muted-foreground"
+                                        )}
+                                      >
+                                        {field.value ? (
+                                          format(field.value, "PP")
+                                        ) : (
+                                          <span>Pick a date</span>
+                                        )}
+                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                      </Button>
+                                    </FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                      mode="single"
+                                      selected={field.value}
+                                      onSelect={(date) => {
+                                        field.onChange(date);
+                                        setIsCalendarOpen(false);
+                                      }}
+                                      initialFocus
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                                <FormControl>
+                                    <Input 
+                                        type="time" 
+                                        className='w-full sm:w-auto flex-grow sm:flex-grow-0 sm:w-[120px]'
+                                        value={field.value ? format(field.value, 'HH:mm') : ''}
+                                        onChange={(e) => handleTimeChange(e, field.value)}
+                                    />
+                                </FormControl>
+                              </div>
+                               <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                    </CardContent>
+                </Card>
             </div>
 
           </div>
@@ -924,7 +926,3 @@ export function BillingForm() {
     </>
   );
 }
-
-    
-
-    
