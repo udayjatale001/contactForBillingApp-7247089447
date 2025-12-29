@@ -743,68 +743,14 @@ export function OwnerDashboard() {
                     Customers with outstanding payments.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
-                {dueBills.length > 0 ? (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Customer</TableHead>
-                                <TableHead>Due</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {dueBills.map(customer => (
-                            <TableRow key={customer.customerName}>
-                                <TableCell>
-                                    <div className="font-medium">{customer.customerName}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                        Last Bill: {format(new Date(customer.lastBillDate), 'PP')}
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge 
-                                        variant="destructive"
-                                        onClick={() => setPaymentCustomer(customer)}
-                                        className="cursor-pointer hover:bg-destructive/80"
-                                    >
-                                        {customer.totalDueAmount.toLocaleString()}rs
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                     <div className="flex items-center justify-end gap-2">
-                                        <Button 
-                                            size="icon" 
-                                            variant="ghost" 
-                                            onClick={() => handleWhatsAppReminder(customer)}
-                                            disabled={!customer.contactNumber}
-                                            title="Send WhatsApp Reminder"
-                                        >
-                                            <MessageSquare className="h-4 w-4 text-green-600" />
-                                        </Button>
-                                        <Button 
-                                            size="icon" 
-                                            variant="ghost"
-                                            onClick={() => setDeleteCustomer(customer)}
-                                            title="Delete Records"
-                                        >
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                ): (
-                    <div className="text-center py-12">
-                        <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-lg font-semibold">No pending customer payments</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            All accounts are settled.
-                        </p>
-                    </div>
-                )}
+            <CardContent>
+                <div className="text-center py-12">
+                    <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-semibold">No pending customer payments</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        All accounts are settled.
+                    </p>
+                </div>
             </CardContent>
         </Card>
       </div>
@@ -1031,3 +977,5 @@ export function OwnerDashboard() {
     </>
   );
 }
+
+    
