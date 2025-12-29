@@ -402,6 +402,11 @@ export function OwnerDashboard() {
         toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid positive number.' });
         return;
     }
+    
+    if (amountToPay > paymentCustomer.totalDueAmount) {
+        toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Paid amount cannot be greater than the total due.' });
+        return;
+    }
 
     setIsProcessingPayment(true);
     let remainingAmountToApply = amountToPay;
@@ -437,8 +442,9 @@ export function OwnerDashboard() {
         await batch.commit();
         toast({ title: 'Payment Successful', description: `${amountToPay.toLocaleString()}rs has been applied.` });
         
-        // After payment, force a refetch of the collection data
-        if(forceRefetch) forceRefetch();
+        if(forceRefetch) {
+          forceRefetch();
+        }
 
     } catch (error) {
         console.error("Error processing payment: ", error);
@@ -961,7 +967,12 @@ export function OwnerDashboard() {
     </div>
 
     {/* Payment Dialog */}
-    <AlertDialog open={!!paymentCustomer} onOpenChange={() => setPaymentCustomer(null)}>
+    <AlertDialog open={!!paymentCustomer} onOpenChange={(open) => {
+        if (!open) {
+            setPaymentCustomer(null);
+            setPaymentAmount('');
+        }
+    }}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Add Payment for {paymentCustomer?.customerName}</AlertDialogTitle>
@@ -1022,5 +1033,7 @@ export function OwnerDashboard() {
     </>
   );
 }
+
+    
 
     
