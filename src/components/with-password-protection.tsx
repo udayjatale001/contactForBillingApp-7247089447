@@ -79,6 +79,13 @@ export default function withPasswordProtection<P extends object>(
       setIsLoading(false);
       setPasswordInput('');
     };
+    
+    const handleKeyDown = (e: React.KeyboardEvent, action: () => void) => {
+        if(e.key === 'Enter') {
+            e.preventDefault();
+            action();
+        }
+    }
 
     const handleVerifyMobile = () => {
       if (mobileNumberInput === AUTHORIZED_MOBILE_NUMBER) {
@@ -180,7 +187,7 @@ export default function withPasswordProtection<P extends object>(
 
         {/* Forgot Password Dialog */}
         <AlertDialog open={showForgotDialog} onOpenChange={setShowForgotDialog}>
-          <AlertDialogContent>
+          <AlertDialogContent onKeyDown={(e) => handleKeyDown(e, handleVerifyMobile)}>
             <AlertDialogHeader>
               <AlertDialogTitle>Password Recovery</AlertDialogTitle>
               <AlertDialogDescription>
@@ -206,7 +213,7 @@ export default function withPasswordProtection<P extends object>(
         
         {/* Create New Password Dialog */}
          <AlertDialog open={showCreatePasswordDialog} onOpenChange={setShowCreatePasswordDialog}>
-            <AlertDialogContent>
+            <AlertDialogContent onKeyDown={(e) => handleKeyDown(e, handleResetPassword)}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Create New Password</AlertDialogTitle>
                     <AlertDialogDescription>
@@ -264,3 +271,5 @@ export default function withPasswordProtection<P extends object>(
 function getDisplayName(WrappedComponent: ComponentType<any>) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component';
 }
+
+    

@@ -193,68 +193,72 @@ export function BillingForm() {
     }
 
     try {
-        // Save main bill records
-        const billCollectionRef = collection(firestore, 'bills');
-        const managerBillCollectionRef = collection(firestore, 'managers', user.uid, 'bills');
-        setDocumentNonBlocking(doc(billCollectionRef, generatedBill.id), generatedBill, { merge: true });
-        setDocumentNonBlocking(doc(managerBillCollectionRef, generatedBill.id), generatedBill, { merge: true });
-
-        // Save notification
-        const newNotification: Notification = {
-            id: uuidv4(),
-            billId: generatedBill.id,
-            managerId: user.uid,
-            createdAt: new Date().toISOString(),
-            customerName: generatedBill.customerName,
-            paidAmount: generatedBill.paidAmount,
-            dueAmount: generatedBill.dueAmount,
-            totalCarat: generatedBill.totalCarat,
-            paidTo: generatedBill.paidTo,
-            paymentMode: generatedBill.paymentMode
-        };
-        addDocumentNonBlocking(collection(firestore, 'notifications'), newNotification);
-
-        // Save labour record if applicable
-        if (generatedBill.totalLabourAmount && generatedBill.totalLabourAmount > 0) {
-            const newLabourRecord: Labour = {
+        await runTransaction(firestore, async (transaction) => {
+            // All reads must happen before any writes
+            let customerDue = 0;
+            const customerRef = doc(firestore, 'customers', generatedBill.customerName.toLowerCase());
+            
+            try {
+                const customerDoc = await transaction.get(customerRef);
+                if (customerDoc.exists()) {
+                    customerDue = customerDoc.data().totalDueAmount || 0;
+                }
+            } catch (error) {
+                console.info("Customer doesn't exist, will be created.");
+            }
+    
+            // Now perform all writes
+            // Save main bill records
+            const billCollectionRef = collection(firestore, 'bills');
+            const managerBillCollectionRef = collection(firestore, 'managers', user.uid, 'bills');
+            transaction.set(doc(billCollectionRef, generatedBill.id), generatedBill);
+            transaction.set(doc(managerBillCollectionRef, generatedBill.id), generatedBill);
+    
+            // Save notification
+            const newNotification: Notification = {
                 id: uuidv4(),
                 billId: generatedBill.id,
                 managerId: user.uid,
+                createdAt: new Date().toISOString(),
                 customerName: generatedBill.customerName,
-                inCaratLabour: generatedBill.inCaratLabour,
-                inCaratLabourRate: generatedBill.inCaratLabourRate,
-                outCaratLabour: generatedBill.outCaratLabour,
-                outCaratLabourRate: generatedBill.outCaratLabourRate,
-                totalLabourAmount: generatedBill.totalLabourAmount,
-                createdAt: generatedBill.createdAt,
+                paidAmount: generatedBill.paidAmount,
+                dueAmount: generatedBill.dueAmount,
+                totalCarat: generatedBill.totalCarat,
+                paidTo: generatedBill.paidTo,
+                paymentMode: generatedBill.paymentMode
             };
-            addDocumentNonBlocking(collection(firestore, 'labours'), newLabourRecord);
-        }
-
-        // Update aggregated customer record
-        if (generatedBill.dueAmount > 0) {
-            const customerRef = doc(firestore, 'customers', generatedBill.customerName.toLowerCase());
-            await runTransaction(firestore, async (transaction) => {
-                const customerDoc = await transaction.get(customerRef);
-                if (!customerDoc.exists()) {
-                    transaction.set(customerRef, {
-                        id: generatedBill.customerName.toLowerCase(),
-                        name: generatedBill.customerName,
-                        contactNumber: generatedBill.contactNumber || '',
-                        totalDueAmount: generatedBill.dueAmount,
-                        lastActivity: generatedBill.createdAt,
-                    });
-                } else {
-                    const currentDue = customerDoc.data().totalDueAmount || 0;
-                    const newDue = currentDue + generatedBill.dueAmount;
-                    transaction.update(customerRef, { 
-                        totalDueAmount: newDue,
-                        lastActivity: generatedBill.createdAt,
-                        ...(generatedBill.contactNumber && { contactNumber: generatedBill.contactNumber }),
-                    });
-                }
-            });
-        }
+            transaction.set(doc(collection(firestore, 'notifications'), newNotification.id), newNotification);
+    
+            // Save labour record if applicable
+            if (generatedBill.totalLabourAmount && generatedBill.totalLabourAmount > 0) {
+                const newLabourRecord: Labour = {
+                    id: uuidv4(),
+                    billId: generatedBill.id,
+                    managerId: user.uid,
+                    customerName: generatedBill.customerName,
+                    inCaratLabour: generatedBill.inCaratLabour,
+                    inCaratLabourRate: generatedBill.inCaratLabourRate,
+                    outCaratLabour: generatedBill.outCaratLabour,
+                    outCaratLabourRate: generatedBill.outCaratLabourRate,
+                    totalLabourAmount: generatedBill.totalLabourAmount,
+                    createdAt: generatedBill.createdAt,
+                };
+                transaction.set(doc(collection(firestore, 'labours'), newLabourRecord.id), newLabourRecord);
+            }
+    
+            // Update aggregated customer record
+            if (generatedBill.dueAmount > 0) {
+                const newTotalDue = customerDue + generatedBill.dueAmount;
+                const customerData: Customer = {
+                    id: generatedBill.customerName.toLowerCase(),
+                    name: generatedBill.customerName,
+                    contactNumber: generatedBill.contactNumber || '',
+                    totalDueAmount: newTotalDue,
+                    lastActivity: generatedBill.createdAt,
+                };
+                 transaction.set(customerRef, customerData, { merge: true });
+            }
+        });
         
         toast({
             title: 'Bill Saved!',
@@ -446,28 +450,22 @@ export function BillingForm() {
     setGeneratedToken(null);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       const formElements = formRef.current?.elements;
       if (!formElements) return;
 
       const focusableElements = Array.from(formElements).filter(
-        (el) => el instanceof HTMLInputElement || el instanceof HTMLButtonElement && el.id.includes('radix') // for select triggers
-      ) as (HTMLInputElement | HTMLButtonElement)[];
+        (el): el is HTMLElement => 
+          el instanceof HTMLInputElement || 
+          el instanceof HTMLButtonElement && el.getAttribute('role') === 'combobox'
+      ).filter(el => !el.hasAttribute('disabled'));
+
 
       const currentElement = e.target as HTMLElement;
-      let currentIndex = -1;
+      let currentIndex = focusableElements.indexOf(currentElement);
       
-      // Find the index of the current element. For normal inputs, this is direct.
-      // For select triggers, the target is inside the button, so we find the button.
-      const currentButton = currentElement.closest('button[role="combobox"]');
-      if (currentButton) {
-        currentIndex = focusableElements.findIndex(el => el.id === currentButton.id);
-      } else {
-        currentIndex = focusableElements.indexOf(currentElement as HTMLInputElement);
-      }
-
       if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
         const nextElement = focusableElements[currentIndex + 1];
         if (nextElement) {
@@ -512,7 +510,7 @@ export function BillingForm() {
                                 <FormControl>
                                     <div className="relative">
                                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input type="tel" placeholder="e.g., 9876543210" className="pl-10" {...field} onKeyDown={handleKeyDown} />
+                                        <Input type="tel" placeholder="e.g., 9876543210" className="pl-10" {...field} value={field.value ?? ''} onKeyDown={handleKeyDown} />
                                     </div>
                                 </FormControl>
                                 <FormMessage />
@@ -526,7 +524,7 @@ export function BillingForm() {
                                 <FormItem>
                                 <FormLabel>Room Number</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="e.g., 09" {...field} onKeyDown={handleKeyDown} />
+                                    <Input placeholder="e.g., 09" {...field} value={field.value ?? ''} onKeyDown={handleKeyDown} />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -541,7 +539,7 @@ export function BillingForm() {
                                 <FormControl>
                                     <div className="relative">
                                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input placeholder="Enter customer's address" className="pl-10" {...field} onKeyDown={handleKeyDown} />
+                                        <Input placeholder="Enter customer's address" className="pl-10" {...field} value={field.value ?? ''} onKeyDown={handleKeyDown} />
                                     </div>
                                 </FormControl>
                                 <FormMessage />
@@ -926,5 +924,7 @@ export function BillingForm() {
     </>
   );
 }
+
+    
 
     

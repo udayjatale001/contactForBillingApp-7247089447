@@ -73,12 +73,19 @@ export function CustomerPaymentDialog({
       onConfirmPayment(customer, amount, paymentMode, paidTo, paymentDate);
     }
   };
+  
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        handleConfirm();
+    }
+  }
 
   const remainingDue = customer.totalDueAmount - (Number(paidAmount) || 0);
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => onOpenChange(isOpen ? customer : null)}>
-      <DialogContent className="sm:max-w-md w-full p-0 flex flex-col">
+      <DialogContent className="sm:max-w-md w-full p-0 flex flex-col" onKeyDown={handleKeyDown}>
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>Payment for {customer.name.toUpperCase()}</DialogTitle>
           <DialogDescription>
@@ -192,3 +199,5 @@ export function CustomerPaymentDialog({
     </Dialog>
   );
 }
+
+    

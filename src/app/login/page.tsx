@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -104,6 +105,17 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+  
+  const handleKeyDown = (e: React.KeyboardEvent, nextFieldId?: string) => {
+      if (e.key === 'Enter') {
+          e.preventDefault();
+          if (nextFieldId) {
+              document.getElementById(nextFieldId)?.focus();
+          } else {
+              handleLogin(e);
+          }
+      }
+  };
 
   if (isUserLoading || user) {
     return (
@@ -147,6 +159,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e, 'password')}
               />
             </div>
             <div className="space-y-2">
@@ -157,6 +170,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e)}
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
@@ -174,3 +188,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
