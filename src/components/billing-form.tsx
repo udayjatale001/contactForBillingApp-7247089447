@@ -225,22 +225,20 @@ export function BillingForm() {
             };
             transaction.set(doc(collection(firestore, 'notifications'), newNotification.id), newNotification);
     
-            // Save labour record if applicable
-            if (generatedBill.totalLabourAmount && generatedBill.totalLabourAmount > 0) {
-                const newLabourRecord: Labour = {
-                    id: uuidv4(),
-                    billId: generatedBill.id,
-                    managerId: user.uid,
-                    customerName: generatedBill.customerName,
-                    inCaratLabour: generatedBill.inCaratLabour,
-                    inCaratLabourRate: generatedBill.inCaratLabourRate,
-                    outCaratLabour: generatedBill.outCaratLabour,
-                    outCaratLabourRate: generatedBill.outCaratLabourRate,
-                    totalLabourAmount: generatedBill.totalLabourAmount,
-                    createdAt: generatedBill.createdAt,
-                };
-                transaction.set(doc(collection(firestore, 'labours'), newLabourRecord.id), newLabourRecord);
-            }
+            // Always save a labour record
+            const newLabourRecord: Labour = {
+                id: uuidv4(),
+                billId: generatedBill.id,
+                managerId: user.uid,
+                customerName: generatedBill.customerName,
+                inCaratLabour: generatedBill.inCaratLabour,
+                inCaratLabourRate: generatedBill.inCaratLabourRate,
+                outCaratLabour: generatedBill.outCaratLabour,
+                outCaratLabourRate: generatedBill.outCaratLabourRate,
+                totalLabourAmount: generatedBill.totalLabourAmount || 0,
+                createdAt: generatedBill.createdAt,
+            };
+            transaction.set(doc(collection(firestore, 'labours'), newLabourRecord.id), newLabourRecord);
     
             // Update aggregated customer record
             if (generatedBill.dueAmount > 0) {
@@ -926,3 +924,5 @@ export function BillingForm() {
     </>
   );
 }
+
+    
