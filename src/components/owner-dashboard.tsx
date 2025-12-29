@@ -749,7 +749,7 @@ export function OwnerDashboard() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Customer</TableHead>
-                                <TableHead>Total Due</TableHead>
+                                <TableHead>Due</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -980,7 +980,7 @@ export function OwnerDashboard() {
             </AlertDialogHeader>
             <div className="py-4 space-y-4">
                 <div className="space-y-2">
-                    <Label>Current Due Amount</Label>
+                    <Label>Due Amount</Label>
                     <Input value={`${paymentCustomer?.totalDueAmount.toLocaleString()}rs`} readOnly className="font-semibold"/>
                 </div>
                 <div className="space-y-2">
@@ -1031,8 +1031,3 @@ export function OwnerDashboard() {
     </>
   );
 }
-
-    
-
-    
-
