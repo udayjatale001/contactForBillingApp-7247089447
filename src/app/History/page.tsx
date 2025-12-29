@@ -218,7 +218,7 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
               </div>
             ) : filteredBills && filteredBills.length > 0 ? (
               <div className="w-full overflow-x-auto">
-                <Table className="min-w-[640px]">
+                <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Customer</TableHead>
@@ -461,7 +461,7 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
               </div>
             ) : filteredTokens && filteredTokens.length > 0 ? (
               <div className="w-full overflow-x-auto">
-                <Table className="min-w-[640px]">
+                <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Customer</TableHead>
@@ -560,18 +560,21 @@ function HistoryPage() {
   
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
         <h2 className="text-3xl font-bold tracking-tight font-headline">
           History
         </h2>
+        <Tabs defaultValue="bills" className="w-full sm:w-auto">
+          <TabsList>
+            <TabsTrigger value="bills">Bill History</TabsTrigger>
+            <TabsTrigger value="tokens">Token History</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       <Tabs defaultValue="bills" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="bills">Bill History</TabsTrigger>
-          <TabsTrigger value="tokens">Token History</TabsTrigger>
-        </TabsList>
-        <TabsContent value="bills">
+        {/* The TabsList is moved up, so we only need the content here */}
+        <TabsContent value="bills" className="mt-0">
           {isLoadingData ? (
              <div className="flex justify-center items-center py-16">
                 <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
@@ -580,7 +583,7 @@ function HistoryPage() {
             <BillHistoryTab isOwner={isOwner} user={user} />
           )}
         </TabsContent>
-        <TabsContent value="tokens">
+        <TabsContent value="tokens" className="mt-0">
            {isLoadingData ? (
              <div className="flex justify-center items-center py-16">
                 <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
@@ -595,7 +598,5 @@ function HistoryPage() {
 }
 
 export default HistoryPage;
-
-    
 
     
