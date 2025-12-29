@@ -50,6 +50,7 @@ export function BillingForm() {
   const [isSavingToken, setIsSavingToken] = React.useState(false);
   const [generatedBill, setGeneratedBill] = React.useState<Bill | null>(null);
   const [generatedToken, setGeneratedToken] = React.useState<Token | null>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
 
 
   const settingsDocRef = useMemoFirebase(() => {
@@ -521,7 +522,7 @@ export function BillingForm() {
                             <FormItem className="md:col-span-2">
                               <FormLabel>Bill Date & Time</FormLabel>
                               <div className='flex flex-col sm:flex-row gap-2'>
-                                <Popover>
+                                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                                   <PopoverTrigger asChild>
                                     <FormControl>
                                       <Button
@@ -544,7 +545,10 @@ export function BillingForm() {
                                     <Calendar
                                       mode="single"
                                       selected={field.value}
-                                      onSelect={field.onChange}
+                                      onSelect={(date) => {
+                                        field.onChange(date);
+                                        setIsCalendarOpen(false);
+                                      }}
                                       initialFocus
                                     />
                                   </PopoverContent>
@@ -859,3 +863,5 @@ export function BillingForm() {
     </>
   );
 }
+
+    

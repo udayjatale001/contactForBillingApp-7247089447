@@ -68,6 +68,7 @@ function NotificationsPage() {
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = React.useState(false);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = React.useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
 
   const notificationsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -306,7 +307,7 @@ function NotificationsPage() {
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <Popover>
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                         <PopoverTrigger asChild>
                         <Button
                             variant={'outline'}
@@ -323,7 +324,10 @@ function NotificationsPage() {
                         <Calendar
                             mode="single"
                             selected={globalDate ?? undefined}
-                            onSelect={(date) => setGlobalDate(date || new Date())}
+                            onSelect={(date) => {
+                                setGlobalDate(date || new Date());
+                                setIsCalendarOpen(false);
+                            }}
                             initialFocus
                         />
                         </PopoverContent>
@@ -415,3 +419,5 @@ function NotificationsPage() {
 }
 
 export default withPasswordProtection(NotificationsPage);
+
+    

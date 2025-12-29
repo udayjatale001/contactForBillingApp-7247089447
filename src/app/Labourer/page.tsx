@@ -82,6 +82,7 @@ export default function LabourerPage() {
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [isBulkDeleting, setIsBulkDeleting] = React.useState(false);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = React.useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
 
   const laboursQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -249,7 +250,7 @@ export default function LabourerPage() {
                     />
                   </div>
                    <div className="flex items-center gap-2">
-                    <Popover>
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                         <PopoverTrigger asChild>
                         <Button
                             variant={'outline'}
@@ -266,7 +267,10 @@ export default function LabourerPage() {
                         <Calendar
                             mode="single"
                             selected={globalDate ?? undefined}
-                            onSelect={(date) => setGlobalDate(date || new Date())}
+                            onSelect={(date) => {
+                                setGlobalDate(date || new Date());
+                                setIsCalendarOpen(false);
+                            }}
                             initialFocus
                         />
                         </PopoverContent>
@@ -434,3 +438,5 @@ export default function LabourerPage() {
     </>
   );
 }
+
+    

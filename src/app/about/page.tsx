@@ -22,10 +22,12 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { format, setHours, setMinutes } from 'date-fns';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import * as React from 'react';
 
 export default function AboutPage() {
   const { t, language, setLanguage } = useLanguage();
   const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
+  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
 
   const handleLanguageChange = (checked: boolean) => {
     setLanguage(checked ? 'hi' : 'en');
@@ -73,7 +75,7 @@ export default function AboutPage() {
               <div>
                 <Label className="text-lg font-semibold text-foreground">Global Date Filter</Label>
                  <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                    <Popover>
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                       <PopoverTrigger asChild>
                         <Button
                           variant={'outline'}
@@ -89,8 +91,11 @@ export default function AboutPage() {
                       <PopoverContent className="w-auto p-0">
                         <Calendar
                           mode="single"
-                          selected={globalDate}
-                          onSelect={(date) => setGlobalDate(date || new Date())}
+                          selected={globalDate || undefined}
+                          onSelect={(date) => {
+                            setGlobalDate(date || new Date());
+                            setIsCalendarOpen(false);
+                          }}
                           initialFocus
                         />
                          <div className="p-2 border-t">

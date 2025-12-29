@@ -68,6 +68,8 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
   const [selectedBill, setSelectedBill] = React.useState<Bill | null>(null);
   const [billToDelete, setBillToDelete] = React.useState<Bill | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+
 
   const collectionPath = React.useMemo(() => {
     if (isOwner === null || !user) return null;
@@ -175,7 +177,7 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                    <Popover>
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                         <PopoverTrigger asChild>
                         <Button
                             variant={'outline'}
@@ -192,7 +194,10 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
                         <Calendar
                             mode="single"
                             selected={globalDate ?? undefined}
-                            onSelect={(date) => setGlobalDate(date || new Date())}
+                            onSelect={(date) => {
+                                setGlobalDate(date || new Date());
+                                setIsCalendarOpen(false);
+                            }}
                             initialFocus
                         />
                         </PopoverContent>
@@ -308,6 +313,7 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
   const [tokenToDelete, setTokenToDelete] = React.useState<Token | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [selectedToken, setSelectedToken] = React.useState<Token | null>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
 
   const collectionPath = React.useMemo(() => {
     if (isOwner === null || !user) return null;
@@ -414,7 +420,7 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
                   />
                 </div>
                  <div className="flex items-center gap-2">
-                    <Popover>
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                         <PopoverTrigger asChild>
                         <Button
                             variant={'outline'}
@@ -431,7 +437,10 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
                         <Calendar
                             mode="single"
                             selected={globalDate ?? undefined}
-                            onSelect={(date) => setGlobalDate(date || new Date())}
+                            onSelect={(date) => {
+                                setGlobalDate(date || new Date());
+                                setIsCalendarOpen(false);
+                            }}
                             initialFocus
                         />
                         </PopoverContent>
@@ -586,3 +595,5 @@ function HistoryPage() {
 }
 
 export default HistoryPage;
+
+    
