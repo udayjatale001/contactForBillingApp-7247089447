@@ -1,4 +1,3 @@
-
 'use client';
 import * as React from 'react';
 import {
@@ -56,7 +55,7 @@ import {
   FileDown,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, doc, getDoc, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, doc, getDoc, getDocs, writeBatch, updateDoc } from 'firebase/firestore';
 import type { Bill, AppSettings, Labour } from '@/lib/types';
 import { format, getYear, getMonth, isSameDay, startOfDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -71,6 +70,17 @@ import { useLanguage } from '@/context/language-context';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import { useDateFilter } from '@/context/date-filter-context';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
 
 const ALL_MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -83,6 +93,7 @@ type AggregatedDueCustomer = {
   totalDueAmount: number;
   lastBillDate: string; // Storing as ISO string
   lastBillIsoDate: string;
+  billIds: string[]; // Keep track of all bill IDs contributing to the due amount
 };
 
 function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
@@ -188,14 +199,22 @@ export function OwnerDashboard() {
   const { t } = useLanguage();
   const { toast } = useToast();
   const { globalDate } = useDateFilter();
-
+  
   const [remindersState, setRemindersState] = React.useState<{ [key: string]: 'sending' | 'sent' | 'error' }>({});
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
-  const [dismissedCustomers, setDismissedCustomers] = React.useState<string[]>([]);
   
   const [selectedYear, setSelectedYear] = React.useState<string>(new Date().getFullYear().toString());
-
   const [isExporting, setIsExporting] = React.useState(false);
+
+  // State for payment dialog
+  const [paymentCustomer, setPaymentCustomer] = React.useState<AggregatedDueCustomer | null>(null);
+  const [paymentAmount, setPaymentAmount] = React.useState<number | string>('');
+  const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
+  
+  // State for delete confirmation
+  const [deleteCustomer, setDeleteCustomer] = React.useState<AggregatedDueCustomer | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
 
   React.useEffect(() => {
     if(user && firestore) {
@@ -218,7 +237,7 @@ export function OwnerDashboard() {
     return query(collection(firestore, collectionPath), orderBy('createdAt', 'desc'));
   }, [firestore, collectionPath]);
 
-  const { data: allBills, isLoading: isLoadingBills, error: billsError } = useCollection<Bill>(billsQuery);
+  const { data: allBills, isLoading: isLoadingBills, error: billsError, forceRefetch } = useCollection<Bill>(billsQuery);
 
   const {
     totalAmount,
@@ -331,6 +350,7 @@ export function OwnerDashboard() {
         const customerNameKey = bill.customerName.trim().toLowerCase();
         if (aggregatedDueCustomers[customerNameKey]) {
           aggregatedDueCustomers[customerNameKey].totalDueAmount += bill.dueAmount;
+          aggregatedDueCustomers[customerNameKey].billIds.push(bill.id);
           if (bill.createdAt > aggregatedDueCustomers[customerNameKey].lastBillIsoDate) {
             aggregatedDueCustomers[customerNameKey].lastBillIsoDate = bill.createdAt;
             aggregatedDueCustomers[customerNameKey].lastBillDate = bill.createdAt;
@@ -345,13 +365,13 @@ export function OwnerDashboard() {
             lastBillDate: bill.createdAt,
             lastBillIsoDate: bill.createdAt,
             contactNumber: bill.contactNumber,
+            billIds: [bill.id],
           };
         }
       }
     });
 
     const customersWithDue = Object.values(aggregatedDueCustomers)
-      .filter(customer => !dismissedCustomers.includes(customer.customerName))
       .sort((a, b) => b.totalDueAmount - a.totalDueAmount);
 
     return {
@@ -371,11 +391,84 @@ export function OwnerDashboard() {
       recentBills: allBills.slice(0, 5),
       availableYears: allAvailableYears,
     };
-  }, [allBills, globalDate, selectedYear, dismissedCustomers]);
+  }, [allBills, globalDate, selectedYear]);
 
-  const handleDismissCustomer = (customerName: string) => {
-    setDismissedCustomers(prev => [...prev, customerName]);
+  const handleProcessPayment = async () => {
+    if (!firestore || !paymentCustomer || !paymentAmount) return;
+
+    const amountToPay = Number(paymentAmount);
+    if (isNaN(amountToPay) || amountToPay <= 0) {
+        toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid positive number.' });
+        return;
+    }
+
+    setIsProcessingPayment(true);
+
+    try {
+        const billRef = doc(firestore, 'bills', paymentCustomer.billIds[paymentCustomer.billIds.length - 1]); // Use last bill
+        const billSnap = await getDoc(billRef);
+
+        if (!billSnap.exists()) throw new Error('Bill not found');
+        
+        const billData = billSnap.data() as Bill;
+        const newPaidAmount = billData.paidAmount + amountToPay;
+        const newDueAmount = billData.totalAmount - newPaidAmount;
+
+        await updateDoc(billRef, {
+            paidAmount: newPaidAmount,
+            dueAmount: newDueAmount < 0 ? 0 : newDueAmount,
+        });
+
+        // Also update the manager's copy if it exists
+        const managerBillRef = doc(firestore, 'managers', billData.managerId, 'bills', billData.id);
+        await updateDoc(managerBillRef, {
+            paidAmount: newPaidAmount,
+            dueAmount: newDueAmount < 0 ? 0 : newDueAmount,
+        }).catch(() => {}); // Ignore error if manager subcollection doc doesn't exist
+
+        toast({ title: 'Payment Successful', description: `${amountToPay.toLocaleString()}rs has been applied.` });
+        setPaymentCustomer(null);
+        setPaymentAmount('');
+        if(forceRefetch) forceRefetch();
+    } catch (error) {
+        console.error("Error processing payment: ", error);
+        toast({ variant: 'destructive', title: 'Payment Failed', description: 'Could not update the bill.' });
+    } finally {
+        setIsProcessingPayment(false);
+    }
   };
+
+  const handleConfirmDelete = async () => {
+    if (!firestore || !deleteCustomer) return;
+
+    setIsDeleting(true);
+    const batch = writeBatch(firestore);
+
+    try {
+        // This is a destructive action - it deletes all bills that contribute to the due amount.
+        // We need to fetch each bill to get the managerId to delete from the subcollection.
+        for (const billId of deleteCustomer.billIds) {
+            const billRef = doc(firestore, 'bills', billId);
+            const billSnap = await getDoc(billRef);
+            if (billSnap.exists()) {
+                const billData = billSnap.data() as Bill;
+                const managerBillRef = doc(firestore, 'managers', billData.managerId, 'bills', billId);
+                batch.delete(managerBillRef);
+            }
+            batch.delete(billRef);
+        }
+
+        await batch.commit();
+        toast({ title: 'Customer Records Deleted', description: `All due bills for ${deleteCustomer.customerName} have been removed.` });
+        if(forceRefetch) forceRefetch();
+    } catch (error) {
+        console.error("Error deleting customer bills: ", error);
+        toast({ variant: 'destructive', title: 'Deletion Failed', description: 'Could not delete customer records.' });
+    } finally {
+        setIsDeleting(false);
+        setDeleteCustomer(null);
+    }
+};
 
   const handleExport = async () => {
     if (!firestore) return;
@@ -494,6 +587,7 @@ export function OwnerDashboard() {
   }
 
   return (
+    <>
     <div className="space-y-4">
       
       {/* Export Button */}
@@ -655,6 +749,13 @@ export function OwnerDashboard() {
                                 </TableCell>
                                 <TableCell className="text-right">
                                      <div className="flex items-center justify-end gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setPaymentCustomer(customer)}
+                                        >
+                                            Pay Due
+                                        </Button>
                                         <Button 
                                             size="icon" 
                                             variant="ghost" 
@@ -667,8 +768,8 @@ export function OwnerDashboard() {
                                         <Button 
                                             size="icon" 
                                             variant="ghost"
-                                            onClick={() => handleDismissCustomer(customer.customerName)}
-                                            title="Dismiss Reminder"
+                                            onClick={() => setDeleteCustomer(customer)}
+                                            title="Delete Records"
                                         >
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>
@@ -845,5 +946,56 @@ export function OwnerDashboard() {
         </CardContent>
       </Card>
     </div>
+
+    {/* Payment Dialog */}
+    <AlertDialog open={!!paymentCustomer} onOpenChange={() => setPaymentCustomer(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Add Payment for {paymentCustomer?.customerName}</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Current due amount is {paymentCustomer?.totalDueAmount.toLocaleString()}rs. Enter the amount being paid now.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4">
+                <Label htmlFor="payment-amount">Payment Amount</Label>
+                <Input
+                    id="payment-amount"
+                    type="number"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    placeholder='Enter amount'
+                    autoFocus
+                />
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isProcessingPayment}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleProcessPayment} disabled={isProcessingPayment}>
+                    {isProcessingPayment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Confirm Payment
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
+    {/* Delete Confirmation Dialog */}
+    <AlertDialog open={!!deleteCustomer} onOpenChange={() => setDeleteCustomer(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This will permanently delete all due bill records for <span className="font-bold">{deleteCustomer?.customerName}</span>. This action cannot be undone.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+                    {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Delete Records
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
+    </>
   );
 }
