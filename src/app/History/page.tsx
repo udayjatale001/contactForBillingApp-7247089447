@@ -277,8 +277,8 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
                 </div>
 
                 <div className="border-t pt-4 mt-4 space-y-4">
-                <div className="flex flex-col md:flex-row gap-2">
-                    <div className="relative flex-1">
+                <div className="flex flex-col md:flex-row flex-wrap gap-2">
+                    <div className="relative flex-1 md:min-w-[200px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
                         placeholder="Search by customer name or bill no..."
@@ -293,7 +293,7 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
                             <Button
                                 variant={'outline'}
                                 className={cn(
-                                'w-full md:w-[280px] justify-start text-left font-normal',
+                                'w-full justify-start text-left font-normal',
                                 !globalDate && 'text-muted-foreground'
                                 )}
                             >
@@ -660,8 +660,8 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
             </div>
 
             <div className="border-t pt-4 mt-4 space-y-4">
-              <div className="flex flex-col md:flex-row gap-2">
-                <div className="relative flex-1">
+              <div className="flex flex-col md:flex-row flex-wrap gap-2">
+                <div className="relative flex-1 md:min-w-[200px]">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     placeholder="Search by customer name..."
@@ -676,7 +676,7 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
                         <Button
                             variant={'outline'}
                             className={cn(
-                            'w-full md:w-[280px] justify-start text-left font-normal',
+                            'w-full justify-start text-left font-normal',
                             !globalDate && 'text-muted-foreground'
                             )}
                         >
@@ -862,7 +862,7 @@ function HistoryPage() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <Tabs defaultValue="bills" className="space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h2 className="text-3xl font-bold tracking-tight font-headline">
             History
           </h2>
