@@ -743,14 +743,46 @@ export function OwnerDashboard() {
                     Customers with outstanding payments.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                <div className="text-center py-12">
-                    <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-semibold">No pending customer payments</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        All accounts are settled.
-                    </p>
-                </div>
+            <CardContent className="space-y-4">
+                 {dueBills.length > 0 ? (
+                    dueBills.map(customer => (
+                        <div key={customer.customerName} className="flex items-center justify-between gap-4 p-2 rounded-lg hover:bg-muted/50">
+                            <div className='flex-1 min-w-0'>
+                                <p className="text-sm font-semibold truncate">{customer.customerName}</p>
+                                <div className='flex items-center gap-2'>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                      Last Bill: {format(new Date(customer.lastBillDate), 'PP')}
+                                  </p>
+                                  {customer.contactNumber && (
+                                    <a href={`tel:${customer.contactNumber}`} className='flex items-center gap-1 text-xs text-blue-500 hover:underline'>
+                                      <Phone className='h-3 w-3' />
+                                      {customer.contactNumber}
+                                    </a>
+                                  )}
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                <Badge variant="destructive" className="cursor-pointer" onClick={() => setPaymentCustomer(customer)}>
+                                    {customer.totalDueAmount.toLocaleString()}rs
+                                </Badge>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleWhatsAppReminder(customer)} disabled={!customer.contactNumber}>
+                                    <MessageSquare className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteCustomer(customer)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <div className="text-center py-12">
+                        <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <h3 className="mt-4 text-lg font-semibold">No pending customer payments</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            All accounts are settled.
+                        </p>
+                    </div>
+                )}
             </CardContent>
         </Card>
       </div>
