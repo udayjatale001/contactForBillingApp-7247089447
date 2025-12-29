@@ -207,11 +207,10 @@ export function OwnerDashboard() {
   const [selectedYear, setSelectedYear] = React.useState<string>(new Date().getFullYear().toString());
   const [isExporting, setIsExporting] = React.useState(false);
 
-  // State for payment dialog
-  const [paymentCustomer, setPaymentCustomer] = React.useState<AggregatedDueCustomer | null>(null);
-  const [paymentAmount, setPaymentAmount] = React.useState<number | string>('');
-  const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
-  
+  // State for inline payment inputs
+  const [paymentAmounts, setPaymentAmounts] = React.useState<{ [key: string]: string }>({});
+  const [processingPaymentFor, setProcessingPaymentFor] = React.useState<string | null>(null);
+
   // State for delete confirmation
   const [deleteCustomer, setDeleteCustomer] = React.useState<AggregatedDueCustomer | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -394,25 +393,25 @@ export function OwnerDashboard() {
     };
   }, [allBills, globalDate, selectedYear]);
 
-  const handleProcessPayment = async () => {
-    if (!firestore || !paymentCustomer || !paymentAmount) return;
+  const handleProcessPayment = async (customer: AggregatedDueCustomer) => {
+    if (!firestore) return;
+    const amountToPay = Number(paymentAmounts[customer.customerName] || 0);
 
-    const amountToPay = Number(paymentAmount);
     if (isNaN(amountToPay) || amountToPay <= 0) {
         toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid positive number.' });
         return;
     }
     
-    if (amountToPay > paymentCustomer.totalDueAmount) {
+    if (amountToPay > customer.totalDueAmount) {
         toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Paid amount cannot be greater than the total due.' });
         return;
     }
 
-    setIsProcessingPayment(true);
+    setProcessingPaymentFor(customer.customerName);
     let remainingAmountToApply = amountToPay;
 
     try {
-        const billRefs = paymentCustomer.billIds.map(id => doc(firestore, 'bills', id));
+        const billRefs = customer.billIds.map(id => doc(firestore, 'bills', id));
         const billSnaps = await Promise.all(billRefs.map(ref => getDoc(ref)));
 
         const billsToUpdate = billSnaps
@@ -442,15 +441,15 @@ export function OwnerDashboard() {
         await batch.commit();
         toast({ title: 'Payment Successful', description: `${amountToPay.toLocaleString()}rs has been applied.` });
         
-        forceRefetch();
+        // Clear the input for this customer
+        setPaymentAmounts(prev => ({ ...prev, [customer.customerName]: '' }));
+        forceRefetch(); // Force a refetch to update the UI
 
     } catch (error) {
         console.error("Error processing payment: ", error);
         toast({ variant: 'destructive', title: 'Payment Failed', description: 'Could not update the bill(s).' });
     } finally {
-        setPaymentCustomer(null);
-        setPaymentAmount('');
-        setIsProcessingPayment(false);
+        setProcessingPaymentFor(null);
     }
   };
 
@@ -580,6 +579,10 @@ export function OwnerDashboard() {
     window.open(whatsappUrl, '_blank');
   };
 
+  const handlePaymentAmountChange = (customerName: string, value: string) => {
+    setPaymentAmounts(prev => ({ ...prev, [customerName]: value }));
+  };
+
   const isLoading = isUserLoading || isLoadingBills || isOwner === null;
 
   if (isLoading) {
@@ -601,8 +604,6 @@ export function OwnerDashboard() {
         </div>
     );
   }
-  
-  const remainingDue = paymentCustomer ? paymentCustomer.totalDueAmount - Number(paymentAmount) : 0;
 
   return (
     <>
@@ -738,42 +739,78 @@ export function OwnerDashboard() {
         {/* Due Amounts & Reminders */}
         <Card>
             <CardHeader>
-                <CardTitle>Customer Reminders</CardTitle>
+                <CardTitle>Customers with Outstanding Payments</CardTitle>
                 <CardDescription>
-                    Customers with outstanding payments.
+                    Manage and clear outstanding dues from customers.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                  {dueBills.length > 0 ? (
-                    dueBills.map(customer => (
-                        <div key={customer.customerName} className="flex items-center justify-between gap-4 p-2 rounded-lg hover:bg-muted/50">
-                            <div className='flex-1 min-w-0'>
-                                <p className="text-sm font-semibold truncate">{customer.customerName}</p>
-                                <div className='flex items-center gap-2'>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                      Last Bill: {format(new Date(customer.lastBillDate), 'PP')}
-                                  </p>
-                                  {customer.contactNumber && (
-                                    <a href={`tel:${customer.contactNumber}`} className='flex items-center gap-1 text-xs text-blue-500 hover:underline'>
-                                      <Phone className='h-3 w-3' />
-                                      {customer.contactNumber}
-                                    </a>
-                                  )}
+                    dueBills.map(customer => {
+                      const isProcessing = processingPaymentFor === customer.customerName;
+                      const currentPayment = paymentAmounts[customer.customerName] || '';
+
+                      return (
+                        <div key={customer.customerName} className="flex flex-col gap-3 p-3 rounded-lg border">
+                            {/* Customer Info */}
+                            <div className="flex items-start justify-between gap-4">
+                                <div className='flex-1 min-w-0'>
+                                    <p className="text-sm font-semibold truncate">{customer.customerName}</p>
+                                    <div className='flex items-center gap-2 flex-wrap'>
+                                      <p className="text-xs text-muted-foreground truncate">
+                                          Last Bill: {format(new Date(customer.lastBillDate), 'PP')}
+                                      </p>
+                                      {customer.contactNumber && (
+                                        <a href={`tel:${customer.contactNumber}`} className='flex items-center gap-1 text-xs text-blue-500 hover:underline'>
+                                          <Phone className='h-3 w-3' />
+                                          {customer.contactNumber}
+                                        </a>
+                                      )}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleWhatsAppReminder(customer)} disabled={!customer.contactNumber}>
+                                        <MessageSquare className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteCustomer(customer)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                                <Badge variant="destructive" className="cursor-pointer" onClick={() => setPaymentCustomer(customer)}>
-                                    {customer.totalDueAmount.toLocaleString()}rs
-                                </Badge>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleWhatsAppReminder(customer)} disabled={!customer.contactNumber}>
-                                    <MessageSquare className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteCustomer(customer)}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
+                            
+                            {/* Payment Section */}
+                            <div className='flex flex-col sm:flex-row items-center gap-2'>
+                                <div className='flex-1 w-full'>
+                                    <Label className='text-xs'>Due Amount</Label>
+                                    <div className="font-semibold text-destructive">{customer.totalDueAmount.toLocaleString()}rs</div>
+                                </div>
+                                <div className='flex-1 w-full'>
+                                    <Label htmlFor={`pay-${customer.customerName}`} className='text-xs'>Paid Amount</Label>
+                                    <Input
+                                        id={`pay-${customer.customerName}`}
+                                        type="number"
+                                        placeholder="Enter amount"
+                                        value={currentPayment}
+                                        onChange={(e) => handlePaymentAmountChange(customer.customerName, e.target.value)}
+                                        className="h-9"
+                                        disabled={isProcessing}
+                                    />
+                                </div>
+                                <div className='w-full sm:w-auto'>
+                                    {/* This label is for alignment purposes */}
+                                    <Label className='text-xs opacity-0 hidden sm:block'>Confirm</Label> 
+                                    <Button 
+                                      onClick={() => handleProcessPayment(customer)}
+                                      disabled={isProcessing || !currentPayment}
+                                      className='w-full h-9'
+                                    >
+                                      {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm'}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                    ))
+                      )
+                    })
                 ) : (
                     <div className="text-center py-12">
                         <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -942,51 +979,6 @@ export function OwnerDashboard() {
       </Card>
     </div>
 
-    {/* Payment Dialog */}
-    <AlertDialog open={!!paymentCustomer} onOpenChange={(open) => {
-        if (!open) {
-            setPaymentCustomer(null);
-            setPaymentAmount('');
-        }
-    }}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Add Payment for {paymentCustomer?.customerName}</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Enter the amount being paid now. The remaining balance will be calculated automatically.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="py-4 space-y-4">
-                <div className="space-y-2">
-                    <Label>Due Amount</Label>
-                    <Input value={`${paymentCustomer?.totalDueAmount.toLocaleString()}rs`} readOnly className="font-semibold"/>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="payment-amount">Paid Amount</Label>
-                    <Input
-                        id="payment-amount"
-                        type="number"
-                        value={paymentAmount}
-                        onChange={(e) => setPaymentAmount(e.target.value)}
-                        placeholder='Enter amount being paid'
-                        autoFocus
-                    />
-                </div>
-                 <div className="space-y-2">
-                    <Label>Remaining Due</Label>
-                    <Input value={`${remainingDue.toLocaleString()}rs`} readOnly className={cn("font-semibold", remainingDue > 0 ? 'text-destructive' : 'text-primary')}/>
-                </div>
-            </div>
-            <AlertDialogFooter>
-                <AlertDialogCancel disabled={isProcessingPayment}>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleProcessPayment} disabled={isProcessingPayment || !paymentAmount}>
-                    {isProcessingPayment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Confirm Payment
-                </AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-    </AlertDialog>
-
     {/* Delete Confirmation Dialog */}
     <AlertDialog open={!!deleteCustomer} onOpenChange={() => setDeleteCustomer(null)}>
         <AlertDialogContent>
@@ -1009,5 +1001,3 @@ export function OwnerDashboard() {
     </>
   );
 }
-
-    
