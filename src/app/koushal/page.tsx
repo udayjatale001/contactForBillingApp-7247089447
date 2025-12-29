@@ -35,6 +35,8 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebas
 import { collection, query, getDocs, writeBatch, doc } from 'firebase/firestore';
 import { Loader2, Search, Users, MessageSquare, Trash2, AlertCircle } from 'lucide-react';
 import { CustomerSummaryDialog } from '@/components/customer-summary-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 // This new interface represents a single, aggregated customer record.
 export interface AggregatedCustomer {
@@ -56,6 +58,9 @@ export default function KoushalPage() {
   const [customerToDelete, setCustomerToDelete] = React.useState<AggregatedCustomer | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [selectedCustomer, setSelectedCustomer] = React.useState<AggregatedCustomer | null>(null);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = React.useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = React.useState(false);
 
   const billsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -112,6 +117,79 @@ export default function KoushalPage() {
     );
   }, [aggregatedCustomers, searchTerm]);
 
+  React.useEffect(() => {
+    const visibleIds = new Set(filteredCustomers.map(c => c.id));
+    setSelectedIds(currentIds => {
+      const newIds = new Set<string>();
+      currentIds.forEach(id => {
+        if (visibleIds.has(id)) {
+          newIds.add(id);
+        }
+      });
+      return newIds;
+    });
+  }, [filteredCustomers]);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(filteredCustomers.map(c => c.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(id);
+      } else {
+        newSet.delete(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (!firestore || selectedIds.size === 0) return;
+
+    setIsBulkDeleting(true);
+    const batch = writeBatch(firestore);
+
+    const billIdsToDelete = new Set<string>();
+    selectedIds.forEach(customerId => {
+        const customer = aggregatedCustomers.find(c => c.id === customerId);
+        if (customer) {
+            customer.billIds.forEach(billId => billIdsToDelete.add(billId));
+        }
+    });
+
+    billIdsToDelete.forEach(billId => {
+        const billRef = doc(firestore, 'bills', billId);
+        batch.delete(billRef);
+    });
+
+    try {
+        await batch.commit();
+        toast({
+            title: 'Customers Deleted',
+            description: `All records for ${selectedIds.size} customers have been removed from the global view.`
+        });
+        setSelectedIds(new Set());
+    } catch (error) {
+        console.error('Error bulk deleting customer records:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Bulk Deletion Failed',
+            description: 'Could not delete the selected customer records. You may not have permission.'
+        });
+    } finally {
+        setIsBulkDeleting(false);
+        setShowBulkDeleteConfirm(false);
+    }
+  };
+
+
   const handleDeleteClick = (customer: AggregatedCustomer) => {
     setSelectedCustomer(null); // Close the summary dialog
     setCustomerToDelete(customer);
@@ -167,6 +245,7 @@ export default function KoushalPage() {
   };
 
   const isLoading = isUserLoading || isLoadingBills;
+  const allFilteredSelected = filteredCustomers.length > 0 && selectedIds.size === filteredCustomers.length;
 
   return (
     <>
@@ -175,6 +254,16 @@ export default function KoushalPage() {
           <h2 className="text-3xl font-bold tracking-tight font-headline">
             Customer Details
           </h2>
+            {selectedIds.size > 0 && (
+                <Button 
+                    variant="destructive" 
+                    onClick={() => setShowBulkDeleteConfirm(true)}
+                    disabled={isBulkDeleting}
+                >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete ({selectedIds.size})
+                </Button>
+            )}
         </div>
         <Card>
           <CardHeader>
@@ -182,14 +271,31 @@ export default function KoushalPage() {
             <CardDescription>
               A complete list of all customers and their total transactions.
             </CardDescription>
-            <div className="relative pt-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Search by customer name..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+            <div className="border-t pt-4 mt-4 space-y-4">
+                <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                    placeholder="Search by customer name..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                />
+                </div>
+                 {filteredCustomers.length > 0 && (
+                    <div className="flex items-center space-x-2">
+                        <Checkbox 
+                            id="select-all-customers" 
+                            checked={allFilteredSelected}
+                            onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                        />
+                        <label
+                            htmlFor="select-all-customers"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                           Select all ({filteredCustomers.length})
+                        </label>
+                    </div>
+                )}
             </div>
           </CardHeader>
           <CardContent>
@@ -210,6 +316,7 @@ export default function KoushalPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className='w-10'></TableHead>
                       <TableHead>Customer Name</TableHead>
                       <TableHead>Contact</TableHead>
                       <TableHead>Address</TableHead>
@@ -219,7 +326,18 @@ export default function KoushalPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredCustomers.map((customer) => (
-                      <TableRow key={customer.id} onClick={() => setSelectedCustomer(customer)} className="cursor-pointer">
+                      <TableRow 
+                        key={customer.id} 
+                        onClick={() => setSelectedCustomer(customer)} 
+                        className={cn("cursor-pointer", selectedIds.has(customer.id) && 'bg-primary/10')}
+                      >
+                         <TableCell onClick={(e) => e.stopPropagation()}>
+                           <Checkbox 
+                              checked={selectedIds.has(customer.id)} 
+                              onCheckedChange={(checked) => handleSelectOne(customer.id, !!checked)}
+                              aria-label={`Select customer ${customer.name}`}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">{customer.name}</TableCell>
                         <TableCell>{customer.contactNumber || 'N/A'}</TableCell>
                         <TableCell>{customer.address || 'N/A'}</TableCell>
@@ -274,6 +392,33 @@ export default function KoushalPage() {
             >
               {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Delete Records
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+       <AlertDialog
+        open={showBulkDeleteConfirm}
+        onOpenChange={setShowBulkDeleteConfirm}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all associated global records for the {selectedIds.size} selected customers. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isBulkDeleting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Delete Selected
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
