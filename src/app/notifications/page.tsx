@@ -415,4 +415,3 @@ function NotificationsPage() {
 }
 
 export default withPasswordProtection(NotificationsPage);
-    
