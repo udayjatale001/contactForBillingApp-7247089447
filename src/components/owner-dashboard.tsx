@@ -415,6 +415,8 @@ export function OwnerDashboard() {
             .filter(bill => bill.dueAmount > 0)
             .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
+        const batch = writeBatch(firestore);
+
         for (const billData of billsToUpdate) {
             if (remainingAmountToApply <= 0) break;
             
@@ -426,14 +428,13 @@ export function OwnerDashboard() {
             const globalBillRef = doc(firestore, 'bills', billData.id);
             const managerBillRef = doc(firestore, 'managers', billData.managerId, 'bills', billData.id);
 
-            // Using await for each update ensures they are part of the same conceptual transaction handled by Firestore's atomicity.
-            // For a true atomic transaction across documents, a batched write is better.
-            await updateDoc(globalBillRef, { paidAmount: newPaidAmount, dueAmount: newDueAmount });
-            await updateDoc(managerBillRef, { paidAmount: newPaidAmount, dueAmount: newDueAmount });
+            batch.update(globalBillRef, { paidAmount: newPaidAmount, dueAmount: newDueAmount });
+            batch.update(managerBillRef, { paidAmount: newPaidAmount, dueAmount: newDueAmount });
             
             remainingAmountToApply -= paymentForThisBill;
         }
 
+        await batch.commit();
         toast({ title: 'Payment Successful', description: `${amountToPay.toLocaleString()}rs has been applied.` });
         
         // After payment, force a refetch of the collection data
