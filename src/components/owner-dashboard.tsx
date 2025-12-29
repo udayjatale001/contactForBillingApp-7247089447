@@ -404,31 +404,45 @@ export function OwnerDashboard() {
     }
 
     setIsProcessingPayment(true);
+    const batch = writeBatch(firestore);
+    let remainingAmountToApply = amountToPay;
 
     try {
-        const billRef = doc(firestore, 'bills', paymentCustomer.billIds[paymentCustomer.billIds.length - 1]); // Use last bill
-        const billSnap = await getDoc(billRef);
+        // Fetch all due bills for the customer, sorted oldest first
+        const dueBillIds = paymentCustomer.billIds;
+        const billRefs = dueBillIds.map(id => doc(firestore, 'bills', id));
+        const billSnaps = await Promise.all(billRefs.map(ref => getDoc(ref)));
 
-        if (!billSnap.exists()) throw new Error('Bill not found');
-        
-        const billData = billSnap.data() as Bill;
-        const newPaidAmount = billData.paidAmount + amountToPay;
-        const newDueAmount = billData.totalAmount - newPaidAmount;
+        const billsToUpdate = billSnaps
+            .map(snap => ({ ...snap.data() as Bill, id: snap.id }))
+            .filter(bill => bill.dueAmount > 0)
+            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-        await updateDoc(billRef, {
-            paidAmount: newPaidAmount,
-            dueAmount: newDueAmount < 0 ? 0 : newDueAmount,
-        });
+        for (const billData of billsToUpdate) {
+            if (remainingAmountToApply <= 0) break;
 
-        // Also update the manager's copy if it exists
-        const managerBillRef = doc(firestore, 'managers', billData.managerId, 'bills', billData.id);
-        const managerBillSnap = await getDoc(managerBillRef);
-        if (managerBillSnap.exists()) {
-             await updateDoc(managerBillRef, {
+            const paymentForThisBill = Math.min(remainingAmountToApply, billData.dueAmount);
+            
+            const newPaidAmount = billData.paidAmount + paymentForThisBill;
+            const newDueAmount = billData.dueAmount - paymentForThisBill;
+            
+            const globalBillRef = doc(firestore, 'bills', billData.id);
+            batch.update(globalBillRef, {
                 paidAmount: newPaidAmount,
-                dueAmount: newDueAmount < 0 ? 0 : newDueAmount,
+                dueAmount: newDueAmount,
             });
+
+            // Also update the manager's copy
+            const managerBillRef = doc(firestore, 'managers', billData.managerId, 'bills', billData.id);
+            batch.update(managerBillRef, {
+                paidAmount: newPaidAmount,
+                dueAmount: newDueAmount,
+            });
+
+            remainingAmountToApply -= paymentForThisBill;
         }
+
+        await batch.commit();
 
         toast({ title: 'Payment Successful', description: `${amountToPay.toLocaleString()}rs has been applied.` });
         setPaymentCustomer(null);
@@ -436,7 +450,7 @@ export function OwnerDashboard() {
         if(forceRefetch) forceRefetch();
     } catch (error) {
         console.error("Error processing payment: ", error);
-        toast({ variant: 'destructive', title: 'Payment Failed', description: 'Could not update the bill.' });
+        toast({ variant: 'destructive', title: 'Payment Failed', description: 'Could not update the bill(s).' });
     } finally {
         setIsProcessingPayment(false);
     }
@@ -1003,5 +1017,7 @@ export function OwnerDashboard() {
     </>
   );
 }
+
+    
 
     
