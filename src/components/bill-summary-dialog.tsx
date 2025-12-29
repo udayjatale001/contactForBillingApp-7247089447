@@ -97,31 +97,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm w-full p-0 print:hidden sm:max-h-[90vh] flex flex-col">
-        <style>
-          {`
-            @media print {
-              body * {
-                visibility: hidden;
-              }
-              #bill-print-area, #bill-print-area * {
-                visibility: visible;
-              }
-              #bill-print-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                padding: 1.5rem;
-                margin: 0;
-                background: white;
-                color: black;
-                font-size: 12px;
-              }
-            }
-          `}
-        </style>
+      <DialogContent className="max-w-sm w-full p-0 print-hidden sm:max-h-[90vh] flex flex-col">
         <div className="p-4 sm:p-6 bg-white rounded-t-lg overflow-y-auto flex-1">
             {/* Header */}
             <header className="flex justify-between items-start mb-4 sm:mb-6 pb-4 border-b">
@@ -131,7 +107,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
               </div>
               <div className="text-right">
                 <p className="text-xs sm:text-sm text-gray-500">{t('bill_no')}: #${bill.id.slice(-6).toUpperCase()}</p>
-                <p className="text-xs sm:text-sm text-gray-500">${t('date')}: ${format(new Date(bill.createdAt), 'PP')}</p>
+                <p className="text-xs sm:text-sm text-gray-500">{t('date')}: {format(new Date(bill.createdAt), 'PP')}</p>
               </div>
             </header>
 
@@ -226,6 +202,26 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
       </DialogContent>
       {/* This is the printable area, which is hidden by default and only visible for printing */}
       <div id="bill-print-area" className="hidden print:block bg-white text-black">
+        <style>
+          {`
+            @media print {
+              body > :not(#bill-print-area) {
+                display: none;
+              }
+              #bill-print-area {
+                display: block;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background: white;
+                color: black;
+                font-size: 12px;
+              }
+            }
+          `}
+        </style>
         <div className="p-6">
               {/* Header */}
               <header className="flex justify-between items-start mb-6 pb-4 border-b">
@@ -235,7 +231,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
                 </div>
                 <div className="text-right">
                   <p className="text-sm">{t('bill_no')}: #${bill.id.slice(-6).toUpperCase()}</p>
-                  <p className="text-sm">${t('date')}: ${format(new Date(bill.createdAt), 'PP')}</p>
+                  <p className="text-sm">{t('date')}: {format(new Date(bill.createdAt), 'PP')}</p>
                 </div>
               </header>
 
