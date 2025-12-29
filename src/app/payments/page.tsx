@@ -30,9 +30,10 @@ import { useLanguage } from '@/context/language-context';
 import { CustomerPaymentDialog } from '@/components/customer-payment-dialog';
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
+import withPasswordProtection from '@/components/with-password-protection';
 
 
-export default function PaymentsPage() {
+function PaymentsPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -268,3 +269,5 @@ export default function PaymentsPage() {
     </>
   );
 }
+
+export default withPasswordProtection(PaymentsPage);
