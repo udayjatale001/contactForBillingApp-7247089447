@@ -416,7 +416,7 @@ export function OwnerDashboard() {
 
         const billsToUpdate = billSnaps
             .map(snap => ({ ...(snap.data() as Bill), id: snap.id }))
-            .filter(bill => bill.dueAmount > 0)
+            .filter(bill => bill && bill.dueAmount > 0)
             .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
         const batch = writeBatch(firestore);
@@ -441,9 +441,8 @@ export function OwnerDashboard() {
         await batch.commit();
         toast({ title: 'Payment Successful', description: `${amountToPay.toLocaleString()}rs has been applied.` });
         
-        // Clear the input for this customer
         setPaymentAmounts(prev => ({ ...prev, [customer.customerName]: '' }));
-        forceRefetch(); // Force a refetch to update the UI
+        forceRefetch();
 
     } catch (error) {
         console.error("Error processing payment: ", error);
@@ -460,8 +459,6 @@ export function OwnerDashboard() {
     const batch = writeBatch(firestore);
 
     try {
-        // This is a destructive action - it deletes all bills that contribute to the due amount.
-        // We need to fetch each bill to get the managerId to delete from the subcollection.
         for (const billId of deleteCustomer.billIds) {
             const billRef = doc(firestore, 'bills', billId);
             const billSnap = await getDoc(billRef);
