@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogFooter,
   DialogClose,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
@@ -95,6 +96,9 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm w-full p-0 print-hidden sm:max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className='sr-only'>Bill Summary</DialogTitle>
+        </DialogHeader>
         <div id="bill-print-area" className="p-4 sm:p-6 bg-white rounded-t-lg overflow-y-auto flex-1 text-black">
             {/* Header */}
             <header className="flex justify-between items-start mb-4 sm:mb-6 pb-4 border-b">

@@ -5,6 +5,8 @@ import {
   Dialog,
   DialogContent,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import type { Token } from '@/lib/types';
@@ -64,6 +66,9 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint, onDelet
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xs w-full p-0 print:border-none print:shadow-none print:bg-white sm:max-h-[90vh] flex flex-col">
+        <DialogHeader>
+            <DialogTitle className="sr-only">Token Summary</DialogTitle>
+        </DialogHeader>
         <style>
           {`
             @media print {

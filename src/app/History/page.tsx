@@ -571,7 +571,7 @@ function HistoryPage() {
           </TabsList>
         </div>
 
-        <TabsContent value="bills" className="mt-0">
+        <TabsContent value="bills">
           {isLoadingData ? (
              <div className="flex justify-center items-center py-16">
                 <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
@@ -580,7 +580,7 @@ function HistoryPage() {
             <BillHistoryTab isOwner={isOwner} user={user} />
           )}
         </TabsContent>
-        <TabsContent value="tokens" className="mt-0">
+        <TabsContent value="tokens">
            {isLoadingData ? (
              <div className="flex justify-center items-center py-16">
                 <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
