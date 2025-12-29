@@ -52,6 +52,8 @@ export function BillingForm() {
   const [generatedToken, setGeneratedToken] = React.useState<Token | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
 
+  // Refs for input fields
+  const formRef = React.useRef<HTMLFormElement>(null);
 
   const settingsDocRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -413,11 +415,41 @@ export function BillingForm() {
     setGeneratedToken(null);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const formElements = formRef.current?.elements;
+      if (!formElements) return;
+
+      const focusableElements = Array.from(formElements).filter(
+        (el) => el instanceof HTMLInputElement || el instanceof HTMLButtonElement && el.id.includes('radix') // for select triggers
+      ) as (HTMLInputElement | HTMLButtonElement)[];
+
+      const currentElement = e.target as HTMLElement;
+      let currentIndex = -1;
+      
+      // Find the index of the current element. For normal inputs, this is direct.
+      // For select triggers, the target is inside the button, so we find the button.
+      const currentButton = currentElement.closest('button[role="combobox"]');
+      if (currentButton) {
+        currentIndex = focusableElements.findIndex(el => el.id === currentButton.id);
+      } else {
+        currentIndex = focusableElements.indexOf(currentElement as HTMLInputElement);
+      }
+
+      if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
+        const nextElement = focusableElements[currentIndex + 1];
+        if (nextElement) {
+          nextElement.focus();
+        }
+      }
+    }
+  };
 
   return (
     <>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             
             <div className="lg:col-span-2 space-y-6">
@@ -434,7 +466,7 @@ export function BillingForm() {
                                 <FormItem>
                                 <FormLabel>Customer Name</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Enter customer's name" {...field} onBlur={handleCustomerNameBlur} />
+                                    <Input placeholder="Enter customer's name" {...field} onBlur={handleCustomerNameBlur} onKeyDown={handleKeyDown}/>
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -449,7 +481,7 @@ export function BillingForm() {
                                 <FormControl>
                                     <div className="relative">
                                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input type="tel" placeholder="e.g., 9876543210" className="pl-10" {...field} />
+                                        <Input type="tel" placeholder="e.g., 9876543210" className="pl-10" {...field} onKeyDown={handleKeyDown} />
                                     </div>
                                 </FormControl>
                                 <FormMessage />
@@ -463,7 +495,7 @@ export function BillingForm() {
                                 <FormItem>
                                 <FormLabel>Room Number</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="e.g., 09" {...field} />
+                                    <Input placeholder="e.g., 09" {...field} onKeyDown={handleKeyDown} />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -478,7 +510,7 @@ export function BillingForm() {
                                 <FormControl>
                                     <div className="relative">
                                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input placeholder="Enter customer's address" className="pl-10" {...field} />
+                                        <Input placeholder="Enter customer's address" className="pl-10" {...field} onKeyDown={handleKeyDown} />
                                     </div>
                                 </FormControl>
                                 <FormMessage />
@@ -494,7 +526,7 @@ export function BillingForm() {
                                 <FormItem>
                                     <FormLabel>In Carat</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder='' {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    <Input type="number" placeholder='' {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -507,7 +539,7 @@ export function BillingForm() {
                                 <FormItem>
                                     <FormLabel>Out Carat</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder='' {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    <Input type="number" placeholder='' {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -594,7 +626,7 @@ export function BillingForm() {
                                 <FormItem className="col-span-2 md:col-span-2">
                                     <FormLabel>Small Carat (Qty)</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder="e.g., 10" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    <Input type="number" placeholder="e.g., 10" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -607,7 +639,7 @@ export function BillingForm() {
                                 <FormItem className="col-span-2 md:col-span-2">
                                     <FormLabel>Rate</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder="e.g., 17" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    <Input type="number" placeholder="e.g., 17" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -620,7 +652,7 @@ export function BillingForm() {
                                 <FormItem className="col-span-2 md:col-span-2">
                                     <FormLabel>Big Carat (Qty)</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder="e.g., 5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    <Input type="number" placeholder="e.g., 5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -633,7 +665,7 @@ export function BillingForm() {
                                 <FormItem className="col-span-2 md:col-span-2">
                                     <FormLabel>Rate</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder="e.g., 20" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                    <Input type="number" placeholder="e.g., 20" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -656,7 +688,7 @@ export function BillingForm() {
                                     <FormItem className="col-span-2 md:col-span-2">
                                         <FormLabel>In Carat Labour (Qty)</FormLabel>
                                         <FormControl>
-                                        <Input type="number" placeholder="In Qty" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                        <Input type="number" placeholder="In Qty" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -669,7 +701,7 @@ export function BillingForm() {
                                     <FormItem className="col-span-2 md:col-span-2">
                                         <FormLabel>Rate</FormLabel>
                                         <FormControl>
-                                        <Input type="number" step="0.1" placeholder="e.g., 1.5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                        <Input type="number" step="0.1" placeholder="e.g., 1.5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -682,7 +714,7 @@ export function BillingForm() {
                                     <FormItem className="col-span-2 md:col-span-2">
                                         <FormLabel>Out Carat Labour (Qty)</FormLabel>
                                         <FormControl>
-                                        <Input type="number" placeholder="Out Qty" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                        <Input type="number" placeholder="Out Qty" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -695,7 +727,7 @@ export function BillingForm() {
                                     <FormItem className="col-span-2 md:col-span-2">
                                         <FormLabel>Rate</FormLabel>
                                         <FormControl>
-                                        <Input type="number" step="0.1" placeholder="e.g., 1.5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} />
+                                        <Input type="number" step="0.1" placeholder="e.g., 1.5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -718,7 +750,7 @@ export function BillingForm() {
                             <FormItem>
                                 <FormLabel>Paid Amount</FormLabel>
                                 <FormControl>
-                                <Input type="number" placeholder="Enter paid amount" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} disabled={paymentMode === 'Due'}/>
+                                <Input type="number" placeholder="Enter paid amount" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} disabled={paymentMode === 'Due'} onKeyDown={handleKeyDown}/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -732,7 +764,7 @@ export function BillingForm() {
                                 <FormLabel>Paid To</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
-                                    <SelectTrigger>
+                                    <SelectTrigger onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault();}}>
                                         <SelectValue placeholder="Select a person" />
                                     </SelectTrigger>
                                     </FormControl>
