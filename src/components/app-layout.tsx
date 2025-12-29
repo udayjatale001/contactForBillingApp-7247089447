@@ -30,6 +30,7 @@ import {
   SidebarInset,
   SidebarTrigger,
   SidebarFooter,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from './ui/button';
 import { Logo } from './icons/logo';
@@ -39,7 +40,7 @@ import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useLanguage } from '@/context/language-context';
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
+function AppLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
@@ -48,6 +49,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
   const { t } = useLanguage();
+  const { setOpenMobile } = useSidebar();
 
   React.useEffect(() => {
     if (!isUserLoading && !user) {
@@ -158,7 +160,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <SidebarProvider>
+    <>
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
@@ -169,7 +171,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <SidebarMenu>
             {menuItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <Link href={item.href} >
+                <Link href={item.href} onClick={() => setOpenMobile(false)}>
                   <SidebarMenuButton
                     isActive={pathname === item.href}
                     tooltip={{
@@ -204,6 +206,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
         {children}
       </SidebarInset>
-    </SidebarProvider>
+    </>
   );
+}
+
+export function AppLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <SidebarProvider>
+            <AppLayoutClient>{children}</AppLayoutClient>
+        </SidebarProvider>
+    )
 }
