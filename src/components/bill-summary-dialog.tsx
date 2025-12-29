@@ -12,7 +12,7 @@ import { Button } from './ui/button';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import type { Bill } from '@/lib/types';
-import { Loader2, Printer, X, MessageSquare } from 'lucide-react';
+import { Loader2, Printer, X, MessageSquare, Trash2 } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -26,9 +26,10 @@ interface BillSummaryDialogProps {
   onSave: () => Promise<void>;
   isSaving: boolean;
   isViewing?: boolean; // New prop
+  onDelete?: () => void; // New prop for delete action
 }
 
-export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, isViewing = false }: BillSummaryDialogProps) {
+export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, isViewing = false, onDelete }: BillSummaryDialogProps) {
   const { t } = useLanguage();
   const [isSavingForPrint, setIsSavingForPrint] = React.useState(false);
   const [isSavingForWhatsApp, setIsSavingForWhatsApp] = React.useState(false);
@@ -102,7 +103,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-full p-0 print:max-w-full print:w-full print:border-none print:shadow-none print:bg-white print:m-0 sm:max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-sm w-full p-0 print:max-w-full print:w-full print:border-none print:shadow-none print:bg-white print:m-0 sm:max-h-[90vh] flex flex-col">
         <style>
           {`
             @media print {
@@ -210,34 +211,38 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             </footer>
           </div>
         <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 rounded-b-lg border-t print-hidden bg-gray-50 flex flex-col sm:flex-row gap-2 flex-shrink-0">
-          <DialogClose asChild>
-            <Button variant="outline" className='w-full sm:w-auto'>
-                <X className="mr-2 h-4 w-4" />
-                {t('close')}
-            </Button>
-          </DialogClose>
-          <div className="flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto">
+            {isViewing && onDelete && (
+                <Button variant="destructive" onClick={onDelete} className="sm:mr-auto">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('delete')}
+                </Button>
+            )}
+            <DialogClose asChild>
+                <Button variant="outline">
+                    <X className="mr-2 h-4 w-4" />
+                    {t('close')}
+                </Button>
+            </DialogClose>
             <Button 
-              variant="secondary" 
-              onClick={handleWhatsAppClick} 
-              className='flex-1' 
-              disabled={!bill.contactNumber || isSavingForPrint || isSavingForWhatsApp || isSaving}
+                variant="secondary" 
+                onClick={handleWhatsAppClick} 
+                disabled={!bill.contactNumber || isSavingForPrint || isSavingForWhatsApp || isSaving}
             >
-              {isSavingForWhatsApp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
-              {t('send_via_whatsapp')}
+                {isSavingForWhatsApp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
+                {t('send_via_whatsapp')}
             </Button>
             <Button 
-              variant="default" 
-              onClick={handlePrintClick} 
-              className='flex-1' 
-              disabled={isSavingForPrint || isSavingForWhatsApp || isSaving}
+                variant="default" 
+                onClick={handlePrintClick} 
+                disabled={isSavingForPrint || isSavingForWhatsApp || isSaving}
             >
-              {isSavingForPrint ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-              {isViewing ? t('print') : t('save_and_print')}
+                {isSavingForPrint ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+                {isViewing ? t('print') : t('save_and_print')}
             </Button>
-          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
+    

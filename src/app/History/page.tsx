@@ -111,9 +111,11 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
     setSelectedBill(bill);
   };
   
-  const handleDeleteClick = (e: React.MouseEvent, bill: Bill) => {
-    e.stopPropagation(); // Prevent row click event
-    setBillToDelete(bill);
+  const handleDeleteFromDialog = () => {
+    if (selectedBill) {
+      setBillToDelete(selectedBill);
+      setSelectedBill(null); // Close the summary dialog
+    }
   };
 
   const confirmDelete = async () => {
@@ -159,7 +161,7 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
           <CardHeader>
             <CardTitle>All Bills</CardTitle>
             <CardDescription>
-              A complete record of all generated bills. Click row to view, or delete icon to remove.
+              A complete record of all generated bills. Click row to view.
             </CardDescription>
             <div className="border-t pt-4 mt-4">
               <div className="flex flex-col md:flex-row gap-2">
@@ -219,7 +221,6 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
                       <TableHead>Paid Amount</TableHead>
                       <TableHead>Due Amount</TableHead>
                       <TableHead>Date & Time</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -240,19 +241,6 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
                           </Badge>
                         </TableCell>
                         <TableCell>{format(new Date(bill.createdAt), 'PPpp')}</TableCell>
-                        <TableCell className="text-right">
-                          {!isOwner && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => handleDeleteClick(e, bill)}
-                              title="Delete Bill"
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                              <span className="sr-only">Delete</span>
-                            </Button>
-                          )}
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -278,6 +266,7 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
           onSave={async () => { /* This is a dummy function as we're not saving from history view */ }}
           isSaving={false}
           isViewing
+          onDelete={!isOwner ? handleDeleteFromDialog : undefined}
         />
       )}
       
@@ -606,3 +595,5 @@ function HistoryPage() {
 }
 
 export default HistoryPage;
+
+    
