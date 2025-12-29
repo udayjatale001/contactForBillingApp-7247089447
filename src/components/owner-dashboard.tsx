@@ -441,8 +441,8 @@ export function OwnerDashboard() {
         await batch.commit();
         toast({ title: 'Payment Successful', description: `${amountToPay.toLocaleString()}rs has been applied.` });
         
-        setPaymentAmounts(prev => ({ ...prev, [customer.customerName]: '' }));
         forceRefetch();
+        setPaymentAmounts(prev => ({ ...prev, [customer.customerName]: '' }));
 
     } catch (error) {
         console.error("Error processing payment: ", error);
@@ -998,5 +998,3 @@ export function OwnerDashboard() {
     </>
   );
 }
-
-    
