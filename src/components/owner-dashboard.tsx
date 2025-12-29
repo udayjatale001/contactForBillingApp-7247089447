@@ -54,6 +54,7 @@ import {
   MessageSquare,
   Trash2,
   FileDown,
+  ArrowRight,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, getDoc, getDocs, writeBatch, updateDoc } from 'firebase/firestore';
@@ -90,6 +91,7 @@ import {
   DialogDescription,
   DialogClose,
 } from '@/components/ui/dialog';
+import Link from 'next/link';
 
 
 const ALL_MONTHS = [
@@ -815,72 +817,25 @@ export function OwnerDashboard() {
          {/* Notifications Feed */}
         <NotificationsFeed />
         
-        {/* Due Amounts & Reminders */}
         <Card>
             <CardHeader>
-                <CardTitle>Customers with Outstanding Payments</CardTitle>
+                <CardTitle>Customer Payments</CardTitle>
                 <CardDescription>
-                    Manage and clear outstanding dues from customers. Click a row to process a payment.
+                    Manage all outstanding customer payments in one place.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
-                 {dueBills.length > 0 ? (
-                    dueBills.map(customer => (
-                       <div key={customer.customerName} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setPayingCustomer(customer)}>
-                            <div className='flex-1 min-w-0'>
-                                <p className="text-sm font-semibold truncate">{customer.customerName}</p>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="text-xs text-muted-foreground truncate">
-                                        Last Bill: {format(new Date(customer.lastBillDate), 'PP')}
-                                    </p>
-                                    {customer.contactNumber && (
-                                        <a
-                                        href={`tel:${customer.contactNumber}`}
-                                        className="flex items-center gap-1 text-xs text-blue-500 hover:underline"
-                                        onClick={(e) => e.stopPropagation()}
-                                        >
-                                        <Phone className="h-3 w-3" />
-                                        {customer.contactNumber}
-                                        </a>
-                                    )}
-                                </div>
-                            </div>
-                             <div className="flex items-center gap-1 flex-shrink-0 ml-4">
-                                <div className='text-right'>
-                                     <p className="text-base font-bold text-destructive">{customer.totalDueAmount.toLocaleString()}rs</p>
-                                     <p className="text-xs text-muted-foreground">Due</p>
-                                </div>
-                                <div className="flex flex-col">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        onClick={(e) => {e.stopPropagation(); handleWhatsAppReminder(customer)}}
-                                        disabled={!customer.contactNumber}
-                                    >
-                                        <MessageSquare className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        onClick={(e) => {e.stopPropagation(); setDeleteCustomer(customer)}}
-                                    >
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                </div>
-                            </div>
-                       </div>
-                    ))
-                ) : (
-                    <div className="text-center py-12">
-                        <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-lg font-semibold">No pending customer payments</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            All accounts are settled.
-                        </p>
-                    </div>
-                )}
+            <CardContent className='flex flex-col items-center justify-center text-center gap-4'>
+                <div className='p-4 bg-muted rounded-full'>
+                  <DollarSign className='h-8 w-8 text-muted-foreground'/>
+                </div>
+                <p className='max-w-xs text-muted-foreground'>
+                    View all customers with due balances and process payments on the dedicated Payments page.
+                </p>
+                <Button asChild>
+                    <Link href="/payments">
+                        Go to Payments Page <ArrowRight className='ml-2 h-4 w-4' />
+                    </Link>
+                </Button>
             </CardContent>
         </Card>
       </div>
