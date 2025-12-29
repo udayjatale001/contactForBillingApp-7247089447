@@ -348,9 +348,11 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
     setSelectedToken(token);
   };
   
-  const handleDeleteClick = (e: React.MouseEvent, token: Token) => {
-    e.stopPropagation();
-    setTokenToDelete(token);
+  const handleDeleteFromDialog = () => {
+    if (selectedToken) {
+      setTokenToDelete(selectedToken);
+      setSelectedToken(null);
+    }
   };
 
   const confirmDelete = async () => {
@@ -458,7 +460,6 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
                       <TableHead>Room No.</TableHead>
                       <TableHead>Contact</TableHead>
                       <TableHead>Date & Time</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -473,17 +474,6 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
                         <TableCell>{token.roomNumber || 'N/A'}</TableCell>
                         <TableCell>{token.contactNumber || 'N/A'}</TableCell>
                         <TableCell>{format(new Date(token.createdAt), 'PPpp')}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => handleDeleteClick(e, token)}
-                            title="Delete Token"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                            <span className="sr-only">Delete</span>
-                          </Button>
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -533,6 +523,7 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
             open={!!selectedToken}
             onOpenChange={() => setSelectedToken(null)}
             onPrint={() => window.print()}
+            onDelete={handleDeleteFromDialog}
         />
       )}
     </>
@@ -595,5 +586,3 @@ function HistoryPage() {
 }
 
 export default HistoryPage;
-
-    
