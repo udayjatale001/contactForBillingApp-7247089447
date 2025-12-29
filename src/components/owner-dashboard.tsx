@@ -207,11 +207,13 @@ const DueCustomerItem = React.memo(function DueCustomerItem({
     isProcessingPayment: boolean;
   }) {
     const [paymentAmount, setPaymentAmount] = React.useState('');
+    const currentDue = customer.totalDueAmount - (Number(paymentAmount) || 0);
   
     const handleConfirm = () => {
       const amount = Number(paymentAmount);
       if (!isNaN(amount) && amount > 0) {
         onProcessPayment(customer, amount);
+        setPaymentAmount(''); // Reset after confirming
       }
     };
   
@@ -258,41 +260,46 @@ const DueCustomerItem = React.memo(function DueCustomerItem({
         </div>
   
         {/* Payment Section */}
-        <div className="flex flex-col sm:flex-row items-center gap-2">
-          <div className="flex-1 w-full">
-            <Label className="text-xs">Due Amount</Label>
-            <div className="font-semibold text-destructive">
-              {customer.totalDueAmount.toLocaleString()}rs
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 items-end">
+            <div className="flex flex-col">
+              <Label className="text-xs">Due Amount</Label>
+              <div className="font-semibold text-destructive">
+                {customer.totalDueAmount.toLocaleString()}rs
+              </div>
             </div>
-          </div>
-          <div className="flex-1 w-full">
-            <Label htmlFor={`pay-${customer.customerName}`} className="text-xs">
-              Paid Amount
-            </Label>
-            <Input
-              id={`pay-${customer.customerName}`}
-              type="number"
-              placeholder="Enter amount"
-              value={paymentAmount}
-              onChange={(e) => setPaymentAmount(e.target.value)}
-              className="h-9"
-              disabled={isProcessingPayment}
-            />
-          </div>
-          <div className="w-full sm:w-auto">
-            <Label className="text-xs opacity-0 hidden sm:block">Confirm</Label>
-            <Button
-              onClick={handleConfirm}
-              disabled={isProcessingPayment || !paymentAmount}
-              className="w-full h-9"
-            >
-              {isProcessingPayment ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                'Confirm'
-              )}
-            </Button>
-          </div>
+             <div className="flex flex-col">
+              <Label htmlFor={`pay-${customer.customerName}`} className="text-xs">
+                Paid Amount
+              </Label>
+              <Input
+                id={`pay-${customer.customerName}`}
+                type="number"
+                placeholder="Enter amount"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                className="h-9"
+                disabled={isProcessingPayment}
+              />
+            </div>
+            <div className="flex flex-col">
+              <Label className="text-xs">Current Due</Label>
+              <div className="font-semibold text-blue-600">
+                {currentDue.toLocaleString()}rs
+              </div>
+            </div>
+            <div className="w-full">
+              <Button
+                onClick={handleConfirm}
+                disabled={isProcessingPayment || !paymentAmount || Number(paymentAmount) <= 0}
+                className="w-full h-9"
+              >
+                {isProcessingPayment ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  'Confirm'
+                )}
+              </Button>
+            </div>
         </div>
       </div>
     );
