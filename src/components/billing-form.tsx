@@ -262,7 +262,7 @@ export function BillingForm() {
         });
         
         form.reset(defaultFormValues);
-        // Do not close the dialog, just resolve
+        setGeneratedBill(null); // Close the dialog and reset state
         return Promise.resolve();
 
     } catch (error) {
@@ -279,7 +279,6 @@ export function BillingForm() {
   const handleBillDialogClose = (open: boolean) => {
     if (!open) {
         setGeneratedBill(null);
-        form.reset(defaultFormValues);
     }
   }
 
@@ -927,3 +926,5 @@ export function BillingForm() {
     </>
   );
 }
+
+    
