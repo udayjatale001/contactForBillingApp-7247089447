@@ -6,6 +6,8 @@ import {
   DialogContent,
   DialogFooter,
   DialogClose,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
@@ -40,6 +42,9 @@ export function LabourSummaryDialog({ labourRecord, open, onOpenChange, onDelete
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md w-full p-0 sm:max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="sr-only">Labour Details</DialogTitle>
+        </DialogHeader>
         <div className="p-6 bg-white rounded-t-lg overflow-y-auto flex-1">
             <header className="flex justify-between items-start mb-6 pb-4 border-b">
               <div>
