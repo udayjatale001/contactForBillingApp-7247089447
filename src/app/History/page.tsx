@@ -567,7 +567,7 @@ function HistoryPage() {
       </div>
 
       <Tabs defaultValue="bills" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-1 gap-2 h-auto md:w-auto md:inline-flex md:h-10 md:grid-cols-2 md:gap-1">
+        <TabsList>
           <TabsTrigger value="bills">Bill History</TabsTrigger>
           <TabsTrigger value="tokens">Token History</TabsTrigger>
         </TabsList>
