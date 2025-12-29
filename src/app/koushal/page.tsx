@@ -207,7 +207,7 @@ export default function KoushalPage() {
               </div>
             ) : filteredCustomers.length > 0 ? (
               <div className="w-full overflow-x-auto">
-                <Table className="min-w-[720px]">
+                <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Customer Name</TableHead>
