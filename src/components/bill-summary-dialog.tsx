@@ -23,16 +23,16 @@ interface BillSummaryDialogProps {
   bill: Bill;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: () => Promise<void>;
+  onSaveAndReset: () => Promise<void>;
   isSaving: boolean;
   isViewing?: boolean; // New prop
   onDelete?: () => void; // New prop for delete action
 }
 
-export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, isViewing = false, onDelete }: BillSummaryDialogProps) {
+export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, isSaving, isViewing = false, onDelete }: BillSummaryDialogProps) {
   const { t } = useLanguage();
-  const [isSavingForPrint, setIsSavingForPrint] = React.useState(false);
-  const [isSavingForWhatsApp, setIsSavingForWhatsApp] = React.useState(false);
+  const [isProcessing, setIsProcessing] = React.useState(false);
+
 
   if (!bill) {
     return null;
@@ -63,34 +63,28 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     return encodeURIComponent(header + billInfo + customerDetails + caratDetails + amountSummary + paymentDetails + footer);
   };
 
-  const handlePrintClick = async () => {
-    setIsSavingForPrint(true);
-    // Don't save if it's just a view from history
-    if (!isViewing) {
-      await onSave();
-    }
-    // The print is handled via CSS, so we just trigger it after saving.
-    setTimeout(() => {
-        window.print();
-        setIsSavingForPrint(false);
-    }, 100);
-  }
+  const handleAction = async (action: 'print' | 'whatsapp') => {
+    setIsProcessing(true);
+    try {
+      if (!isViewing) {
+        await onSaveAndReset(); // This now also handles form reset and dialog close
+      }
 
-  const handleWhatsAppClick = async () => {
-    if (!bill.contactNumber) return;
-    setIsSavingForWhatsApp(true);
-     // Don't save if it's just a view from history
-    if (!isViewing) {
-      await onSave();
+      if (action === 'print') {
+        setTimeout(() => window.print(), 100);
+      } else if (action === 'whatsapp' && bill.contactNumber) {
+        const message = generateWhatsAppMessage();
+        const whatsappUrl = `https://wa.me/91${bill.contactNumber}?text=${message}`;
+        window.open(whatsappUrl, '_blank');
+      }
+    } catch (error) {
+        console.error("Error during bill action:", error);
+    } finally {
+        setIsProcessing(false);
+         if (isViewing) { // if just viewing, we need to close the dialog manually
+            onOpenChange(false);
+        }
     }
-
-    const message = generateWhatsAppMessage();
-    // Assuming Indian phone numbers without country code, will add 91.
-    // If numbers already have it, WhatsApp handles it.
-    const whatsappUrl = `https://wa.me/91${bill.contactNumber}?text=${message}`;
-    window.open(whatsappUrl, '_blank');
-    setIsSavingForWhatsApp(false);
-    onOpenChange(false); // Close dialog after opening whatsapp
   };
 
 
@@ -220,18 +214,18 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             <div className='flex-1 flex justify-end gap-2'>
               <Button 
                   variant="secondary" 
-                  onClick={handleWhatsAppClick} 
-                  disabled={!bill.contactNumber || isSavingForPrint || isSavingForWhatsApp || isSaving}
+                  onClick={() => handleAction('whatsapp')} 
+                  disabled={!bill.contactNumber || isProcessing || isSaving}
               >
-                  {isSavingForWhatsApp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
+                  {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
                   {t('send_via_whatsapp')}
               </Button>
               <Button 
                   variant="default" 
-                  onClick={handlePrintClick} 
-                  disabled={isSavingForPrint || isSavingForWhatsApp || isSaving}
+                  onClick={() => handleAction('print')}
+                  disabled={isProcessing || isSaving}
               >
-                  {isSavingForPrint ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+                  {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
                   {isViewing ? t('print') : t('save_and_print')}
               </Button>
             </div>
@@ -240,5 +234,3 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     </Dialog>
   );
 }
-
-    

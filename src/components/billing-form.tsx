@@ -182,72 +182,75 @@ export function BillingForm() {
   }, [paymentMode, form]);
 
 
-  const handleSaveBill = async (): Promise<void> => {
+ const handleSaveAndReset = async (): Promise<void> => {
     return new Promise(async (resolve, reject) => {
-      if (generatedBill && user && firestore) {
-          try {
-              const billCollectionRef = collection(firestore, 'bills');
-              const managerBillCollectionRef = collection(firestore, 'managers', user.uid, 'bills');
+        if (generatedBill && user && firestore) {
+            try {
+                const billCollectionRef = collection(firestore, 'bills');
+                const managerBillCollectionRef = collection(firestore, 'managers', user.uid, 'bills');
 
-              // Use non-blocking writes for better UX
-              setDocumentNonBlocking(doc(billCollectionRef, generatedBill.id), generatedBill, { merge: true });
-              setDocumentNonBlocking(doc(managerBillCollectionRef, generatedBill.id), generatedBill, { merge: true });
+                setDocumentNonBlocking(doc(billCollectionRef, generatedBill.id), generatedBill, { merge: true });
+                setDocumentNonBlocking(doc(managerBillCollectionRef, generatedBill.id), generatedBill, { merge: true });
 
-              const newNotification: Notification = {
-                  id: uuidv4(),
-                  billId: generatedBill.id,
-                  managerId: user.uid,
-                  createdAt: new Date().toISOString(),
-                  customerName: generatedBill.customerName,
-                  paidAmount: generatedBill.paidAmount,
-                  dueAmount: generatedBill.dueAmount,
-                  totalCarat: generatedBill.totalCarat,
-                  paidTo: generatedBill.paidTo,
-                  paymentMode: generatedBill.paymentMode
-              };
-              addDocumentNonBlocking(collection(firestore, 'notifications'), newNotification);
+                const newNotification: Notification = {
+                    id: uuidv4(),
+                    billId: generatedBill.id,
+                    managerId: user.uid,
+                    createdAt: new Date().toISOString(),
+                    customerName: generatedBill.customerName,
+                    paidAmount: generatedBill.paidAmount,
+                    dueAmount: generatedBill.dueAmount,
+                    totalCarat: generatedBill.totalCarat,
+                    paidTo: generatedBill.paidTo,
+                    paymentMode: generatedBill.paymentMode
+                };
+                addDocumentNonBlocking(collection(firestore, 'notifications'), newNotification);
 
-              if (generatedBill.totalLabourAmount && generatedBill.totalLabourAmount > 0) {
-                  const newLabourRecord: Labour = {
-                      id: uuidv4(),
-                      billId: generatedBill.id,
-                      managerId: user.uid,
-                      customerName: generatedBill.customerName,
-                      inCaratLabour: generatedBill.inCaratLabour,
-                      inCaratLabourRate: generatedBill.inCaratLabourRate,
-                      outCaratLabour: generatedBill.outCaratLabour,
-                      outCaratLabourRate: generatedBill.outCaratLabourRate,
-                      totalLabourAmount: generatedBill.totalLabourAmount,
-                      createdAt: generatedBill.createdAt,
-                  };
-                  addDocumentNonBlocking(collection(firestore, 'labours'), newLabourRecord);
-              }
-              
-              toast({
-                title: 'Bill Saved!',
-                description: `The bill for ${generatedBill.customerName} has been saved.`,
-              });
+                if (generatedBill.totalLabourAmount && generatedBill.totalLabourAmount > 0) {
+                    const newLabourRecord: Labour = {
+                        id: uuidv4(),
+                        billId: generatedBill.id,
+                        managerId: user.uid,
+                        customerName: generatedBill.customerName,
+                        inCaratLabour: generatedBill.inCaratLabour,
+                        inCaratLabourRate: generatedBill.inCaratLabourRate,
+                        outCaratLabour: generatedBill.outCaratLabour,
+                        outCaratLabourRate: generatedBill.outCaratLabourRate,
+                        totalLabourAmount: generatedBill.totalLabourAmount,
+                        createdAt: generatedBill.createdAt,
+                    };
+                    addDocumentNonBlocking(collection(firestore, 'labours'), newLabourRecord);
+                }
+                
+                toast({
+                    title: 'Bill Saved!',
+                    description: `The bill for ${generatedBill.customerName} has been saved.`,
+                });
 
-              resolve();
-          } catch (error) {
-              console.error("Error saving bill and associated data: ", error);
-              toast({
-                  variant: 'destructive',
-                  title: 'Save Failed',
-                  description: 'An error occurred while saving the bill.',
-              });
-              reject(error);
-          }
-      } else {
-        reject(new Error("No bill data, user, or firestore available."));
-      }
+                // Reset the form and close the dialog
+                form.reset(defaultFormValues);
+                setGeneratedBill(null);
+
+                resolve();
+            } catch (error) {
+                console.error("Error saving bill and associated data: ", error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Save Failed',
+                    description: 'An error occurred while saving the bill.',
+                });
+                reject(error);
+            }
+        } else {
+            reject(new Error("No bill data, user, or firestore available."));
+        }
     });
 };
 
   const handleBillDialogClose = (open: boolean) => {
     if (!open) {
+        // Only close the dialog, do not reset the form here.
         setGeneratedBill(null);
-        form.reset(defaultFormValues);
     }
   }
 
@@ -879,7 +882,7 @@ export function BillingForm() {
           bill={generatedBill}
           open={!!generatedBill}
           onOpenChange={handleBillDialogClose}
-          onSave={handleSaveBill}
+          onSaveAndReset={handleSaveAndReset}
           isSaving={isSubmitting} 
           isViewing={false}
         />
@@ -896,4 +899,3 @@ export function BillingForm() {
   );
 }
 
-    
