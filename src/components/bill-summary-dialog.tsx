@@ -12,7 +12,7 @@ import { Button } from './ui/button';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import type { Bill } from '@/lib/types';
-import { Loader2, Printer, X, MessageSquare, Trash2 } from 'lucide-react';
+import { Loader2, Printer, X, MessageSquare, Trash2, Save } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -23,13 +23,13 @@ interface BillSummaryDialogProps {
   bill: Bill;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaveAndReset: () => Promise<void>;
+  onSave: () => Promise<void>;
   isSaving: boolean;
-  isViewing?: boolean; // New prop
-  onDelete?: () => void; // New prop for delete action
+  isViewing?: boolean;
+  onDelete?: () => void;
 }
 
-export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, isSaving, isViewing = false, onDelete }: BillSummaryDialogProps) {
+export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, isViewing = false, onDelete }: BillSummaryDialogProps) {
   const { t } = useLanguage();
   const [isProcessing, setIsProcessing] = React.useState(false);
 
@@ -62,28 +62,25 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
 
     return encodeURIComponent(header + billInfo + customerDetails + caratDetails + amountSummary + paymentDetails + footer);
   };
-
-  const handleAction = async (action: 'print' | 'whatsapp') => {
+  
+  const handleSaveAction = async () => {
     setIsProcessing(true);
     try {
-      if (!isViewing) {
-        await onSaveAndReset(); // This now also handles form reset and dialog close
-      }
+        if (!isViewing) {
+            await onSave();
+        }
+    } catch(error) {
+        console.error("Error during bill save:", error);
+    } finally {
+        setIsProcessing(false);
+    }
+  }
 
-      if (action === 'print') {
-        setTimeout(() => window.print(), 100);
-      } else if (action === 'whatsapp' && bill.contactNumber) {
+  const handleWhatsAppAction = () => {
+    if (bill.contactNumber) {
         const message = generateWhatsAppMessage();
         const whatsappUrl = `https://wa.me/91${bill.contactNumber}?text=${message}`;
         window.open(whatsappUrl, '_blank');
-      }
-    } catch (error) {
-        console.error("Error during bill action:", error);
-    } finally {
-        setIsProcessing(false);
-         if (isViewing) { // if just viewing, we need to close the dialog manually
-            onOpenChange(false);
-        }
     }
   };
 
@@ -174,29 +171,41 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
             </footer>
           </div>
         <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 rounded-b-lg border-t bg-gray-50 flex-row justify-between w-full">
-            {isViewing && onDelete && (
-                <Button variant="ghost" size="icon" onClick={onDelete}>
-                    <Trash2 className="h-5 w-5 text-destructive" />
-                    <span className="sr-only">Delete</span>
+            <div className='flex items-center gap-2'>
+              {isViewing && onDelete && (
+                  <Button variant="ghost" size="icon" onClick={onDelete}>
+                      <Trash2 className="h-5 w-5 text-destructive" />
+                      <span className="sr-only">Delete</span>
+                  </Button>
+              )}
+               <Button 
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => window.print()}
+                >
+                    <Printer className="h-5 w-5"/>
+                    <span className="sr-only">Print</span>
                 </Button>
-            )}
+            </div>
             <div className='flex-1 flex justify-end gap-2'>
               <Button 
                   variant="secondary" 
-                  onClick={() => handleAction('whatsapp')} 
+                  onClick={handleWhatsAppAction} 
                   disabled={!bill.contactNumber || isProcessing || isSaving}
               >
                   {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
                   {t('send_via_whatsapp')}
               </Button>
-              <Button 
-                  variant="default" 
-                  onClick={() => handleAction('print')}
-                  disabled={isProcessing || isSaving}
-              >
-                  {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-                  {isViewing ? t('print') : t('save_and_print')}
-              </Button>
+               {!isViewing && (
+                 <Button 
+                    variant="default" 
+                    onClick={handleSaveAction}
+                    disabled={isProcessing || isSaving}
+                >
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save Bill
+                </Button>
+               )}
             </div>
         </DialogFooter>
       </DialogContent>
@@ -205,19 +214,22 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
         <style>
           {`
             @media print {
-              body > :not(#bill-print-area) {
-                display: none;
+              body, body > * {
+                visibility: hidden;
+              }
+              #bill-print-area, #bill-print-area * {
+                visibility: visible;
               }
               #bill-print-area {
-                display: block;
                 position: absolute;
                 left: 0;
                 top: 0;
                 width: 100%;
-                height: 100%;
+                height: auto;
                 background: white;
                 color: black;
                 font-size: 12px;
+                padding: 1rem;
               }
             }
           `}
@@ -301,5 +313,3 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
     </Dialog>
   );
 }
-
-    

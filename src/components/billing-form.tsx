@@ -4,7 +4,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as React from 'react';
-import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home, Wrench, Phone, Calendar as CalendarIcon, Printer, MapPin } from 'lucide-react';
+import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home, Wrench, Phone, Calendar as CalendarIcon, Printer, MapPin, Save } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { collection, doc, runTransaction } from 'firebase/firestore';
 import { format, setHours, setMinutes } from 'date-fns';
@@ -182,100 +182,104 @@ export function BillingForm() {
   }, [paymentMode, form]);
 
 
- const handleSaveAndReset = async (): Promise<void> => {
-    return new Promise(async (resolve, reject) => {
-        if (generatedBill && user && firestore) {
-            try {
-                // Save main bill records
-                const billCollectionRef = collection(firestore, 'bills');
-                const managerBillCollectionRef = collection(firestore, 'managers', user.uid, 'bills');
-                setDocumentNonBlocking(doc(billCollectionRef, generatedBill.id), generatedBill, { merge: true });
-                setDocumentNonBlocking(doc(managerBillCollectionRef, generatedBill.id), generatedBill, { merge: true });
+ const handleSaveBill = async (): Promise<void> => {
+    if (!generatedBill || !user || !firestore) {
+        toast({
+            variant: 'destructive',
+            title: 'Save Failed',
+            description: "No bill data, user, or firestore available.",
+        });
+        return Promise.reject("Missing data for save");
+    }
 
-                // Save notification
-                const newNotification: Notification = {
-                    id: uuidv4(),
-                    billId: generatedBill.id,
-                    managerId: user.uid,
-                    createdAt: new Date().toISOString(),
-                    customerName: generatedBill.customerName,
-                    paidAmount: generatedBill.paidAmount,
-                    dueAmount: generatedBill.dueAmount,
-                    totalCarat: generatedBill.totalCarat,
-                    paidTo: generatedBill.paidTo,
-                    paymentMode: generatedBill.paymentMode
-                };
-                addDocumentNonBlocking(collection(firestore, 'notifications'), newNotification);
+    try {
+        // Save main bill records
+        const billCollectionRef = collection(firestore, 'bills');
+        const managerBillCollectionRef = collection(firestore, 'managers', user.uid, 'bills');
+        setDocumentNonBlocking(doc(billCollectionRef, generatedBill.id), generatedBill, { merge: true });
+        setDocumentNonBlocking(doc(managerBillCollectionRef, generatedBill.id), generatedBill, { merge: true });
 
-                // Save labour record if applicable
-                if (generatedBill.totalLabourAmount && generatedBill.totalLabourAmount > 0) {
-                    const newLabourRecord: Labour = {
-                        id: uuidv4(),
-                        billId: generatedBill.id,
-                        managerId: user.uid,
-                        customerName: generatedBill.customerName,
-                        inCaratLabour: generatedBill.inCaratLabour,
-                        inCaratLabourRate: generatedBill.inCaratLabourRate,
-                        outCaratLabour: generatedBill.outCaratLabour,
-                        outCaratLabourRate: generatedBill.outCaratLabourRate,
-                        totalLabourAmount: generatedBill.totalLabourAmount,
-                        createdAt: generatedBill.createdAt,
-                    };
-                    addDocumentNonBlocking(collection(firestore, 'labours'), newLabourRecord);
-                }
+        // Save notification
+        const newNotification: Notification = {
+            id: uuidv4(),
+            billId: generatedBill.id,
+            managerId: user.uid,
+            createdAt: new Date().toISOString(),
+            customerName: generatedBill.customerName,
+            paidAmount: generatedBill.paidAmount,
+            dueAmount: generatedBill.dueAmount,
+            totalCarat: generatedBill.totalCarat,
+            paidTo: generatedBill.paidTo,
+            paymentMode: generatedBill.paymentMode
+        };
+        addDocumentNonBlocking(collection(firestore, 'notifications'), newNotification);
 
-                // Update aggregated customer record
-                if (generatedBill.dueAmount > 0) {
-                    const customerRef = doc(firestore, 'customers', generatedBill.customerName.toLowerCase());
-                    await runTransaction(firestore, async (transaction) => {
-                        const customerDoc = await transaction.get(customerRef);
-                        if (!customerDoc.exists()) {
-                            transaction.set(customerRef, {
-                                id: generatedBill.customerName.toLowerCase(),
-                                name: generatedBill.customerName,
-                                contactNumber: generatedBill.contactNumber || '',
-                                totalDueAmount: generatedBill.dueAmount,
-                                lastActivity: generatedBill.createdAt,
-                            });
-                        } else {
-                            const currentDue = customerDoc.data().totalDueAmount || 0;
-                            const newDue = currentDue + generatedBill.dueAmount;
-                            transaction.update(customerRef, { 
-                                totalDueAmount: newDue,
-                                lastActivity: generatedBill.createdAt,
-                                ...(generatedBill.contactNumber && { contactNumber: generatedBill.contactNumber }),
-                            });
-                        }
+        // Save labour record if applicable
+        if (generatedBill.totalLabourAmount && generatedBill.totalLabourAmount > 0) {
+            const newLabourRecord: Labour = {
+                id: uuidv4(),
+                billId: generatedBill.id,
+                managerId: user.uid,
+                customerName: generatedBill.customerName,
+                inCaratLabour: generatedBill.inCaratLabour,
+                inCaratLabourRate: generatedBill.inCaratLabourRate,
+                outCaratLabour: generatedBill.outCaratLabour,
+                outCaratLabourRate: generatedBill.outCaratLabourRate,
+                totalLabourAmount: generatedBill.totalLabourAmount,
+                createdAt: generatedBill.createdAt,
+            };
+            addDocumentNonBlocking(collection(firestore, 'labours'), newLabourRecord);
+        }
+
+        // Update aggregated customer record
+        if (generatedBill.dueAmount > 0) {
+            const customerRef = doc(firestore, 'customers', generatedBill.customerName.toLowerCase());
+            await runTransaction(firestore, async (transaction) => {
+                const customerDoc = await transaction.get(customerRef);
+                if (!customerDoc.exists()) {
+                    transaction.set(customerRef, {
+                        id: generatedBill.customerName.toLowerCase(),
+                        name: generatedBill.customerName,
+                        contactNumber: generatedBill.contactNumber || '',
+                        totalDueAmount: generatedBill.dueAmount,
+                        lastActivity: generatedBill.createdAt,
+                    });
+                } else {
+                    const currentDue = customerDoc.data().totalDueAmount || 0;
+                    const newDue = currentDue + generatedBill.dueAmount;
+                    transaction.update(customerRef, { 
+                        totalDueAmount: newDue,
+                        lastActivity: generatedBill.createdAt,
+                        ...(generatedBill.contactNumber && { contactNumber: generatedBill.contactNumber }),
                     });
                 }
-                
-                toast({
-                    title: 'Bill Saved!',
-                    description: `The bill for ${generatedBill.customerName} has been saved.`,
-                });
-
-                form.reset(defaultFormValues);
-                setGeneratedBill(null);
-
-                resolve();
-            } catch (error) {
-                console.error("Error saving bill and associated data: ", error);
-                toast({
-                    variant: 'destructive',
-                    title: 'Save Failed',
-                    description: 'An error occurred while saving the bill.',
-                });
-                reject(error);
-            }
-        } else {
-            reject(new Error("No bill data, user, or firestore available."));
+            });
         }
-    });
+        
+        toast({
+            title: 'Bill Saved!',
+            description: `The bill for ${generatedBill.customerName} has been saved.`,
+        });
+        
+        form.reset(defaultFormValues);
+        // Do not close the dialog, just resolve
+        return Promise.resolve();
+
+    } catch (error) {
+        console.error("Error saving bill and associated data: ", error);
+        toast({
+            variant: 'destructive',
+            title: 'Save Failed',
+            description: 'An error occurred while saving the bill.',
+        });
+        return Promise.reject(error);
+    }
 };
 
   const handleBillDialogClose = (open: boolean) => {
     if (!open) {
         setGeneratedBill(null);
+        form.reset(defaultFormValues);
     }
   }
 
@@ -907,7 +911,7 @@ export function BillingForm() {
           bill={generatedBill}
           open={!!generatedBill}
           onOpenChange={handleBillDialogClose}
-          onSaveAndReset={handleSaveAndReset}
+          onSave={handleSaveBill}
           isSaving={isSubmitting} 
           isViewing={false}
         />
