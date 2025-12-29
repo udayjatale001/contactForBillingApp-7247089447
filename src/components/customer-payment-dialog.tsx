@@ -80,7 +80,7 @@ export function CustomerPaymentDialog({
     <Dialog open={open} onOpenChange={(isOpen) => onOpenChange(isOpen ? customer : null)}>
       <DialogContent className="sm:max-w-md w-full p-0 flex flex-col">
         <DialogHeader className="p-6 pb-0">
-          <DialogTitle>Payment for {customer.name}</DialogTitle>
+          <DialogTitle>Payment for {customer.name.toUpperCase()}</DialogTitle>
           <DialogDescription>
             Settle the outstanding balance for this customer.
           </DialogDescription>
@@ -192,4 +192,3 @@ export function CustomerPaymentDialog({
     </Dialog>
   );
 }
-

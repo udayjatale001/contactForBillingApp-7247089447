@@ -29,6 +29,8 @@ import { Loader2, Search, Users, Wallet, Phone, Trash2, MessageSquare } from 'lu
 import { useLanguage } from '@/context/language-context';
 import { CustomerPaymentDialog } from '@/components/customer-payment-dialog';
 import { v4 as uuidv4 } from 'uuid';
+import { format } from 'date-fns';
+
 
 export default function PaymentsPage() {
   const { user, isUserLoading } = useUser();
@@ -199,7 +201,7 @@ export default function PaymentsPage() {
                     className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg gap-4 hover:bg-muted/50 cursor-pointer transition-colors"
                 >
                     <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-lg truncate">{customer.name}</p>
+                        <p className="font-semibold text-lg truncate">{customer.name.toUpperCase()}</p>
                         <div className="flex items-center gap-2 mt-1">
                         <Phone className="h-4 w-4 text-muted-foreground" />
                         <a href={`tel:${customer.contactNumber}`} className="text-sm text-blue-500 hover:underline" onClick={e => e.stopPropagation()}>
