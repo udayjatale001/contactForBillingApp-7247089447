@@ -416,7 +416,7 @@ export function OwnerDashboard() {
         const billSnaps = await Promise.all(billRefs.map(ref => getDoc(ref)));
 
         const billsToUpdate = billSnaps
-            .map(snap => ({ ...snap.data() as Bill, id: snap.id }))
+            .map(snap => ({ ...(snap.data() as Bill), id: snap.id }))
             .filter(bill => bill.dueAmount > 0)
             .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
@@ -1031,3 +1031,5 @@ export function OwnerDashboard() {
     </>
   );
 }
+
+    
