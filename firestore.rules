@@ -159,6 +159,16 @@ service cloud.firestore {
     match /bills/{billId} {
       allow read, write: if isSignedIn();
     }
+    
+    /**
+     * @description Aggregated customer data for tracking payments.
+     * @path /customers/{customerId}
+     * @allow read, write for any authenticated user.
+     */
+    match /customers/{customerId} {
+      allow read, write: if isSignedIn();
+    }
+
 
     /**
      * @description Global collection of all tokens, for owner oversight.

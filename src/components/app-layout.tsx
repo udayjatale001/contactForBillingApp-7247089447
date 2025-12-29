@@ -16,6 +16,7 @@ import {
   Wrench,
   Globe,
   Users,
+  DollarSign,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -88,6 +89,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       href: '/History',
       label: t('billing_history'),
       icon: FileText,
+      ownerOnly: false,
+    },
+    {
+      href: '/payments',
+      label: 'Payments',
+      icon: DollarSign,
       ownerOnly: false,
     },
     {
