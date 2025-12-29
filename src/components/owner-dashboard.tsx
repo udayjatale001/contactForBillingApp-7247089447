@@ -597,6 +597,8 @@ export function OwnerDashboard() {
         </div>
     );
   }
+  
+  const remainingDue = paymentCustomer ? paymentCustomer.totalDueAmount - Number(paymentAmount) : 0;
 
   return (
     <>
@@ -757,17 +759,16 @@ export function OwnerDashboard() {
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    <Badge variant="destructive">{customer.totalDueAmount.toLocaleString()}rs</Badge>
+                                    <Badge 
+                                        variant="destructive"
+                                        onClick={() => setPaymentCustomer(customer)}
+                                        className="cursor-pointer hover:bg-destructive/80"
+                                    >
+                                        {customer.totalDueAmount.toLocaleString()}rs
+                                    </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
                                      <div className="flex items-center justify-end gap-2">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => setPaymentCustomer(customer)}
-                                        >
-                                            Pay Due
-                                        </Button>
                                         <Button 
                                             size="icon" 
                                             variant="ghost" 
@@ -965,23 +966,33 @@ export function OwnerDashboard() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Add Payment for {paymentCustomer?.customerName}</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Current due amount is {paymentCustomer?.totalDueAmount.toLocaleString()}rs. Enter the amount being paid now.
+                    Enter the amount being paid now. The remaining balance will be calculated automatically.
                 </AlertDialogDescription>
             </AlertDialogHeader>
-            <div className="py-4">
-                <Label htmlFor="payment-amount">Payment Amount</Label>
-                <Input
-                    id="payment-amount"
-                    type="number"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    placeholder='Enter amount'
-                    autoFocus
-                />
+            <div className="py-4 space-y-4">
+                <div className="space-y-2">
+                    <Label>Current Due Amount</Label>
+                    <Input value={`${paymentCustomer?.totalDueAmount.toLocaleString()}rs`} readOnly className="font-semibold"/>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="payment-amount">Paid Amount</Label>
+                    <Input
+                        id="payment-amount"
+                        type="number"
+                        value={paymentAmount}
+                        onChange={(e) => setPaymentAmount(e.target.value)}
+                        placeholder='Enter amount being paid'
+                        autoFocus
+                    />
+                </div>
+                 <div className="space-y-2">
+                    <Label>Remaining Due</Label>
+                    <Input value={`${remainingDue.toLocaleString()}rs`} readOnly className={cn("font-semibold", remainingDue > 0 ? 'text-destructive' : 'text-primary')}/>
+                </div>
             </div>
             <AlertDialogFooter>
                 <AlertDialogCancel disabled={isProcessingPayment}>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleProcessPayment} disabled={isProcessingPayment}>
+                <AlertDialogAction onClick={handleProcessPayment} disabled={isProcessingPayment || !paymentAmount}>
                     {isProcessingPayment && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Confirm Payment
                 </AlertDialogAction>
@@ -1011,9 +1022,5 @@ export function OwnerDashboard() {
     </>
   );
 }
-
-    
-
-    
 
     
