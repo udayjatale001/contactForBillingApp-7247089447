@@ -57,6 +57,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDateFilter } from '@/context/date-filter-context';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}) {
@@ -69,6 +70,9 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
   const [billToDelete, setBillToDelete] = React.useState<Bill | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = React.useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = React.useState(false);
 
 
   const collectionPath = React.useMemo(() => {
@@ -108,6 +112,88 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
     
     return bills;
   }, [bills, searchTerm]);
+
+  React.useEffect(() => {
+    const visibleIds = new Set(filteredBills.map(n => n.id));
+    setSelectedIds(currentIds => {
+      const newIds = new Set<string>();
+      currentIds.forEach(id => {
+        if (visibleIds.has(id)) {
+          newIds.add(id);
+        }
+      });
+      return newIds;
+    });
+  }, [filteredBills]);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(filteredBills.map(n => n.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(id);
+      } else {
+        newSet.delete(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (!firestore || !user || selectedIds.size === 0) return;
+    
+    setIsBulkDeleting(true);
+    const batch = writeBatch(firestore);
+
+    try {
+        if (isOwner) {
+            // Owner needs to delete from global `bills` and potentially from manager subcollections
+            // For simplicity, we assume we need to find the manager for each bill.
+            // This is a slow operation, but necessary if not deleting from subcollections directly.
+            for (const billId of selectedIds) {
+                const billRef = doc(firestore, 'bills', billId);
+                const billDoc = await getDoc(billRef);
+                if (billDoc.exists()) {
+                    const billData = billDoc.data() as Bill;
+                    batch.delete(billRef);
+                    // Also delete from manager subcollection
+                    const managerBillRef = doc(firestore, 'managers', billData.managerId, 'bills', billId);
+                    batch.delete(managerBillRef);
+                }
+            }
+        } else {
+            // Manager only deletes from their own subcollection
+            selectedIds.forEach(id => {
+                const managerBillRef = doc(firestore, 'managers', user.uid, 'bills', id);
+                batch.delete(managerBillRef);
+            });
+        }
+        
+        await batch.commit();
+        toast({
+            title: 'Bills Deleted',
+            description: `${selectedIds.size} bills have been successfully removed.`
+        });
+        setSelectedIds(new Set());
+    } catch (error) {
+      console.error("Error bulk deleting bills: ", error);
+      toast({
+        variant: 'destructive',
+        title: 'Bulk Deletion Failed',
+        description: 'Could not delete selected bills. You may not have permission.'
+      });
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteConfirm(false);
+    }
+  };
   
   const handleRowClick = (bill: Bill) => {
     setSelectedBill(bill);
@@ -121,31 +207,39 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
   };
 
   const confirmDelete = async () => {
-    if (!firestore || !billToDelete || !user || isOwner) return;
+    if (!firestore || !billToDelete || !user) return;
 
     setIsDeleting(true);
 
     try {
-        // Only delete from the manager's subcollection, not the global one.
+        const batch = writeBatch(firestore);
+        
+        // Both owner and manager need to delete from the global collection
+        const globalBillRef = doc(firestore, 'bills', billToDelete.id);
+        batch.delete(globalBillRef);
+
+        // Also delete from the manager's subcollection
         const managerBillRef = doc(firestore, 'managers', billToDelete.managerId, 'bills', billToDelete.id);
-        await deleteDoc(managerBillRef);
+        batch.delete(managerBillRef);
+        
+        await batch.commit();
 
         toast({
-            title: 'Bill Removed',
-            description: `The bill for ${billToDelete.customerName} has been removed from your history.`,
+            title: 'Bill Deleted',
+            description: `The bill for ${billToDelete.customerName} has been removed.`,
         });
 
     } catch (error) {
-        console.error("Error deleting bill from history: ", error);
+        console.error("Error deleting bill: ", error);
         const permissionError = new FirestorePermissionError({
-            path: `managers/${billToDelete.managerId}/bills/${billToDelete.id}`, // Specific path for error
+            path: `bills/${billToDelete.id}`, // Specific path for error
             operation: 'delete',
         });
         errorEmitter.emit('permission-error', permissionError);
         toast({
             variant: 'destructive',
             title: 'Deletion Failed',
-            description: 'Could not remove the bill from your history. You may not have permission.',
+            description: 'Could not remove the bill. You may not have permission.',
         });
     } finally {
         setIsDeleting(false);
@@ -156,135 +250,177 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
   const handleCloseDialog = () => {
     setSelectedBill(null);
   };
+  
+  const allFilteredSelected = filteredBills.length > 0 && selectedIds.size === filteredBills.length;
 
   return (
     <>
-      <Card>
-          <CardHeader>
-            <CardTitle>All Bills</CardTitle>
-            <CardDescription>
-              A complete record of all generated bills. Click row to view.
-            </CardDescription>
-            <div className="border-t pt-4 mt-4">
-              <div className="flex flex-col md:flex-row gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by customer name or bill no..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                        <PopoverTrigger asChild>
-                        <Button
-                            variant={'outline'}
-                            className={cn(
-                            'w-full md:w-[280px] justify-start text-left font-normal',
-                            !globalDate && 'text-muted-foreground'
-                            )}
+        <Card>
+            <CardHeader>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div>
+                        <CardTitle>All Bills</CardTitle>
+                        <CardDescription>
+                        A complete record of all generated bills.
+                        </CardDescription>
+                    </div>
+                    {selectedIds.size > 0 && !isOwner && (
+                        <Button 
+                            variant="destructive" 
+                            onClick={() => setShowBulkDeleteConfirm(true)}
+                            disabled={isBulkDeleting}
                         >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {globalDate ? format(globalDate, 'PPP') : <span>Today</span>}
-                        </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="end">
-                        <Calendar
-                            mode="single"
-                            selected={globalDate ?? undefined}
-                            onSelect={(date) => {
-                                setGlobalDate(date || new Date());
-                                setIsCalendarOpen(false);
-                            }}
-                            initialFocus
-                        />
-                        </PopoverContent>
-                    </Popover>
-                    {globalDate && (
-                        <Button variant="ghost" size="icon" onClick={clearGlobalDate}>
-                        <X className="h-4 w-4" />
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete ({selectedIds.size})
                         </Button>
                     )}
                 </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center items-center py-16">
-                  <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
-              </div>
-            ) : filteredBills && filteredBills.length > 0 ? (
-              <div className="w-full overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Total Amount</TableHead>
-                      <TableHead>Paid Amount</TableHead>
-                      <TableHead>Due Amount</TableHead>
-                      <TableHead>Date & Time</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredBills.map((bill) => (
-                      <TableRow
-                        key={bill.id}
-                        onClick={() => handleRowClick(bill)}
-                        className="cursor-pointer"
-                      >
-                        <TableCell>{bill.customerName}</TableCell>
-                        <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
-                        <TableCell>{bill.paidAmount.toLocaleString()}rs</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}
-                          >
-                            {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{format(new Date(bill.createdAt), 'PPpp')}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-16">
-                  <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-4 text-lg font-semibold">No Bills Found</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                      No records found for the selected period.
-                  </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
+                <div className="border-t pt-4 mt-4 space-y-4">
+                <div className="flex flex-col md:flex-row gap-2">
+                    <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                        placeholder="Search by customer name or bill no..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                    />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                            <PopoverTrigger asChild>
+                            <Button
+                                variant={'outline'}
+                                className={cn(
+                                'w-full md:w-[280px] justify-start text-left font-normal',
+                                !globalDate && 'text-muted-foreground'
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {globalDate ? format(globalDate, 'PPP') : <span>Today</span>}
+                            </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar
+                                mode="single"
+                                selected={globalDate ?? undefined}
+                                onSelect={(date) => {
+                                    setGlobalDate(date || new Date());
+                                    setIsCalendarOpen(false);
+                                }}
+                                initialFocus
+                            />
+                            </PopoverContent>
+                        </Popover>
+                        {globalDate && (
+                            <Button variant="ghost" size="icon" onClick={clearGlobalDate}>
+                            <X className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                </div>
+                 {filteredBills.length > 0 && !isOwner && (
+                    <div className="flex items-center space-x-2">
+                        <Checkbox 
+                            id="select-all-bills" 
+                            checked={allFilteredSelected}
+                            onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                        />
+                        <label
+                            htmlFor="select-all-bills"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                           Select all ({filteredBills.length})
+                        </label>
+                    </div>
+                )}
+                </div>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                <div className="flex justify-center items-center py-16">
+                    <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
+                </div>
+                ) : filteredBills && filteredBills.length > 0 ? (
+                <div className="w-full overflow-x-auto">
+                    <Table>
+                    <TableHeader>
+                        <TableRow>
+                          {!isOwner && <TableHead className="w-10"></TableHead>}
+                          <TableHead>Customer</TableHead>
+                          <TableHead>Total Amount</TableHead>
+                          <TableHead>Paid Amount</TableHead>
+                          <TableHead>Due Amount</TableHead>
+                          <TableHead>Date & Time</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredBills.map((bill) => (
+                        <TableRow
+                            key={bill.id}
+                            className={cn("cursor-pointer", selectedIds.has(bill.id) && 'bg-primary/10')}
+                            onClick={() => handleRowClick(bill)}
+                        >
+                            {!isOwner && 
+                            <TableCell onClick={(e) => e.stopPropagation()}>
+                                 <Checkbox 
+                                    checked={selectedIds.has(bill.id)} 
+                                    onCheckedChange={(checked) => handleSelectOne(bill.id, !!checked)}
+                                    aria-label={`Select bill ${bill.id}`}
+                                />
+                            </TableCell>
+                            }
+                            <TableCell>{bill.customerName}</TableCell>
+                            <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
+                            <TableCell>{bill.paidAmount.toLocaleString()}rs</TableCell>
+                            <TableCell>
+                            <Badge
+                                variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}
+                            >
+                                {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
+                            </Badge>
+                            </TableCell>
+                            <TableCell>{format(new Date(bill.createdAt), 'PPpp')}</TableCell>
+                        </TableRow>
+                        ))}
+                    </TableBody>
+                    </Table>
+                </div>
+                ) : (
+                <div className="text-center py-16">
+                    <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-semibold">No Bills Found</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        No records found for the selected period.
+                    </p>
+                </div>
+                )}
+            </CardContent>
+            </Card>
 
       {selectedBill && (
         <BillSummaryDialog
           bill={selectedBill}
           open={!!selectedBill}
           onOpenChange={handleCloseDialog}
-          onSave={async () => { /* This is a dummy function as we're not saving from history view */ }}
+          onSave={async () => { /* Dummy */ }}
           isSaving={false}
           isViewing
-          onDelete={!isOwner ? handleDeleteFromDialog : undefined}
+          onDelete={handleDeleteFromDialog}
         />
       )}
       
        <AlertDialog
-        open={!!billToDelete && !isOwner}
+        open={!!billToDelete}
         onOpenChange={() => setBillToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will remove the bill for{' '}
-              <span className='font-semibold'>{billToDelete?.customerName}</span> from your history view. It will not delete the global record.
+              This action will permanently delete the bill for{' '}
+              <span className='font-semibold'>{billToDelete?.customerName}</span>.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -295,7 +431,34 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
               className="bg-destructive hover:bg-destructive/90"
             >
               {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Remove From History
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
+      <AlertDialog
+        open={showBulkDeleteConfirm && !isOwner}
+        onOpenChange={setShowBulkDeleteConfirm}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the {selectedIds.size} selected bills from your history.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isBulkDeleting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Delete Selected
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -314,6 +477,9 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [selectedToken, setSelectedToken] = React.useState<Token | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = React.useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = React.useState(false);
 
   const collectionPath = React.useMemo(() => {
     if (isOwner === null || !user) return null;
@@ -349,6 +515,74 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
 
     return tokens;
   }, [tokens, searchTerm]);
+
+   React.useEffect(() => {
+    const visibleIds = new Set(filteredTokens.map(n => n.id));
+    setSelectedIds(currentIds => {
+      const newIds = new Set<string>();
+      currentIds.forEach(id => {
+        if (visibleIds.has(id)) {
+          newIds.add(id);
+        }
+      });
+      return newIds;
+    });
+  }, [filteredTokens]);
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(new Set(filteredTokens.map(n => n.id)));
+    } else {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleSelectOne = (id: string, checked: boolean) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(id);
+      } else {
+        newSet.delete(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (!firestore || selectedIds.size === 0) return;
+    
+    setIsBulkDeleting(true);
+    const batch = writeBatch(firestore);
+
+    try {
+        for (const tokenId of selectedIds) {
+            const tokenDoc = await getDoc(doc(firestore, 'tokens', tokenId));
+            if (tokenDoc.exists()) {
+                const tokenData = tokenDoc.data() as Token;
+                batch.delete(doc(firestore, 'tokens', tokenId));
+                batch.delete(doc(firestore, 'managers', tokenData.managerId, 'tokens', tokenId));
+            }
+        }
+        
+        await batch.commit();
+        toast({
+            title: 'Tokens Deleted',
+            description: `${selectedIds.size} tokens have been successfully removed.`
+        });
+        setSelectedIds(new Set());
+    } catch (error) {
+      console.error("Error bulk deleting tokens: ", error);
+      toast({
+        variant: 'destructive',
+        title: 'Bulk Deletion Failed',
+        description: 'Could not delete selected tokens. You may not have permission.'
+      });
+    } finally {
+      setIsBulkDeleting(false);
+      setShowBulkDeleteConfirm(false);
+    }
+  };
   
   const handleRowClick = (token: Token) => {
     setSelectedToken(token);
@@ -399,16 +633,33 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
         setTokenToDelete(null);
     }
   };
+  
+  const allFilteredSelected = filteredTokens.length > 0 && selectedIds.size === filteredTokens.length;
 
   return (
     <>
       <Card>
           <CardHeader>
-            <CardTitle>All Tokens</CardTitle>
-            <CardDescription>
-              A record of all printed tokens. These are saved separately from bills.
-            </CardDescription>
-            <div className="border-t pt-4 mt-4">
+             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <div>
+                    <CardTitle>All Tokens</CardTitle>
+                    <CardDescription>
+                    A record of all printed tokens.
+                    </CardDescription>
+                </div>
+                {selectedIds.size > 0 && (
+                    <Button 
+                        variant="destructive" 
+                        onClick={() => setShowBulkDeleteConfirm(true)}
+                        disabled={isBulkDeleting}
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete ({selectedIds.size})
+                    </Button>
+                )}
+            </div>
+
+            <div className="border-t pt-4 mt-4 space-y-4">
               <div className="flex flex-col md:flex-row gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -452,6 +703,21 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
                     )}
                 </div>
               </div>
+                {filteredTokens.length > 0 && (
+                    <div className="flex items-center space-x-2">
+                        <Checkbox 
+                            id="select-all-tokens" 
+                            checked={allFilteredSelected}
+                            onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                        />
+                        <label
+                            htmlFor="select-all-tokens"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                           Select all ({filteredTokens.length})
+                        </label>
+                    </div>
+                )}
             </div>
           </CardHeader>
           <CardContent>
@@ -464,6 +730,7 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className='w-10'></TableHead>
                       <TableHead>Customer</TableHead>
                       <TableHead>In Carat</TableHead>
                       <TableHead>Room No.</TableHead>
@@ -476,8 +743,15 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
                       <TableRow 
                         key={token.id}
                         onClick={() => handleRowClick(token)}
-                        className="cursor-pointer"
+                        className={cn("cursor-pointer", selectedIds.has(token.id) && 'bg-primary/10')}
                       >
+                         <TableCell onClick={(e) => e.stopPropagation()}>
+                             <Checkbox 
+                                checked={selectedIds.has(token.id)} 
+                                onCheckedChange={(checked) => handleSelectOne(token.id, !!checked)}
+                                aria-label={`Select token ${token.id}`}
+                            />
+                        </TableCell>
                         <TableCell>{token.customerName}</TableCell>
                         <TableCell>{token.inCarat || 'N/A'}</TableCell>
                         <TableCell>{token.roomNumber || 'N/A'}</TableCell>
@@ -521,6 +795,33 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
             >
               {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Delete Token
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+       <AlertDialog
+        open={showBulkDeleteConfirm}
+        onOpenChange={setShowBulkDeleteConfirm}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the {selectedIds.size} selected tokens.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isBulkDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isBulkDeleting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Delete Selected
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
