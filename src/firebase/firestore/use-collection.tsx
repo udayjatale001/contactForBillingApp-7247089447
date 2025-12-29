@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -23,7 +24,7 @@ export interface UseCollectionResult<T> {
   data: WithId<T>[] | null; // Document data with ID, or null.
   isLoading: boolean;       // True if loading.
   error: FirestoreError | Error | null; // Error object, or null.
-  forceRefetch?: () => void; // Function to force a manual refetch
+  forceRefetch: () => void; // Function to force a manual refetch
 }
 
 /* Internal implementation of Query:
@@ -119,3 +120,4 @@ export function useCollection<T = any>(
   }
   return { data, isLoading, error, forceRefetch };
 }
+

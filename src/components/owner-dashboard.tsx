@@ -346,7 +346,7 @@ export function OwnerDashboard() {
     
     // --- Due Bills Calculation ---
     const aggregatedDueCustomers: { [key: string]: AggregatedDueCustomer } = {};
-     filteredBills.forEach(bill => {
+     allBills.forEach(bill => {
        if (bill.dueAmount > 0) {
         const customerNameKey = bill.customerName.trim().toLowerCase();
         if (aggregatedDueCustomers[customerNameKey]) {
@@ -442,9 +442,7 @@ export function OwnerDashboard() {
         await batch.commit();
         toast({ title: 'Payment Successful', description: `${amountToPay.toLocaleString()}rs has been applied.` });
         
-        if(forceRefetch) {
-          forceRefetch();
-        }
+        forceRefetch();
 
     } catch (error) {
         console.error("Error processing payment: ", error);
@@ -478,7 +476,7 @@ export function OwnerDashboard() {
 
         await batch.commit();
         toast({ title: 'Customer Records Deleted', description: `All due bills for ${deleteCustomer.customerName} have been removed.` });
-        if(forceRefetch) forceRefetch();
+        forceRefetch();
     } catch (error) {
         console.error("Error deleting customer bills: ", error);
         toast({ variant: 'destructive', title: 'Deletion Failed', description: 'Could not delete customer records.' });
@@ -1037,3 +1035,4 @@ export function OwnerDashboard() {
     
 
     
+
