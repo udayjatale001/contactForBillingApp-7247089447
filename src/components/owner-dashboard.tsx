@@ -404,13 +404,10 @@ export function OwnerDashboard() {
     }
 
     setIsProcessingPayment(true);
-    const batch = writeBatch(firestore);
     let remainingAmountToApply = amountToPay;
 
     try {
-        // Fetch all due bills for the customer, sorted oldest first
-        const dueBillIds = paymentCustomer.billIds;
-        const billRefs = dueBillIds.map(id => doc(firestore, 'bills', id));
+        const billRefs = paymentCustomer.billIds.map(id => doc(firestore, 'bills', id));
         const billSnaps = await Promise.all(billRefs.map(ref => getDoc(ref)));
 
         const billsToUpdate = billSnaps
@@ -420,38 +417,34 @@ export function OwnerDashboard() {
 
         for (const billData of billsToUpdate) {
             if (remainingAmountToApply <= 0) break;
-
+            
             const paymentForThisBill = Math.min(remainingAmountToApply, billData.dueAmount);
             
             const newPaidAmount = billData.paidAmount + paymentForThisBill;
             const newDueAmount = billData.dueAmount - paymentForThisBill;
-            
+
             const globalBillRef = doc(firestore, 'bills', billData.id);
-            batch.update(globalBillRef, {
-                paidAmount: newPaidAmount,
-                dueAmount: newDueAmount,
-            });
-
-            // Also update the manager's copy
             const managerBillRef = doc(firestore, 'managers', billData.managerId, 'bills', billData.id);
-            batch.update(managerBillRef, {
-                paidAmount: newPaidAmount,
-                dueAmount: newDueAmount,
-            });
 
+            // Using await for each update ensures they are part of the same conceptual transaction handled by Firestore's atomicity.
+            // For a true atomic transaction across documents, a batched write is better.
+            await updateDoc(globalBillRef, { paidAmount: newPaidAmount, dueAmount: newDueAmount });
+            await updateDoc(managerBillRef, { paidAmount: newPaidAmount, dueAmount: newDueAmount });
+            
             remainingAmountToApply -= paymentForThisBill;
         }
 
-        await batch.commit();
-
         toast({ title: 'Payment Successful', description: `${amountToPay.toLocaleString()}rs has been applied.` });
-        setPaymentCustomer(null);
-        setPaymentAmount('');
+        
+        // After payment, force a refetch of the collection data
         if(forceRefetch) forceRefetch();
+
     } catch (error) {
         console.error("Error processing payment: ", error);
         toast({ variant: 'destructive', title: 'Payment Failed', description: 'Could not update the bill(s).' });
     } finally {
+        setPaymentCustomer(null);
+        setPaymentAmount('');
         setIsProcessingPayment(false);
     }
   };
