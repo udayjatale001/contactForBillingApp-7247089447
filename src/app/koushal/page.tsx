@@ -32,11 +32,12 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { Bill } from '@/lib/types';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, getDocs, writeBatch, doc, deleteDoc, where } from 'firebase/firestore';
+import { collection, query, getDocs, writeBatch, doc } from 'firebase/firestore';
 import { Loader2, Search, Users, MessageSquare, Trash2, AlertCircle } from 'lucide-react';
+import { CustomerSummaryDialog } from '@/components/customer-summary-dialog';
 
 // This new interface represents a single, aggregated customer record.
-interface AggregatedCustomer {
+export interface AggregatedCustomer {
   id: string; // We'll use the customer name as a unique key
   name: string;
   contactNumber?: string;
@@ -54,6 +55,7 @@ export default function KoushalPage() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [customerToDelete, setCustomerToDelete] = React.useState<AggregatedCustomer | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [selectedCustomer, setSelectedCustomer] = React.useState<AggregatedCustomer | null>(null);
 
   const billsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -111,6 +113,7 @@ export default function KoushalPage() {
   }, [aggregatedCustomers, searchTerm]);
 
   const handleDeleteClick = (customer: AggregatedCustomer) => {
+    setSelectedCustomer(null); // Close the summary dialog
     setCustomerToDelete(customer);
   };
   
@@ -212,25 +215,16 @@ export default function KoushalPage() {
                       <TableHead>Address</TableHead>
                       <TableHead>Total Amount</TableHead>
                       <TableHead>Total Carat</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredCustomers.map((customer) => (
-                      <TableRow key={customer.id}>
+                      <TableRow key={customer.id} onClick={() => setSelectedCustomer(customer)} className="cursor-pointer">
                         <TableCell className="font-medium">{customer.name}</TableCell>
                         <TableCell>{customer.contactNumber || 'N/A'}</TableCell>
                         <TableCell>{customer.address || 'N/A'}</TableCell>
                         <TableCell className="text-green-600 font-medium">{(customer.totalAmount || 0).toLocaleString()}rs</TableCell>
                         <TableCell>{(customer.totalCarat || 0).toLocaleString()}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => handleWhatsAppClick(customer)} disabled={!customer.contactNumber} title="Send WhatsApp">
-                            <MessageSquare className="h-4 w-4 text-green-600" />
-                          </Button>
-                           <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(customer)} title="Delete All Records for Customer">
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -248,6 +242,16 @@ export default function KoushalPage() {
           </CardContent>
         </Card>
       </div>
+
+      {selectedCustomer && (
+        <CustomerSummaryDialog
+            customer={selectedCustomer}
+            open={!!selectedCustomer}
+            onOpenChange={() => setSelectedCustomer(null)}
+            onWhatsApp={() => handleWhatsAppClick(selectedCustomer)}
+            onDelete={() => handleDeleteClick(selectedCustomer)}
+        />
+      )}
 
       <AlertDialog
         open={!!customerToDelete}
