@@ -247,5 +247,3 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     </Dialog>
   );
 }
-
-    
