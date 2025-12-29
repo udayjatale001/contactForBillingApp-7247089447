@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import {
@@ -421,10 +422,13 @@ export function OwnerDashboard() {
 
         // Also update the manager's copy if it exists
         const managerBillRef = doc(firestore, 'managers', billData.managerId, 'bills', billData.id);
-        await updateDoc(managerBillRef, {
-            paidAmount: newPaidAmount,
-            dueAmount: newDueAmount < 0 ? 0 : newDueAmount,
-        }).catch(() => {}); // Ignore error if manager subcollection doc doesn't exist
+        const managerBillSnap = await getDoc(managerBillRef);
+        if (managerBillSnap.exists()) {
+             await updateDoc(managerBillRef, {
+                paidAmount: newPaidAmount,
+                dueAmount: newDueAmount < 0 ? 0 : newDueAmount,
+            });
+        }
 
         toast({ title: 'Payment Successful', description: `${amountToPay.toLocaleString()}rs has been applied.` });
         setPaymentCustomer(null);
@@ -999,3 +1003,5 @@ export function OwnerDashboard() {
     </>
   );
 }
+
+    
