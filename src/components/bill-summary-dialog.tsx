@@ -210,37 +210,35 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               </div>
             </footer>
           </div>
-        <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 rounded-b-lg border-t print-hidden bg-gray-50 flex flex-col sm:flex-row gap-2 flex-shrink-0">
+        <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 rounded-b-lg border-t print-hidden bg-gray-50 flex-row justify-between w-full">
             {isViewing && onDelete && (
-                <Button variant="destructive" onClick={onDelete} className="sm:mr-auto">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    {t('delete')}
+                <Button variant="ghost" size="icon" onClick={onDelete}>
+                    <Trash2 className="h-5 w-5 text-destructive" />
+                    <span className="sr-only">Delete</span>
                 </Button>
             )}
-            <DialogClose asChild>
-                <Button variant="outline">
-                    <X className="mr-2 h-4 w-4" />
-                    {t('close')}
-                </Button>
-            </DialogClose>
-            <Button 
-                variant="secondary" 
-                onClick={handleWhatsAppClick} 
-                disabled={!bill.contactNumber || isSavingForPrint || isSavingForWhatsApp || isSaving}
-            >
-                {isSavingForWhatsApp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
-                {t('send_via_whatsapp')}
-            </Button>
-            <Button 
-                variant="default" 
-                onClick={handlePrintClick} 
-                disabled={isSavingForPrint || isSavingForWhatsApp || isSaving}
-            >
-                {isSavingForPrint ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-                {isViewing ? t('print') : t('save_and_print')}
-            </Button>
+            <div className='flex-1 flex justify-end gap-2'>
+              <Button 
+                  variant="secondary" 
+                  onClick={handleWhatsAppClick} 
+                  disabled={!bill.contactNumber || isSavingForPrint || isSavingForWhatsApp || isSaving}
+              >
+                  {isSavingForWhatsApp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
+                  {t('send_via_whatsapp')}
+              </Button>
+              <Button 
+                  variant="default" 
+                  onClick={handlePrintClick} 
+                  disabled={isSavingForPrint || isSavingForWhatsApp || isSaving}
+              >
+                  {isSavingForPrint ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+                  {isViewing ? t('print') : t('save_and_print')}
+              </Button>
+            </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
+    
