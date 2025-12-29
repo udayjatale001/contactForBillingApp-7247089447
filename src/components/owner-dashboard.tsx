@@ -193,6 +193,111 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
   );
 }
 
+const DueCustomerItem = React.memo(function DueCustomerItem({
+    customer,
+    onProcessPayment,
+    onWhatsAppReminder,
+    onDelete,
+    isProcessingPayment,
+  }: {
+    customer: AggregatedDueCustomer;
+    onProcessPayment: (customer: AggregatedDueCustomer, amount: number) => void;
+    onWhatsAppReminder: (customer: AggregatedDueCustomer) => void;
+    onDelete: (customer: AggregatedDueCustomer) => void;
+    isProcessingPayment: boolean;
+  }) {
+    const [paymentAmount, setPaymentAmount] = React.useState('');
+  
+    const handleConfirm = () => {
+      const amount = Number(paymentAmount);
+      if (!isNaN(amount) && amount > 0) {
+        onProcessPayment(customer, amount);
+      }
+    };
+  
+    return (
+      <div className="flex flex-col gap-3 p-3 rounded-lg border">
+        {/* Customer Info */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate">{customer.customerName}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-xs text-muted-foreground truncate">
+                Last Bill: {format(new Date(customer.lastBillDate), 'PP')}
+              </p>
+              {customer.contactNumber && (
+                <a
+                  href={`tel:${customer.contactNumber}`}
+                  className="flex items-center gap-1 text-xs text-blue-500 hover:underline"
+                >
+                  <Phone className="h-3 w-3" />
+                  {customer.contactNumber}
+                </a>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => onWhatsAppReminder(customer)}
+              disabled={!customer.contactNumber}
+            >
+              <MessageSquare className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => onDelete(customer)}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        </div>
+  
+        {/* Payment Section */}
+        <div className="flex flex-col sm:flex-row items-center gap-2">
+          <div className="flex-1 w-full">
+            <Label className="text-xs">Due Amount</Label>
+            <div className="font-semibold text-destructive">
+              {customer.totalDueAmount.toLocaleString()}rs
+            </div>
+          </div>
+          <div className="flex-1 w-full">
+            <Label htmlFor={`pay-${customer.customerName}`} className="text-xs">
+              Paid Amount
+            </Label>
+            <Input
+              id={`pay-${customer.customerName}`}
+              type="number"
+              placeholder="Enter amount"
+              value={paymentAmount}
+              onChange={(e) => setPaymentAmount(e.target.value)}
+              className="h-9"
+              disabled={isProcessingPayment}
+            />
+          </div>
+          <div className="w-full sm:w-auto">
+            <Label className="text-xs opacity-0 hidden sm:block">Confirm</Label>
+            <Button
+              onClick={handleConfirm}
+              disabled={isProcessingPayment || !paymentAmount}
+              className="w-full h-9"
+            >
+              {isProcessingPayment ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Confirm'
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  });
+
 
 export function OwnerDashboard() {
   const { user, isUserLoading } = useUser();
@@ -208,7 +313,6 @@ export function OwnerDashboard() {
   const [isExporting, setIsExporting] = React.useState(false);
 
   // State for inline payment inputs
-  const [paymentAmounts, setPaymentAmounts] = React.useState<{ [key: string]: string }>({});
   const [processingPaymentFor, setProcessingPaymentFor] = React.useState<string | null>(null);
 
   // State for delete confirmation
@@ -393,10 +497,9 @@ export function OwnerDashboard() {
     };
   }, [allBills, globalDate, selectedYear]);
 
-  const handleProcessPayment = async (customer: AggregatedDueCustomer) => {
+  const handleProcessPayment = async (customer: AggregatedDueCustomer, amountToPay: number) => {
     if (!firestore) return;
-    const amountToPay = Number(paymentAmounts[customer.customerName] || 0);
-
+    
     if (isNaN(amountToPay) || amountToPay <= 0) {
         toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid positive number.' });
         return;
@@ -442,7 +545,6 @@ export function OwnerDashboard() {
         toast({ title: 'Payment Successful', description: `${amountToPay.toLocaleString()}rs has been applied.` });
         
         forceRefetch();
-        setPaymentAmounts(prev => ({ ...prev, [customer.customerName]: '' }));
 
     } catch (error) {
         console.error("Error processing payment: ", error);
@@ -574,10 +676,6 @@ export function OwnerDashboard() {
 
     const whatsappUrl = `https://wa.me/91${customer.contactNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
-  };
-
-  const handlePaymentAmountChange = (customerName: string, value: string) => {
-    setPaymentAmounts(prev => ({ ...prev, [customerName]: value }));
   };
 
   const isLoading = isUserLoading || isLoadingBills || isOwner === null;
@@ -743,71 +841,16 @@ export function OwnerDashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
                  {dueBills.length > 0 ? (
-                    dueBills.map(customer => {
-                      const isProcessing = processingPaymentFor === customer.customerName;
-                      const currentPayment = paymentAmounts[customer.customerName] || '';
-
-                      return (
-                        <div key={customer.customerName} className="flex flex-col gap-3 p-3 rounded-lg border">
-                            {/* Customer Info */}
-                            <div className="flex items-start justify-between gap-4">
-                                <div className='flex-1 min-w-0'>
-                                    <p className="text-sm font-semibold truncate">{customer.customerName}</p>
-                                    <div className='flex items-center gap-2 flex-wrap'>
-                                      <p className="text-xs text-muted-foreground truncate">
-                                          Last Bill: {format(new Date(customer.lastBillDate), 'PP')}
-                                      </p>
-                                      {customer.contactNumber && (
-                                        <a href={`tel:${customer.contactNumber}`} className='flex items-center gap-1 text-xs text-blue-500 hover:underline'>
-                                          <Phone className='h-3 w-3' />
-                                          {customer.contactNumber}
-                                        </a>
-                                      )}
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-1 flex-shrink-0">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleWhatsAppReminder(customer)} disabled={!customer.contactNumber}>
-                                        <MessageSquare className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDeleteCustomer(customer)}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                </div>
-                            </div>
-                            
-                            {/* Payment Section */}
-                            <div className='flex flex-col sm:flex-row items-center gap-2'>
-                                <div className='flex-1 w-full'>
-                                    <Label className='text-xs'>Due Amount</Label>
-                                    <div className="font-semibold text-destructive">{customer.totalDueAmount.toLocaleString()}rs</div>
-                                </div>
-                                <div className='flex-1 w-full'>
-                                    <Label htmlFor={`pay-${customer.customerName}`} className='text-xs'>Paid Amount</Label>
-                                    <Input
-                                        id={`pay-${customer.customerName}`}
-                                        type="number"
-                                        placeholder="Enter amount"
-                                        value={currentPayment}
-                                        onChange={(e) => handlePaymentAmountChange(customer.customerName, e.target.value)}
-                                        className="h-9"
-                                        disabled={isProcessing}
-                                    />
-                                </div>
-                                <div className='w-full sm:w-auto'>
-                                    {/* This label is for alignment purposes */}
-                                    <Label className='text-xs opacity-0 hidden sm:block'>Confirm</Label> 
-                                    <Button 
-                                      onClick={() => handleProcessPayment(customer)}
-                                      disabled={isProcessing || !currentPayment}
-                                      className='w-full h-9'
-                                    >
-                                      {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm'}
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                      )
-                    })
+                    dueBills.map(customer => (
+                        <DueCustomerItem
+                          key={customer.customerName}
+                          customer={customer}
+                          onProcessPayment={handleProcessPayment}
+                          onWhatsAppReminder={handleWhatsAppReminder}
+                          onDelete={setDeleteCustomer}
+                          isProcessingPayment={processingPaymentFor === customer.customerName}
+                        />
+                      ))
                 ) : (
                     <div className="text-center py-12">
                         <DollarSign className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -998,3 +1041,5 @@ export function OwnerDashboard() {
     </>
   );
 }
+
+    
