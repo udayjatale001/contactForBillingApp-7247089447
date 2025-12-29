@@ -112,10 +112,12 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
                 left: 0;
                 top: 0;
                 width: 100%;
+                height: 100%;
                 padding: 1.5rem;
                 margin: 0;
                 background: white;
                 color: black;
+                font-size: 12px;
               }
             }
           `}
@@ -129,7 +131,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
               </div>
               <div className="text-right">
                 <p className="text-xs sm:text-sm text-gray-500">{t('bill_no')}: #${bill.id.slice(-6).toUpperCase()}</p>
-                <p className="text-xs sm:text-sm text-gray-500">{t('date')}: ${format(new Date(bill.createdAt), 'PP')}</p>
+                <p className="text-xs sm:text-sm text-gray-500">${t('date')}: ${format(new Date(bill.createdAt), 'PP')}</p>
               </div>
             </header>
 
@@ -223,25 +225,25 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
         </DialogFooter>
       </DialogContent>
       {/* This is the printable area, which is hidden by default and only visible for printing */}
-      <div id="bill-print-area" className="hidden print:block">
-        <div className="p-4 sm:p-6 bg-white rounded-t-lg">
+      <div id="bill-print-area" className="hidden print:block bg-white text-black">
+        <div className="p-6">
               {/* Header */}
-              <header className="flex justify-between items-start mb-4 sm:mb-6 pb-4 border-b">
+              <header className="flex justify-between items-start mb-6 pb-4 border-b">
                 <div>
-                  <h1 className="text-lg sm:text-2xl font-bold text-gray-800">{t('bill_receipt_title')}</h1>
-                  <p className="text-xs sm:text-sm text-gray-500">{t('bill_receipt_subtitle')}</p>
+                  <h1 className="text-2xl font-bold">{t('bill_receipt_title')}</h1>
+                  <p className="text-sm">{t('bill_receipt_subtitle')}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs sm:text-sm text-gray-500">{t('bill_no')}: #${bill.id.slice(-6).toUpperCase()}</p>
-                  <p className="text-xs sm:text-sm text-gray-500">{t('date')}: ${format(new Date(bill.createdAt), 'PP')}</p>
+                  <p className="text-sm">{t('bill_no')}: #${bill.id.slice(-6).toUpperCase()}</p>
+                  <p className="text-sm">${t('date')}: ${format(new Date(bill.createdAt), 'PP')}</p>
                 </div>
               </header>
 
-              <main className="space-y-4 sm:space-y-6">
+              <main className="space-y-6">
                 {/* Customer Details */}
-                <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
-                  <h2 className="text-base sm:text-lg font-bold text-gray-700 mb-2">{t('customer_details')}</h2>
-                  <div className="space-y-1">
+                <div className="p-4 border rounded-lg">
+                  <h2 className="text-lg font-bold mb-2">{t('customer_details')}</h2>
+                  <div className="space-y-1 text-sm">
                     <DetailItem label={t('customer_name')} value={bill.customerName} />
                     {bill.roomNumber && <DetailItem label={t('room_number')} value={bill.roomNumber} />}
                     {bill.contactNumber && <DetailItem label={t('contact_number')} value={bill.contactNumber} />}
@@ -250,9 +252,9 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
                 </div>
 
                 {/* Carat Details */}
-                <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
-                  <h2 className="text-base sm:text-lg font-bold text-gray-700 mb-3">{t('carat_details')}</h2>
-                  <div className="space-y-2 sm:space-y-3">
+                <div className="p-4 border rounded-lg">
+                  <h2 className="text-lg font-bold mb-3">{t('carat_details')}</h2>
+                  <div className="space-y-3 text-sm">
                     {bill.inCarat && bill.inCarat > 0 && <DetailItem label={t('in_carat')} value={bill.inCarat} />}
                     {bill.outCarat && bill.outCarat > 0 && <DetailItem label={t('out_carat')} value={bill.outCarat} />}
 
@@ -268,8 +270,8 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
                         value={`${bill.bigCarat} kg`}
                       />
                     )}
-                     <Separator className="my-2" />
-                    <DetailItem label={t('total_amount')} value={`${bill.totalAmount.toLocaleString()}${t('rs_symbol')}`} valueClassName="text-base sm:text-lg font-bold text-gray-800" />
+                     <Separator className="my-2 bg-gray-300" />
+                    <DetailItem label={t('total_amount')} value={`${bill.totalAmount.toLocaleString()}${t('rs_symbol')}`} valueClassName="text-lg font-bold" />
                     <DetailItem label={t('paid_amount')} value={`${bill.paidAmount.toLocaleString()}${t('rs_symbol')}`} />
                     <DetailItem 
                       label={t('due_amount')} 
@@ -280,9 +282,9 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
                 </div>
                 
                 {/* Payment Details */}
-                <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
-                   <h2 className="text-base sm:text-lg font-bold text-gray-700 mb-2">{t('payment_details')}</h2>
-                   <div className="space-y-1">
+                <div className="p-4 border rounded-lg">
+                   <h2 className="text-lg font-bold mb-2">{t('payment_details')}</h2>
+                   <div className="space-y-1 text-sm">
                       <DetailItem label={t('payment_method')} value={t(bill.paymentMode.toLowerCase() as keyof typeof import('@/lib/locales/en').default)} />
                       <DetailItem label={`${t('date')} & ${t('time')}`} value={format(new Date(bill.createdAt), 'PPpp')} />
                    </div>
@@ -290,7 +292,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSaveAndReset, is
               </main>
 
               {/* Footer */}
-              <footer className="mt-6 sm:mt-10 pt-6 border-t flex justify-between items-center text-xs sm:text-sm">
+              <footer className="mt-10 pt-6 border-t flex justify-between items-center text-sm">
                 <div className="text-center">
                   <p className="text-gray-500">{t('signature_seal')}</p>
                 </div>
