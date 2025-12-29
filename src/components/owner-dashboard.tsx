@@ -381,6 +381,7 @@ export function OwnerDashboard() {
     if (!firestore || !user) return;
     setIsProcessing(true);
 
+    
     const customerRef = doc(firestore, 'customers', customer.id);
     
     const paymentBill: Bill = {
