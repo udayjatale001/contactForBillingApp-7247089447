@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
-import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
+import { collection, getDocs, writeBatch, doc, query, limit, CollectionReference } from 'firebase/firestore';
 
 
 export default function AboutPage() {
@@ -60,6 +60,19 @@ export default function AboutPage() {
       setGlobalDate(newDate);
     }
   };
+  
+  async function deleteCollectionInBatch(collectionRef: CollectionReference) {
+    let snapshot = await getDocs(query(collectionRef, limit(500)));
+    while (snapshot.size > 0) {
+      const batch = writeBatch(firestore!);
+      snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      snapshot = await getDocs(query(collectionRef, limit(500)));
+    }
+  }
+
 
   const handleResetApp = async () => {
     if (!firestore) {
@@ -78,12 +91,7 @@ export default function AboutPage() {
       // Step 1: Delete all documents in the global collections
       for (const collectionName of collectionsToDelete) {
         const collectionRef = collection(firestore, collectionName);
-        const snapshot = await getDocs(collectionRef);
-        if (snapshot.empty) continue;
-
-        const batch = writeBatch(firestore);
-        snapshot.docs.forEach((doc) => batch.delete(doc.ref));
-        await batch.commit();
+        await deleteCollectionInBatch(collectionRef);
       }
 
       // Step 2: Delete all sub-collections within each manager
@@ -93,12 +101,7 @@ export default function AboutPage() {
            const subcollectionsToDelete = ['bills', 'tokens'];
            for (const subcollectionName of subcollectionsToDelete) {
               const subcollectionRef = collection(firestore, 'managers', managerDoc.id, subcollectionName);
-              const subcollectionSnapshot = await getDocs(subcollectionRef);
-              if (subcollectionSnapshot.empty) continue;
-              
-              const subBatch = writeBatch(firestore);
-              subcollectionSnapshot.docs.forEach(doc => subBatch.delete(doc.ref));
-              await subBatch.commit();
+              await deleteCollectionInBatch(subcollectionRef);
            }
         }
       }
@@ -108,7 +111,7 @@ export default function AboutPage() {
         description: 'All application data has been permanently deleted.',
       });
 
-      // Optional: force a reload to ensure all states are cleared
+      // Force a reload to ensure all states are cleared
       window.location.reload();
 
     } catch (error) {
@@ -299,5 +302,3 @@ export default function AboutPage() {
     </>
   );
 }
-
-    
