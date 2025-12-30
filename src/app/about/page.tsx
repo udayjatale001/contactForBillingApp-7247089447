@@ -242,37 +242,6 @@ export default function AboutPage() {
                 </div>
              </div>
            </div>
-           
-           <Separator className="my-6" />
-
-            <Card className="border-destructive bg-destructive/5">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-destructive">
-                        <AlertTriangle />
-                        Danger Zone
-                    </CardTitle>
-                    <CardDescription>
-                        These actions are irreversible. Proceed with caution.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col sm:flex-row items-center justify-between rounded-lg border border-destructive/20 p-4">
-                        <div>
-                            <h3 className="font-semibold text-foreground">Reset App</h3>
-                            <p className="text-sm text-muted-foreground">Permanently delete all bills, customers, notifications, and other data.</p>
-                        </div>
-                         <Button
-                            variant="destructive"
-                            onClick={() => setShowResetConfirm(true)}
-                            className="mt-2 sm:mt-0 sm:ml-4 flex-shrink-0"
-                            disabled={isResetting}
-                        >
-                            {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Reset App
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
 
         </CardContent>
       </Card>
