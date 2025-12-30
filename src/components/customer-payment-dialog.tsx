@@ -150,8 +150,8 @@ export function CustomerPaymentDialog({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="Gopal Temkar">Gopal Temkar</SelectItem>
+                            <SelectItem value="Yuvaraj Temkar">Yuvaraj Temkar</SelectItem>
                             <SelectItem value="Suyash Temkar">Suyash Temkar</SelectItem>
-                            <SelectItem value="Yuvaraj Temkar">Yuvraj Temkar</SelectItem>
                             <SelectItem value="Gajananad Murtankar">Gajananad Murtankar</SelectItem>
                         </SelectContent>
                     </Select>
@@ -199,5 +199,3 @@ export function CustomerPaymentDialog({
     </Dialog>
   );
 }
-
-    
