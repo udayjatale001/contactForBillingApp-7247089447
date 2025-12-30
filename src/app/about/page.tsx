@@ -40,7 +40,7 @@ import { collection, getDocs, writeBatch } from 'firebase/firestore';
 export default function AboutPage() {
   const { t, language, setLanguage } = useLanguage();
   const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
-  const [isCalendarOpen, React.useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
   const [showResetConfirm, setShowResetConfirm] = React.useState(false);
   const [isResetting, setIsResetting] = React.useState(false);
   const firestore = useFirestore();
@@ -275,5 +275,3 @@ export default function AboutPage() {
     </>
   );
 }
-
-    
