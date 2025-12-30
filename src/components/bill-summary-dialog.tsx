@@ -230,8 +230,10 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             body > * {
                 display: none;
             }
-            #printable-bill {
+            #printable-bill, #printable-bill * {
                 display: block;
+            }
+            #printable-bill {
                 position: absolute;
                 left: 0;
                 top: 0;
