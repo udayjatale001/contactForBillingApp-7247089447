@@ -221,7 +221,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                 visibility: hidden;
               }
               .print-hidden {
-                  display: none;
+                  display: none !important;
               }
               #bill-print-area, #bill-print-area * {
                 visibility: visible;
@@ -230,12 +230,16 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                 position: absolute;
                 left: 0;
                 top: 0;
+                right: 0;
                 width: 100%;
                 height: auto;
                 background: white;
                 color: black;
                 font-size: 12px;
                 padding: 1rem;
+                margin: 0;
+                border: none;
+                box-shadow: none;
               }
               @page {
                 size: auto;
