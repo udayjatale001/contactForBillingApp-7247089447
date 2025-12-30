@@ -291,6 +291,12 @@ export function BillingForm() {
     setValue('customerName', capitalizeFirstLetter(currentValue), { shouldValidate: true });
   };
 
+  const handleAddressBlur = async () => {
+    await trigger('address');
+    const currentValue = getValues('address');
+    setValue('address', capitalizeFirstLetter(currentValue || ''), { shouldValidate: true });
+  };
+
 
   async function onSubmit(data: BillingFormValues) {
     setIsSubmitting(true);
@@ -533,7 +539,7 @@ export function BillingForm() {
                                 <FormControl>
                                     <div className="relative">
                                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input placeholder="Enter customer's address" className="pl-10" {...field} value={field.value ?? ''} onKeyDown={handleKeyDown} />
+                                        <Input placeholder="Enter customer's address" className="pl-10" {...field} value={field.value ?? ''} onBlur={handleAddressBlur} onKeyDown={handleKeyDown} />
                                     </div>
                                 </FormControl>
                                 <FormMessage />
