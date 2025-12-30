@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Phone, Languages, Calendar as CalendarIcon, X } from 'lucide-react';
+import { Mail, Phone, Languages, Calendar as CalendarIcon, X, Loader2, AlertTriangle } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useLanguage } from '@/context/language-context';
 import { Label } from '@/components/ui/label';
@@ -23,11 +23,30 @@ import { cn } from '@/lib/utils';
 import { format, setHours, setMinutes } from 'date-fns';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import * as React from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { useFirestore } from '@/firebase';
+import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
+
 
 export default function AboutPage() {
-  const { t, language, setLanguage } = useLanguage();
+  const { t } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+  const [showResetConfirm, setShowResetConfirm] = React.useState(false);
+  const [isResetting, setIsResetting] = React.useState(false);
+  const firestore = useFirestore();
+  const { toast } = useToast();
 
   const handleLanguageChange = (checked: boolean) => {
     setLanguage(checked ? 'hi' : 'en');
@@ -39,6 +58,69 @@ export default function AboutPage() {
       const [hours, minutes] = value.split(':');
       const newDate = setHours(setMinutes(globalDate, parseInt(minutes)), parseInt(hours));
       setGlobalDate(newDate);
+    }
+  };
+
+  const handleResetApp = async () => {
+    if (!firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Firestore is not available.',
+      });
+      return;
+    }
+    setIsResetting(true);
+
+    const collectionsToDelete = ['bills', 'customers', 'labours', 'notifications', 'tokens'];
+
+    try {
+      // Step 1: Delete all documents in the global collections
+      for (const collectionName of collectionsToDelete) {
+        const collectionRef = collection(firestore, collectionName);
+        const snapshot = await getDocs(collectionRef);
+        if (snapshot.empty) continue;
+
+        const batch = writeBatch(firestore);
+        snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+        await batch.commit();
+      }
+
+      // Step 2: Delete all sub-collections within each manager
+      const managersSnapshot = await getDocs(collection(firestore, 'managers'));
+      if (!managersSnapshot.empty) {
+        for (const managerDoc of managersSnapshot.docs) {
+           const subcollectionsToDelete = ['bills', 'tokens'];
+           for (const subcollectionName of subcollectionsToDelete) {
+              const subcollectionRef = collection(firestore, 'managers', managerDoc.id, subcollectionName);
+              const subcollectionSnapshot = await getDocs(subcollectionRef);
+              if (subcollectionSnapshot.empty) continue;
+              
+              const subBatch = writeBatch(firestore);
+              subcollectionSnapshot.docs.forEach(doc => subBatch.delete(doc.ref));
+              await subBatch.commit();
+           }
+        }
+      }
+      
+      toast({
+        title: 'App Reset Successfully',
+        description: 'All application data has been permanently deleted.',
+      });
+
+      // Optional: force a reload to ensure all states are cleared
+      window.location.reload();
+
+    } catch (error) {
+      console.error('Failed to reset app:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Reset Failed',
+        description: 'An error occurred while deleting data.',
+      });
+    } finally {
+      setIsResetting(false);
+      setShowResetConfirm(false);
     }
   };
 
@@ -157,9 +239,65 @@ export default function AboutPage() {
                 </div>
              </div>
            </div>
+           
+           <Separator className="my-6" />
+
+            <Card className="border-destructive bg-destructive/5">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle />
+                        Danger Zone
+                    </CardTitle>
+                    <CardDescription>
+                        These actions are irreversible. Proceed with caution.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col sm:flex-row items-center justify-between rounded-lg border border-destructive/20 p-4">
+                        <div>
+                            <h3 className="font-semibold text-foreground">Reset App</h3>
+                            <p className="text-sm text-muted-foreground">Permanently delete all bills, customers, notifications, and other data.</p>
+                        </div>
+                         <Button
+                            variant="destructive"
+                            onClick={() => setShowResetConfirm(true)}
+                            className="mt-2 sm:mt-0 sm:ml-4 flex-shrink-0"
+                            disabled={isResetting}
+                        >
+                            {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Reset App
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
         </CardContent>
       </Card>
     </div>
+
+    <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete all application data. All bills, customers, tokens, and records will be lost forever.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isResetting}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleResetApp}
+            disabled={isResetting}
+            className="bg-destructive hover:bg-destructive/90"
+          >
+            {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Yes, Delete Everything
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
+
+    
