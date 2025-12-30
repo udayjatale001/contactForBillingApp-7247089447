@@ -56,6 +56,7 @@ import {
   Trash2,
   FileDown,
   ArrowRight,
+  Wallet,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, getDoc, getDocs, writeBatch, updateDoc, runTransaction } from 'firebase/firestore';
@@ -931,4 +932,5 @@ export function OwnerDashboard() {
   );
 }
 
+    
     
