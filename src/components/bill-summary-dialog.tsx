@@ -45,6 +45,17 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
   if (!bill) {
     return null;
   }
+
+  const handleOpenChange = (isOpen: boolean) => {
+    // Only allow closing via the explicit close button
+    if (!isOpen) {
+      onOpenChange(false);
+    }
+  };
+
+  const handleDialogInteraction = (e: React.UIEvent) => {
+    e.preventDefault();
+  };
   
   const generateWhatsAppMessage = () => {
     const header = `*${t('bill_receipt_title')}*\n${t('bill_receipt_subtitle')}\n\n`;
@@ -94,11 +105,26 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-sm w-full p-0 sm:max-h-[90vh] flex flex-col">
-          <DialogHeader className="p-4 sm:p-6 pb-0">
-            <DialogTitle className='sr-only'>Bill Summary</DialogTitle>
-          </DialogHeader>
+      <Dialog 
+        open={open} 
+        onOpenChange={(isOpen) => {
+            if (!isOpen) onOpenChange(false);
+        }}
+      >
+        <DialogContent 
+            className="max-w-sm w-full p-0 sm:max-h-[90vh] flex flex-col"
+            onPointerDownOutside={handleDialogInteraction}
+            onInteractOutside={handleDialogInteraction}
+        >
+            <DialogHeader className="p-4 sm:p-6 pb-0 flex-row justify-between items-center">
+                <DialogTitle className='sr-only'>Bill Summary</DialogTitle>
+                <DialogClose asChild>
+                    <Button variant="ghost" size="icon">
+                        <X className="h-5 w-5" />
+                        <span className="sr-only">Close</span>
+                    </Button>
+                </DialogClose>
+            </DialogHeader>
           <div id="final-bill-print" className="p-4 sm:p-6 bg-white rounded-t-lg overflow-y-auto flex-1 text-black">
               {/* Header */}
               <header className="flex justify-between items-start mb-4 sm:mb-6 pb-4 border-b">

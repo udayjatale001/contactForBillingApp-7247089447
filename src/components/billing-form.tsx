@@ -260,7 +260,7 @@ export function BillingForm() {
         });
         
         form.reset(defaultFormValues);
-        setGeneratedBill(null); // Close the dialog and reset state
+        // setGeneratedBill(null); // Keep dialog open after saving.
         return Promise.resolve();
 
     } catch (error) {
@@ -924,5 +924,3 @@ export function BillingForm() {
     </>
   );
 }
-
-    
