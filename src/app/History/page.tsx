@@ -556,14 +556,17 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
     const batch = writeBatch(firestore);
 
     try {
-        for (const tokenId of selectedIds) {
-            const tokenDoc = await getDoc(doc(firestore, 'tokens', tokenId));
+        const tokenDocs = await Promise.all(
+          Array.from(selectedIds).map(id => getDoc(doc(firestore, 'tokens', id)))
+        );
+
+        tokenDocs.forEach(tokenDoc => {
             if (tokenDoc.exists()) {
                 const tokenData = tokenDoc.data() as Token;
-                batch.delete(doc(firestore, 'tokens', tokenId));
-                batch.delete(doc(firestore, 'managers', tokenData.managerId, 'tokens', tokenId));
+                batch.delete(doc(firestore, 'tokens', tokenDoc.id));
+                batch.delete(doc(firestore, 'managers', tokenData.managerId, 'tokens', tokenDoc.id));
             }
-        }
+        });
         
         await batch.commit();
         toast({
