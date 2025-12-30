@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Phone, Languages, Calendar as CalendarIcon, X } from 'lucide-react';
+import { Mail, Phone, Languages, Calendar as CalendarIcon, X, AlertTriangle, Loader2 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useLanguage } from '@/context/language-context';
 import { Label } from '@/components/ui/label';
@@ -23,11 +23,28 @@ import { cn } from '@/lib/utils';
 import { format, setHours, setMinutes } from 'date-fns';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import * as React from 'react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useFirestore } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { collection, getDocs, writeBatch } from 'firebase/firestore';
 
 export default function AboutPage() {
   const { t, language, setLanguage } = useLanguage();
   const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
-  const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+  const [isCalendarOpen, React.useState(false);
+  const [showResetConfirm, setShowResetConfirm] = React.useState(false);
+  const [isResetting, setIsResetting] = React.useState(false);
+  const firestore = useFirestore();
+  const { toast } = useToast();
 
   const handleLanguageChange = (checked: boolean) => {
     setLanguage(checked ? 'hi' : 'en');
@@ -42,7 +59,54 @@ export default function AboutPage() {
     }
   };
 
+  const handleResetApp = async () => {
+    if (!firestore) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Firestore not available.' });
+        return;
+    }
+    setIsResetting(true);
+
+    const collectionsToDelete = ['bills', 'customers', 'labours', 'notifications', 'tokens'];
+
+    try {
+        const batch = writeBatch(firestore);
+        
+        for (const collectionName of collectionsToDelete) {
+            const collectionRef = collection(firestore, collectionName);
+            const snapshot = await getDocs(collectionRef);
+            snapshot.docs.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+        }
+        
+        // Note: This won't delete subcollections like manager-specific bills,
+        // but it will clear all globally accessible data, effectively resetting the owner's view.
+        
+        await batch.commit();
+
+        toast({
+            title: 'App Reset Successful',
+            description: 'All application data has been permanently deleted.',
+        });
+
+        // Optional: Force a page reload to see changes immediately
+        window.location.reload();
+
+    } catch (error) {
+        console.error("Error resetting app:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Reset Failed',
+            description: 'An error occurred while deleting data. Please check console for details.',
+        });
+    } finally {
+        setIsResetting(false);
+        setShowResetConfirm(false);
+    }
+};
+
   return (
+    <>
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight font-headline">
@@ -125,6 +189,33 @@ export default function AboutPage() {
               </div>
           </div>
           <Separator className="my-4" />
+           <div className="space-y-4">
+              <Card className="border-destructive/50">
+                  <CardHeader>
+                      <CardTitle className="text-destructive flex items-center gap-2">
+                          <AlertTriangle />
+                          Danger Zone
+                      </CardTitle>
+                      <CardDescription>
+                          These actions are irreversible. Proceed with caution.
+                      </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <Button
+                          variant="destructive"
+                          onClick={() => setShowResetConfirm(true)}
+                          disabled={isResetting}
+                      >
+                          {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          Reset App
+                      </Button>
+                      <p className="text-xs text-muted-foreground mt-2">
+                          Permanently delete all bills, customers, notifications, and other data.
+                      </p>
+                  </CardContent>
+              </Card>
+          </div>
+          <Separator className="my-4" />
           <div className="space-y-4 text-center max-w-3xl mx-auto">
               <p>
                 {t('about_p1')}
@@ -159,6 +250,29 @@ export default function AboutPage() {
         </CardContent>
       </Card>
     </div>
+
+    <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete all application data, including bills, customers, and notifications.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isResetting}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                    onClick={handleResetApp}
+                    disabled={isResetting}
+                    className="bg-destructive hover:bg-destructive/90"
+                >
+                    {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Yes, Delete Everything
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
