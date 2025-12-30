@@ -172,15 +172,16 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
   );
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm w-full p-0 print:hidden sm:max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-sm w-full p-0 sm:max-h-[90vh] flex flex-col print:hidden">
         <DialogHeader className="p-4 sm:p-6 pb-0">
           <DialogTitle className='sr-only'>Bill Summary</DialogTitle>
         </DialogHeader>
         <div className="p-4 sm:p-6 bg-white rounded-t-lg overflow-y-auto flex-1 text-black">
           <BillContent />
         </div>
-        <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 rounded-b-lg border-t bg-gray-50 flex-row justify-between w-full print:hidden">
+        <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 rounded-b-lg border-t bg-gray-50 flex-row justify-between w-full">
             <div className='flex items-center gap-2'>
               {isViewing && onDelete && (
                   <Button variant="ghost" size="icon" onClick={onDelete}>
@@ -219,19 +220,25 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             </div>
         </DialogFooter>
       </DialogContent>
-      {/* This is the printable area, which is hidden by default and only visible for printing */}
-       <div className="hidden print:block p-4 bg-white text-black">
-         <BillContent />
-       </div>
-      <style>
-          {`
-            @media print {
-              body > :not(.print-block) {
-                display: none;
-              }
-            }
-          `}
-        </style>
     </Dialog>
+    {/* This is the printable area, which is hidden by default and only visible for printing */}
+    <div className="hidden print:block bg-white text-black p-4" id="printable-bill">
+        <BillContent />
+    </div>
+    <style jsx global>{`
+        @media print {
+            body > * {
+                display: none;
+            }
+            #printable-bill {
+                display: block;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
+    `}</style>
+    </>
   );
 }
