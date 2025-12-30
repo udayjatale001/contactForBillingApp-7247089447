@@ -70,7 +70,8 @@ export default function AboutPage() {
 
     try {
         const batch = writeBatch(firestore);
-        
+
+        // 1. Delete all documents in the global collections
         for (const collectionName of collectionsToDelete) {
             const collectionRef = collection(firestore, collectionName);
             const snapshot = await getDocs(collectionRef);
@@ -79,8 +80,23 @@ export default function AboutPage() {
             });
         }
         
-        // Note: This won't delete subcollections like manager-specific bills,
-        // but it will clear all globally accessible data, effectively resetting the owner's view.
+        // 2. Fetch all managers to delete their sub-collections
+        const managersCollectionRef = collection(firestore, 'managers');
+        const managersSnapshot = await getDocs(managersCollectionRef);
+
+        for (const managerDoc of managersSnapshot.docs) {
+            const managerId = managerDoc.id;
+            
+            // Delete manager's bills sub-collection
+            const managerBillsRef = collection(firestore, `managers/${managerId}/bills`);
+            const managerBillsSnapshot = await getDocs(managerBillsRef);
+            managerBillsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+
+            // Delete manager's tokens sub-collection
+            const managerTokensRef = collection(firestore, `managers/${managerId}/tokens`);
+            const managerTokensSnapshot = await getDocs(managerTokensRef);
+            managerTokensSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+        }
         
         await batch.commit();
 
@@ -89,7 +105,7 @@ export default function AboutPage() {
             description: 'All application data has been permanently deleted.',
         });
 
-        // Optional: Force a page reload to see changes immediately
+        // Force a page reload to see changes immediately
         window.location.reload();
 
     } catch (error) {
@@ -104,6 +120,7 @@ export default function AboutPage() {
         setShowResetConfirm(false);
     }
 };
+
 
   return (
     <>
