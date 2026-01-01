@@ -822,30 +822,32 @@ export function OwnerDashboard() {
             </CardHeader>
             <CardContent className="overflow-x-auto">
             {recentBills && recentBills.length > 0 ? (
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead>Due</TableHead>
-                        <TableHead>Date</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {recentBills.map(bill => (
-                        <TableRow key={bill.id}>
-                            <TableCell className="font-medium">{bill.customerName}</TableCell>
-                            <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
-                            <TableCell>
-                            <Badge variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}>
-                                {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
-                            </Badge>
-                            </TableCell>
-                            <TableCell>{format(new Date(bill.createdAt), 'PPp')}</TableCell>                        
-                        </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                <div className="w-full overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Total</TableHead>
+                            <TableHead>Due</TableHead>
+                            <TableHead>Date</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {recentBills.map(bill => (
+                            <TableRow key={bill.id}>
+                                <TableCell className="font-medium">{bill.customerName}</TableCell>
+                                <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
+                                <TableCell>
+                                <Badge variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}>
+                                    {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
+                                </Badge>
+                                </TableCell>
+                                <TableCell>{format(new Date(bill.createdAt), 'PPp')}</TableCell>                        
+                            </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
             ) : (
                     <div className="text-center py-16">
                     <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
