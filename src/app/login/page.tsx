@@ -36,7 +36,7 @@ export default function LoginPage() {
         const ownerDocRef = doc(firestore, 'roles_owner', user.uid);
         const ownerDoc = await getDoc(ownerDocRef);
         if (ownerDoc.exists()) {
-          router.push('/dashboard');
+          router.push('/Admin');
         } else {
           router.push('/');
         }
@@ -59,7 +59,7 @@ export default function LoginPage() {
 
       if (role === 'owner') {
         if (ownerDoc.exists()) {
-          router.push('/dashboard');
+          router.push('/Admin');
         } else {
           await auth.signOut();
           toast({
@@ -188,5 +188,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
