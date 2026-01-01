@@ -33,10 +33,10 @@ const prompt = ai.definePrompt({
   name: 'composeReminderMessagePrompt',
   input: {schema: ComposeReminderMessageInputSchema},
   output: {schema: ComposeReminderMessageOutputSchema},
-  prompt: `You are an SMS messaging assistant for Ananad Sagar Fresh Fruit.
+  prompt: `You are an SMS messaging assistant for Anand Sagar Fresh Fruit.
 
   Compose a friendly and encouraging reminder message for a customer who hasn't had any carat activity in a month. The message should:
-  * Remind them of Ananad Sagar Fresh Fruit.
+  * Remind them of Anand Sagar Fresh Fruit.
   * Mention their name.
   * Encourage them to visit again soon.
   * Highlight the fresh fruit available.

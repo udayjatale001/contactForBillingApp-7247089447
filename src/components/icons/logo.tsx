@@ -13,7 +13,7 @@ export function Logo() {
       </div>
       <div className="flex flex-col">
         <span className="font-bold text-lg font-headline text-foreground leading-tight">
-          Ananad Sagar
+          Anand Sagar
         </span>
         <span className="text-xs text-muted-foreground leading-tight">
           {t('billing_app')}

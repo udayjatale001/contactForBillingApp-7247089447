@@ -10,8 +10,8 @@ import { LanguageProvider } from '@/context/language-context';
 import { DateFilterProvider } from '@/context/date-filter-context';
 
 export const metadata: Metadata = {
-  title: 'Ananad Sagar Billing App',
-  description: 'Billing application for Ananad Sagar Fresh Fruit',
+  title: 'Anand Sagar Billing App',
+  description: 'Billing application for Anand Sagar Fresh Fruit',
 };
 
 const fontSans = Inter({

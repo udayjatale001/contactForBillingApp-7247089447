@@ -1,7 +1,7 @@
 
 export default {
   // General
-  app_title: 'Ananad Sagar Billing App',
+  app_title: 'Anand Sagar Billing App',
   billing_app: 'Billing App',
   developed_by: 'Developed by: Uday Jatale & Koushal Mahajan',
   language_toggle_label: 'हिन्दी',
@@ -104,7 +104,7 @@ export default {
   token_save_failed_desc: 'An error occurred while saving the token.',
 
   // Bill Summary Dialog
-  bill_receipt_title: 'Ananad Sagar Ripening Chamber',
+  bill_receipt_title: 'Anand Sagar Ripening Chamber',
   bill_receipt_subtitle: 'Ichapur Road, Shahpur',
   bill_no: 'Bill No',
   date: 'Date',
