@@ -42,93 +42,6 @@ import { Calendar } from './ui/calendar';
 import { TokenSummaryDialog } from './token-summary-dialog';
 import { Label } from './ui/label';
 
-function AppSettingsCard() {
-  const { toast } = useToast();
-  const firestore = useFirestore();
-  const { user } = useUser();
-  const [isOwner, setIsOwner] = React.useState(false);
-
-  const settingsDocRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'app_settings', 'rates');
-  }, [firestore]);
-
-  const { data: appSettings, isLoading } = useDoc<AppSettings>(settingsDocRef);
-
-  const [contactUsNumber, setContactUsNumber] = React.useState<string>('');
-  const [isSaving, setIsSaving] = React.useState(false);
-
-  React.useEffect(() => {
-    if (appSettings) {
-      setContactUsNumber(appSettings.contactUsNumber ?? '');
-    }
-  }, [appSettings]);
-
-  React.useEffect(() => {
-    if (user && firestore) {
-      const checkRole = async () => {
-        const ownerDocRef = doc(firestore, 'roles_owner', user.uid);
-        const ownerDoc = await getDoc(ownerDocRef);
-        setIsOwner(ownerDoc.exists());
-      };
-      checkRole();
-    }
-  }, [user, firestore]);
-
-  const handleSaveSettings = async () => {
-    if (!firestore || !settingsDocRef || !isOwner) return;
-
-    setIsSaving(true);
-    const newSettings = {
-      contactUsNumber: contactUsNumber,
-    };
-
-    try {
-      await setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
-      toast({
-        title: 'Settings Updated',
-        description: 'The contact number has been saved.',
-      });
-    } catch (error) {
-       toast({
-        variant: 'destructive',
-        title: 'Save Failed',
-        description: 'Could not save settings.',
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings />
-          Global Bill Settings
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="contact-us-number">Contact Us Number</Label>
-          <Input
-            id="contact-us-number"
-            type="tel"
-            placeholder="e.g., 9876543210"
-            value={contactUsNumber}
-            onChange={(e) => setContactUsNumber(e.target.value)}
-            disabled={!isOwner || isLoading || isSaving}
-          />
-        </div>
-         <Button onClick={handleSaveSettings} disabled={!isOwner || isLoading || isSaving} className="w-full">
-          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save Contact Number
-        </Button>
-      </CardContent>
-    </Card>
-  )
-}
-
 export function BillingForm() {
   const { toast } = useToast();
   const { user } = useUser();
@@ -933,8 +846,6 @@ export function BillingForm() {
                   </Button>
                 </Card>
                 
-                <AppSettingsCard />
-
                  {/* Bill Date & Time */}
                 <Card>
                     <CardHeader>
