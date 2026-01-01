@@ -71,37 +71,55 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint, onDelet
         </DialogHeader>
         <style>
           {`
+            @page {
+              size: 80mm auto;
+              margin: 0;
+            }
             @media print {
-              body, body > *, .print-hidden {
-                visibility: hidden;
+              html, body {
+                width: 100%;
+                height: 100%;
                 margin: 0;
                 padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+              }
+              body > * {
+                visibility: hidden;
+              }
+              .print-hidden {
+                display: none !important;
               }
               #token-receipt-container, #token-receipt-container * {
                 visibility: visible;
               }
-               #token-receipt-container {
-                position: absolute;
-                left: 0;
-                top: 0;
-                right: 0;
+              #token-receipt-container {
+                position: static;
+                display: block;
                 width: 100%;
                 height: auto;
-                min-height: 100vh;
-                display: block;
+                min-height: initial;
+                max-height: none;
+                margin: auto;
                 padding: 0;
-                margin: 0;
-                background: white;
+                background-color: #ffffff !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
                 overflow: visible;
+                page-break-before: auto;
+                page-break-after: auto;
+                page-break-inside: avoid !important;
               }
-               #token-receipt {
-                  width: 100%;
-                  border: none;
-                  box-shadow: none;
-                  margin: 0;
-                  padding: 1rem;
-                  font-size: 12px;
-               }
+              #token-receipt {
+                width: 100%;
+                border: none !important;
+                box-shadow: none !important;
+                margin: 0;
+                padding: 1rem;
+                font-size: 12px;
+                page-break-inside: avoid;
+              }
             }
           `}
         </style>
