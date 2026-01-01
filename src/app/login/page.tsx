@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
@@ -18,7 +17,6 @@ import { useFirestore } from '@/firebase';
 import Link from 'next/link';
 
 export default function LoginPage() {
-  const [role, setRole] = useState<'manager' | 'owner'>('manager');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -57,29 +55,10 @@ export default function LoginPage() {
       const ownerDocRef = doc(firestore, 'roles_owner', loggedInUser.uid);
       const ownerDoc = await getDoc(ownerDocRef);
 
-      if (role === 'owner') {
-        if (ownerDoc.exists()) {
-          router.push('/Admin');
-        } else {
-          await auth.signOut();
-          toast({
-            variant: 'destructive',
-            title: 'Login Failed',
-            description: 'You do not have owner privileges.',
-          });
-        }
-      } else { // role is 'manager'
-        if (ownerDoc.exists()) {
-          // An owner is trying to log in as a manager
-          await auth.signOut();
-           toast({
-            variant: 'destructive',
-            title: 'Login Failed',
-            description: 'Owners must log in using the "Owner" role.',
-          });
-        } else {
-          router.push('/');
-        }
+      if (ownerDoc.exists()) {
+        router.push('/Admin');
+      } else {
+        router.push('/');
       }
     } catch (error: any) {
       let errorMessage = 'An unknown error occurred.';
@@ -133,23 +112,10 @@ export default function LoginPage() {
                 <Logo />
             </div>
           <CardTitle className="text-2xl font-bold">Login</CardTitle>
-          <CardDescription>Select your role and enter your credentials.</CardDescription>
+          <CardDescription>Enter your credentials to access your account.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <RadioGroup value={role} onValueChange={(value) => setRole(value as 'manager' | 'owner')} className="flex space-x-4">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="manager" id="manager" />
-                  <Label htmlFor="manager">Manager</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="owner" id="owner" />
-                  <Label htmlFor="owner">Owner</Label>
-                </div>
-              </RadioGroup>
-            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
