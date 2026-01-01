@@ -41,6 +41,7 @@ export default {
   contact_devs: 'For app and website development, contact:',
 
   // Billing Form
+  customer_name: 'Customer Name',
   enter_customer_name: "Enter customer's name",
   contact_number: 'Contact Number',
   enter_contact_number: 'e.g., 9876543210',

@@ -67,7 +67,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
   };
   
   const generateWhatsAppMessage = () => {
-    const header = `*${t('bill_receipt_title')}*\n${t('bill_receipt_subtitle')}\n\n`;
+    const header = `*${t('app_title')}*\n${t('bill_receipt_subtitle')}\n\n`;
     const billInfo = `*${t('bill_no')}:* #${bill.id.slice(-6).toUpperCase()}\n*${t('date')}:* ${format(new Date(bill.createdAt), 'PP')}\n\n`;
     const customerDetails = `*${t('customer_details')}:*\n${t('customer_name')}: ${bill.customerName}\n` +
       (bill.roomNumber ? `${t('room_number')}: ${bill.roomNumber}\n` : '') +
@@ -138,11 +138,11 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               {/* Header */}
               <header className="flex justify-between items-start mb-4 sm:mb-6 pb-4 border-b">
                   <div>
-                      <h1 className="text-lg sm:text-2xl font-bold text-gray-800">{t('bill_receipt_title')}</h1>
+                      <h1 className="text-lg sm:text-2xl font-bold text-gray-800">{t('app_title')}</h1>
                       <p className="text-xs sm:text-sm text-gray-500">{t('bill_receipt_subtitle')}</p>
                   </div>
                   <div className="text-right">
-                      <p className="text-xs sm:text-sm text-gray-500">{t('bill_no')}: #{bill.id.slice(-6).toUpperCase()}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">{t('bill_no')}: #${bill.id.slice(-6).toUpperCase()}</p>
                       <p className="text-xs sm:text-sm text-gray-500">{t('date')}: {format(new Date(bill.createdAt), 'PP')}</p>
                   </div>
               </header>
@@ -321,5 +321,3 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     </>
   );
 }
-
-    
