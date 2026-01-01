@@ -257,43 +257,54 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
       </Dialog>
       
       <style jsx global>{`
-          @media print {
-            body {
-              -webkit-print-color-adjust: exact;
-              color-adjust: exact;
-            }
-            body * {
-              visibility: hidden;
-            }
-            .print-hidden {
-              display: none !important;
-            }
-            #final-bill-print, #final-bill-print * {
-              visibility: visible;
-            }
-            #final-bill-print {
-              position: absolute;
-              left: 0;
-              top: 0;
-              right: 0;
-              width: 100%;
-              margin: 0;
-              padding: 0;
-              border: none;
-              box-shadow: none;
-              background-color: #ffffff !important;
-              color: #000000 !important;
-              font-size: 12px;
-              height: fit-content;
-              max-height: none;
-              overflow: hidden;
-              page-break-inside: avoid;
-            }
+        @page {
+          size: 80mm auto;
+          margin: 0;
+        }
+        @media print {
+          body {
+            margin: 0;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
           }
-          @page {
-            size: 80mm auto;
-            margin: 0mm;
+          .print-hidden, body > *:not(#final-bill-print) {
+            display: none;
+            visibility: hidden;
           }
+          #final-bill-print {
+            visibility: visible;
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: fit-content;
+            max-height: none;
+            margin: 0;
+            padding: 1rem;
+            border: none;
+            box-shadow: none;
+            font-size: 12px;
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            overflow: hidden;
+            page-break-before: never;
+            page-break-after: never;
+            page-break-inside: avoid;
+            transform: scale(0.95);
+            transform-origin: top left;
+          }
+          /* Further compacting styles */
+          #final-bill-print header, #final-bill-print main, #final-bill-print footer {
+            padding: 0.5rem !important;
+            margin: 0 !important;
+          }
+          #final-bill-print .space-y-1 > div { margin-top: 0.1rem; }
+          #final-bill-print .space-y-2 > div { margin-top: 0.2rem; }
+          #final-bill-print .space-y-3 > div { margin-top: 0.3rem; }
+          #final-bill-print .space-y-4 > div { margin-top: 0.4rem; }
+          #final-bill-print .space-y-6 > div { margin-top: 0.6rem; }
+        }
       `}</style>
     </>
   );
