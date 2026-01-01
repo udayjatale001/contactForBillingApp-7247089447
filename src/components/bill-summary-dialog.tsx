@@ -258,7 +258,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
       
       <style jsx global>{`
           @media print {
-            body {
+            body * {
               visibility: hidden;
             }
             .print-hidden {
@@ -282,13 +282,13 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               -webkit-print-color-adjust: exact;
               color-adjust: exact;
               font-size: 12px;
-              height: auto !important; /* Ensure height is not constrained */
-              overflow: visible !important; /* Ensure content is not clipped */
-              page-break-inside: avoid; /* Prevent breaking inside the element */
+              height: auto !important;
+              overflow: visible !important;
+              page-break-inside: avoid;
             }
             
             @page {
-              size: 80mm auto; /* Common thermal printer paper width */
+              size: 80mm auto;
               margin: 0mm;
             }
           }
@@ -296,4 +296,3 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     </>
   );
 }
-
