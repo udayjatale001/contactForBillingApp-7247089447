@@ -258,42 +258,41 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
       
       <style jsx global>{`
           @media print {
+            body {
+              background: #fff;
+            }
             body * {
               visibility: hidden;
             }
-
             .print-hidden {
               display: none !important;
             }
-
             #final-bill-print, #final-bill-print * {
               visibility: visible;
             }
-
             #final-bill-print {
               position: absolute;
               left: 0;
               top: 0;
+              right: 0;
               width: 100%;
-              height: auto;
               margin: 0;
-              padding: 1.5rem;
+              padding: 0.5rem; /* Reduced padding */
               border: none;
               box-shadow: none;
-              font-size: 14px;
               background-color: #ffffff !important;
-              color: #1f2937 !important;
+              color: #000000 !important;
               -webkit-print-color-adjust: exact;
               color-adjust: exact;
+              font-size: 12px; /* Smaller font for thermal printers */
             }
             
             @page {
-              size: auto;
-              margin: 0;
+              size: 80mm auto; /* Common thermal printer paper width */
+              margin: 0mm;
             }
           }
       `}</style>
     </>
   );
 }
-
