@@ -263,8 +263,8 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
         }
         @media print {
           html, body {
-            height: 100%;
             width: 100%;
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -276,10 +276,13 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             visibility: hidden;
           }
           .print-hidden {
-            display: none;
+            display: none !important;
           }
-          .print-container {
+          .print-container, .print-container > div {
             visibility: hidden;
+            border: none !important;
+            box-shadow: none !important;
+            max-width: none !important;
           }
           #final-bill-print, #final-bill-print * {
             visibility: visible;
@@ -287,21 +290,19 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
           #final-bill-print {
             position: static;
             display: block;
-            width: 100%;
+            width: 100%; /* Fill the container */
             height: fit-content;
             max-height: none;
             min-height: initial;
             margin: auto;
             padding: 1rem;
-            border: none;
-            box-shadow: none;
             background-color: #ffffff !important;
             -webkit-print-color-adjust: exact;
             color-adjust: exact;
             overflow: visible;
             page-break-before: auto;
             page-break-after: auto;
-            page-break-inside: avoid;
+            page-break-inside: avoid !important;
           }
         }
       `}</style>
