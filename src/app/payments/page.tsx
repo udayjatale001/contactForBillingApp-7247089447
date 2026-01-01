@@ -68,8 +68,7 @@ function PaymentsPage() {
   const handleUpdatePayment = async (
     customer: Customer, 
     paidAmount: number, 
-    paymentMode: 'Cash' | 'Online Payment', 
-    paidTo: 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gajananad Murtankar',
+    paymentMode: 'Cash' | 'Online Payment',
     paymentDate: Date
     ) => {
     if (!firestore || !user) return;
@@ -88,7 +87,7 @@ function PaymentsPage() {
         totalAmount: paidAmount, // Total amount of this transaction is what's paid
         paidAmount: paidAmount,
         dueAmount: 0, // This specific transaction has no due amount
-        paidTo: paidTo,
+        paidTo: 'Gopal Temkar', // Default value
         paymentMode: paymentMode,
         createdAt: paymentDate.toISOString(),
     };

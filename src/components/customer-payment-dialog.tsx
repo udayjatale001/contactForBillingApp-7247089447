@@ -15,14 +15,12 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Separator } from './ui/separator';
 import type { Customer } from '@/lib/types';
 import { Loader2, MessageSquare, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
-type PaidTo = 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gajananad Murtankar';
 type PaymentMode = 'Cash' | 'Online Payment';
 
 interface CustomerPaymentDialogProps {
@@ -33,7 +31,6 @@ interface CustomerPaymentDialogProps {
     customer: Customer, 
     paidAmount: number, 
     paymentMode: PaymentMode, 
-    paidTo: PaidTo,
     paymentDate: Date
   ) => Promise<void>;
   onDelete: (customer: Customer) => void;
@@ -54,7 +51,6 @@ export function CustomerPaymentDialog({
   const [paidAmount, setPaidAmount] = React.useState('');
   const [paymentDate, setPaymentDate] = React.useState(new Date());
   const [paymentMode, setPaymentMode] = React.useState<PaymentMode>('Cash');
-  const [paidTo, setPaidTo] = React.useState<PaidTo>('Gopal Temkar');
 
   React.useEffect(() => {
     if (customer) {
@@ -70,7 +66,7 @@ export function CustomerPaymentDialog({
   const handleConfirm = () => {
     const amount = Number(paidAmount);
     if (!isNaN(amount) && amount > 0 && amount <= customer.totalDueAmount) {
-      onConfirmPayment(customer, amount, paymentMode, paidTo, paymentDate);
+      onConfirmPayment(customer, amount, paymentMode, paymentDate);
     }
   };
   
@@ -141,20 +137,6 @@ export function CustomerPaymentDialog({
                             <Label htmlFor="online">Online Payment</Label>
                         </div>
                     </RadioGroup>
-                 </div>
-                 <div>
-                    <Label>Paid To</Label>
-                    <Select value={paidTo} onValueChange={(v) => setPaidTo(v as PaidTo)}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select person" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="Gopal Temkar">Gopal Temkar</SelectItem>
-                            <SelectItem value="Yuvaraj Temkar">Yuvaraj Temkar</SelectItem>
-                            <SelectItem value="Suyash Temkar">Suyash Temkar</SelectItem>
-                            <SelectItem value="Gajananad Murtankar">Gajananad Murtankar</SelectItem>
-                        </SelectContent>
-                    </Select>
                  </div>
             </div>
 
