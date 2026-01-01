@@ -111,7 +111,7 @@ type AggregatedDueCustomer = {
 };
 
 
-function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
+function ManageRatesCard() {
   const { toast } = useToast();
   const firestore = useFirestore();
 
@@ -173,7 +173,7 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
             placeholder="e.g., 17"
             value={smallCaratRate}
             onChange={(e) => setSmallCaratRate(e.target.value)}
-            disabled={!isOwner || isLoading || isSaving}
+            disabled={isLoading || isSaving}
           />
         </div>
         <div className="space-y-2">
@@ -183,7 +183,7 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
             placeholder="e.g., 20"
             value={bigCaratRate}
             onChange={(e) => setBigCaratRate(e.target.value)}
-            disabled={!isOwner || isLoading || isSaving}
+            disabled={isLoading || isSaving}
           />
         </div>
         <div className="space-y-2">
@@ -193,12 +193,12 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
             placeholder="e.g., 5"
             value={labourRate}
             onChange={(e) => setLabourRate(e.target.value)}
-            disabled={!isOwner || isLoading || isSaving}
+            disabled={isLoading || isSaving}
           />
         </div>
       </CardContent>
       <CardContent>
-        <Button onClick={handleSaveRates} disabled={!isOwner || isLoading || isSaving} className="w-full">
+        <Button onClick={handleSaveRates} disabled={isLoading || isSaving} className="w-full">
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Save Rates
         </Button>
@@ -207,7 +207,7 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
   );
 }
 
-function GlobalBillSettingsCard({ isOwner }: { isOwner: boolean }) {
+function GlobalBillSettingsCard() {
   const { toast } = useToast();
   const firestore = useFirestore();
 
@@ -263,12 +263,12 @@ function GlobalBillSettingsCard({ isOwner }: { isOwner: boolean }) {
             placeholder="e.g., 9876543210"
             value={contactUsNumber}
             onChange={(e) => setContactUsNumber(e.target.value)}
-            disabled={!isOwner || isLoading || isSaving}
+            disabled={isLoading || isSaving}
           />
         </div>
       </CardContent>
        <CardContent>
-        <Button onClick={handleSaveSettings} disabled={!isOwner || isLoading || isSaving} className="w-full">
+        <Button onClick={handleSaveSettings} disabled={isLoading || isSaving} className="w-full">
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Save Contact Number
         </Button>
@@ -284,8 +284,6 @@ export function OwnerDashboard() {
   const { toast } = useToast();
   const { globalDate } = useDateFilter();
   
-  const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
-  
   const [selectedYear, setSelectedYear] = React.useState<string>(new Date().getFullYear().toString());
   const [isExporting, setIsExporting] = React.useState(false);
 
@@ -293,17 +291,6 @@ export function OwnerDashboard() {
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [customerToDelete, setCustomerToDelete] = React.useState<Customer | null>(null);
 
-  React.useEffect(() => {
-    if(user && firestore) {
-      const checkRole = async () => {
-        const ownerDocRef = doc(firestore, 'roles_owner', user.uid);
-        const ownerDoc = await getDoc(ownerDocRef);
-        setIsOwner(ownerDoc.exists());
-      }
-      checkRole();
-    }
-  }, [user, firestore]);
-  
   const billsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'bills'), orderBy('createdAt', 'desc'));
@@ -612,7 +599,7 @@ export function OwnerDashboard() {
     }
   };
 
-  const isLoading = isUserLoading || isLoadingBills || isOwner === null || isLoadingCustomers;
+  const isLoading = isUserLoading || isLoadingBills || isLoadingCustomers;
 
   if (isLoading) {
     return (
@@ -968,8 +955,8 @@ export function OwnerDashboard() {
             </CardContent>
         </Card>
         <div className="col-span-full lg:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
-             <ManageRatesCard isOwner={!!isOwner} />
-             <GlobalBillSettingsCard isOwner={!!isOwner} />
+             <ManageRatesCard />
+             <GlobalBillSettingsCard />
         </div>
       </div>
 
