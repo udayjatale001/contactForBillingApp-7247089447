@@ -116,7 +116,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             onPointerDownOutside={handleDialogInteraction}
             onInteractOutside={handleDialogInteraction}
         >
-            <DialogHeader className="p-4 sm:p-6 pb-0 flex-row justify-between items-center">
+            <DialogHeader className="p-4 sm:p-6 pb-0 flex-row justify-between items-center print-hidden">
                 <DialogTitle className='sr-only'>Bill Summary</DialogTitle>
                 <DialogClose asChild>
                     <Button variant="ghost" size="icon">
@@ -199,7 +199,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                   </div>
               </footer>
           </div>
-          <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 rounded-b-lg border-t bg-gray-50 flex-row justify-between w-full">
+          <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 rounded-b-lg border-t bg-gray-50 flex-row justify-between w-full print-hidden">
               <div className='flex items-center gap-2'>
                 {isViewing && onDelete && (
                     <Button variant="ghost" size="icon" onClick={onDelete}>
@@ -250,6 +250,10 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             body {
               margin: 0;
               padding: 0;
+            }
+
+            .print-hidden {
+                display: none;
             }
 
             body * {
