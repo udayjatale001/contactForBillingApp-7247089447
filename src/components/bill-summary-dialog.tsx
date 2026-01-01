@@ -258,78 +258,42 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
       
       <style jsx global>{`
           @media print {
-            @page {
-              size: auto;
-              margin: 0mm;
-            }
-
-            html, body {
-                height: 100%;
-                width: 100%;
-                margin: 0;
-                padding: 0;
-                background: #fff;
-                -webkit-print-color-adjust: exact;
-                color-adjust: exact;
-            }
-            
-            body > div[data-radix-dialog-portal] {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                visibility: visible;
-                background: #fff;
+            body * {
+              visibility: hidden;
             }
 
             .print-hidden {
-                display: none !important;
+              display: none !important;
             }
 
-            body > div[data-radix-dialog-portal] > div[data-radix-overlay] {
-                display: none;
-            }
-            
-            body > div[data-radix-dialog-portal] > div[data-radix-dialog-content] {
-                visibility: visible;
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                max-width: none;
-                max-height: none;
-                border: none;
-                box-shadow: none;
-                border-radius: 0;
-                padding: 0;
-                margin: 0;
-                overflow: visible;
-            }
-
-            #final-bill-print,
-            #final-bill-print * {
+            #final-bill-print, #final-bill-print * {
               visibility: visible;
             }
 
             #final-bill-print {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: auto;
-                min-height: 100%;
-                padding: 1.5rem; /* Add some padding for print */
-                margin: 0;
-                border: none;
-                box-shadow: none;
-                font-size: 14px;
-                background-color: #ffffff !important;
-                color: #1f2937 !important;
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
+              height: auto;
+              margin: 0;
+              padding: 1.5rem;
+              border: none;
+              box-shadow: none;
+              font-size: 14px;
+              background-color: #ffffff !important;
+              color: #1f2937 !important;
+              -webkit-print-color-adjust: exact;
+              color-adjust: exact;
+            }
+            
+            @page {
+              size: auto;
+              margin: 0;
             }
           }
       `}</style>
     </>
   );
 }
+
