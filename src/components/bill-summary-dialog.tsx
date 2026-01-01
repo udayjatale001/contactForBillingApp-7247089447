@@ -121,11 +121,11 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
         }}
       >
         <DialogContent 
-            className="max-w-sm w-full p-0 sm:max-h-[90vh] flex flex-col print-container"
+            className="max-w-sm w-full p-0 flex flex-col h-screen sm:h-auto sm:max-h-[90vh] print-container"
             onPointerDownOutside={handleDialogInteraction}
             onInteractOutside={handleDialogInteraction}
         >
-            <DialogHeader className="p-4 sm:p-6 pb-0 flex-row justify-between items-center print-hidden">
+            <DialogHeader className="p-4 sm:p-6 pb-0 flex-row justify-between items-center print-hidden flex-shrink-0">
                 <DialogTitle className='sr-only'>Bill Summary</DialogTitle>
                 <DialogClose asChild>
                     <Button variant="ghost" size="icon">
@@ -215,7 +215,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                   )}
               </footer>
           </div>
-          <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 rounded-b-lg border-t bg-gray-50 flex-row justify-between w-full print-hidden">
+          <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 rounded-b-lg border-t bg-gray-50 flex-row justify-between w-full print-hidden flex-shrink-0">
               <div className='flex items-center gap-2'>
                 {isViewing && onDelete && (
                     <Button variant="ghost" size="icon" onClick={onDelete}>
