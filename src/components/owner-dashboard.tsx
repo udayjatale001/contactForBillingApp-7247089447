@@ -1,4 +1,3 @@
-
 'use client';
 import * as React from 'react';
 import {
@@ -126,7 +125,6 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
   const [smallCaratRate, setSmallCaratRate] = React.useState<number | string>('');
   const [bigCaratRate, setBigCaratRate] = React.useState<number | string>('');
   const [labourRate, setLabourRate] = React.useState<number | string>('');
-  const [contactUsNumber, setContactUsNumber] = React.useState<string>('');
   const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -134,7 +132,6 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
       setSmallCaratRate(appSettings.smallCaratRate ?? '');
       setBigCaratRate(appSettings.bigCaratRate ?? '');
       setLabourRate(appSettings.labourRate ?? '');
-      setContactUsNumber(appSettings.contactUsNumber ?? '');
     }
   }, [appSettings]);
 
@@ -146,7 +143,6 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
       smallCaratRate: Number(smallCaratRate) || 0,
       bigCaratRate: Number(bigCaratRate) || 0,
       labourRate: Number(labourRate) || 0,
-      contactUsNumber: contactUsNumber,
     };
 
     setDocumentNonBlocking(settingsDocRef, newRates, { merge: true });
@@ -163,10 +159,10 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Settings />
-          Manage Global Settings
+          Manage Billing Rates
         </CardTitle>
         <CardDescription>
-          Update billing rates and contact information. Changes apply to all new bills.
+          Update billing and labour rates. Changes apply to all new bills.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -200,7 +196,67 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
             disabled={!isOwner || isLoading || isSaving}
           />
         </div>
-         <div className="space-y-2">
+      </CardContent>
+      <CardContent>
+        <Button onClick={handleSaveRates} disabled={!isOwner || isLoading || isSaving} className="w-full">
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Save Rates
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function GlobalBillSettingsCard({ isOwner }: { isOwner: boolean }) {
+  const { toast } = useToast();
+  const firestore = useFirestore();
+
+  const settingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'app_settings', 'rates');
+  }, [firestore]);
+
+  const { data: appSettings, isLoading } = useDoc<AppSettings>(settingsDocRef);
+
+  const [contactUsNumber, setContactUsNumber] = React.useState<string>('');
+  const [isSaving, setIsSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    if (appSettings) {
+      setContactUsNumber(appSettings.contactUsNumber ?? '');
+    }
+  }, [appSettings]);
+
+  const handleSaveSettings = async () => {
+    if (!firestore || !settingsDocRef) return;
+
+    setIsSaving(true);
+    const newSettings = {
+      contactUsNumber: contactUsNumber,
+    };
+
+    setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
+
+    toast({
+      title: 'Settings Updated',
+      description: 'The "Contact Us" number has been saved.',
+    });
+    setIsSaving(false);
+  };
+
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Settings />
+          Global Bill Settings
+        </CardTitle>
+        <CardDescription>
+          This contact number will appear on every bill.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
           <label className="text-sm font-medium">Contact Us Number</label>
           <Input
             type="tel"
@@ -211,10 +267,10 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
           />
         </div>
       </CardContent>
-      <CardContent>
-        <Button onClick={handleSaveRates} disabled={!isOwner || isLoading || isSaving} className="w-full">
+       <CardContent>
+        <Button onClick={handleSaveSettings} disabled={!isOwner || isLoading || isSaving} className="w-full">
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save Settings
+          Save Contact Number
         </Button>
       </CardContent>
     </Card>
@@ -869,7 +925,7 @@ export function OwnerDashboard() {
       </Tabs>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-full lg:col-span-4">
+        <Card className="col-span-full lg:col-span-3">
             <CardHeader>
                 <CardTitle>Recent Bills</CardTitle>
                 <CardDescription>Latest 5 bills generated.</CardDescription>
@@ -911,7 +967,10 @@ export function OwnerDashboard() {
             )}
             </CardContent>
         </Card>
-        <ManageRatesCard isOwner={!!isOwner} />
+        <div className="col-span-full lg:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
+             <ManageRatesCard isOwner={!!isOwner} />
+             <GlobalBillSettingsCard isOwner={!!isOwner} />
+        </div>
       </div>
 
     </div>

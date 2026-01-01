@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -208,9 +207,11 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                         {t('thank_you_note')} 😊
                     </div>
                   </div>
-                  <div className="text-center font-bold text-gray-800">
-                    <p>Contact Us: 9826926999</p>
-                  </div>
+                  {appSettings?.contactUsNumber && (
+                    <div className="text-center font-bold text-gray-800">
+                      <p>Contact Us: {appSettings.contactUsNumber}</p>
+                    </div>
+                  )}
               </footer>
           </div>
           <DialogFooter className="px-4 py-3 sm:px-6 sm:pb-4 rounded-b-lg border-t bg-gray-50 flex-row justify-between w-full print-hidden">
