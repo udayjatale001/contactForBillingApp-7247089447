@@ -258,6 +258,10 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
       
       <style jsx global>{`
           @media print {
+            body {
+              -webkit-print-color-adjust: exact;
+              color-adjust: exact;
+            }
             body * {
               visibility: hidden;
             }
@@ -274,23 +278,21 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               right: 0;
               width: 100%;
               margin: 0;
-              padding: 0.5rem;
+              padding: 0;
               border: none;
               box-shadow: none;
               background-color: #ffffff !important;
               color: #000000 !important;
-              -webkit-print-color-adjust: exact;
-              color-adjust: exact;
               font-size: 12px;
-              height: auto !important;
-              overflow: visible !important;
+              height: fit-content;
+              max-height: none;
+              overflow: hidden;
               page-break-inside: avoid;
             }
-            
-            @page {
-              size: 80mm auto;
-              margin: 0mm;
-            }
+          }
+          @page {
+            size: 80mm auto;
+            margin: 0mm;
           }
       `}</style>
     </>
