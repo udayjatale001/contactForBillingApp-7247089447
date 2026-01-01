@@ -34,8 +34,8 @@ interface BillSummaryDialogProps {
 
 const DetailItem = ({ label, value, className, valueClassName }: { label: string, value: React.ReactNode, className?: string, valueClassName?: string }) => (
     <div className={cn("flex justify-between items-start text-xs sm:text-sm", className)}>
-      <p className="text-gray-400">{label}</p>
-      <p className={cn("font-medium text-right text-gray-200", valueClassName)}>{value}</p>
+      <p className="text-gray-500">{label}</p>
+      <p className={cn("font-medium text-right text-gray-800", valueClassName)}>{value}</p>
     </div>
   );
 
@@ -134,12 +134,12 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                     </Button>
                 </DialogClose>
             </DialogHeader>
-          <div id="final-bill-print" className="p-4 sm:p-6 bg-gray-900 text-white rounded-t-lg overflow-y-auto flex-1 font-sans">
+          <div id="final-bill-print" className="p-4 sm:p-6 bg-white text-gray-800 rounded-t-lg overflow-y-auto flex-1 font-sans">
               {/* Header */}
-              <header className="text-center mb-4 sm:mb-6 pb-4 border-b border-gray-700">
-                  <h1 className="text-xl sm:text-2xl font-bold text-primary-foreground tracking-wider">{t('app_title')}</h1>
-                  <p className="text-xs sm:text-sm text-gray-400">{t('bill_receipt_subtitle')}</p>
-                   <div className='flex justify-between text-xs sm:text-sm text-gray-400 mt-4'>
+              <header className="text-center mb-4 sm:mb-6 pb-4 border-b border-gray-200">
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-800 tracking-wider">{t('app_title')}</h1>
+                  <p className="text-xs sm:text-sm text-gray-500">{t('bill_receipt_subtitle')}</p>
+                   <div className='flex justify-between text-xs sm:text-sm text-gray-500 mt-4'>
                       <span>{t('bill_no')}: #{bill.id.slice(-6).toUpperCase()}</span>
                       <span>{t('date')}: {format(new Date(bill.createdAt), 'PP')}</span>
                   </div>
@@ -147,8 +147,8 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
 
               <main className="space-y-4 sm:space-y-6">
                   {/* Customer Details */}
-                  <div className="p-3 sm:p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                      <h2 className="text-base sm:text-lg font-bold text-gray-300 mb-2">{t('customer_details')}</h2>
+                  <div className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100">
+                      <h2 className="text-base sm:text-lg font-bold text-gray-700 mb-2">{t('customer_details')}</h2>
                       <div className="space-y-1">
                           <DetailItem label={t('customer_name')} value={bill.customerName} />
                           {bill.roomNumber && <DetailItem label={t('room_number')} value={bill.roomNumber} />}
@@ -158,8 +158,8 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                   </div>
 
                   {/* Carat Details */}
-                  <div className="p-3 sm:p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                      <h2 className="text-base sm:text-lg font-bold text-gray-300 mb-3">{t('carat_details')}</h2>
+                  <div className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100">
+                      <h2 className="text-base sm:text-lg font-bold text-gray-700 mb-3">{t('carat_details')}</h2>
                       <div className="space-y-2 sm:space-y-3">
                           {bill.inCarat && bill.inCarat > 0 && <DetailItem label={t('in_carat')} value={bill.inCarat} />}
                           {bill.outCarat && bill.outCarat > 0 && <DetailItem label={t('out_carat')} value={bill.outCarat} />}
@@ -175,20 +175,20 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                                   value={`${bill.bigCarat} kg`}
                               />
                           )}
-                          <Separator className="my-2 bg-gray-700" />
-                          <DetailItem label={t('total_amount')} value={`${bill.totalAmount.toLocaleString()}${t('rs_symbol')}`} valueClassName="text-base sm:text-lg font-bold text-white" />
+                          <Separator className="my-2 bg-gray-200" />
+                          <DetailItem label={t('total_amount')} value={`${bill.totalAmount.toLocaleString()}${t('rs_symbol')}`} valueClassName="text-base sm:text-lg font-bold text-black" />
                           <DetailItem label={t('paid_amount')} value={`${bill.paidAmount.toLocaleString()}${t('rs_symbol')}`} />
                           <DetailItem
                               label={t('due_amount')}
                               value={`${bill.dueAmount.toLocaleString()}${t('rs_symbol')}`}
-                              valueClassName={cn("font-bold text-lg", bill.dueAmount > 0 ? "text-red-400" : "text-green-400")}
+                              valueClassName={cn("font-bold text-lg", bill.dueAmount > 0 ? "text-red-600" : "text-green-600")}
                           />
                       </div>
                   </div>
 
                   {/* Payment Details */}
-                  <div className="p-3 sm:p-4 bg-gray-800/50 rounded-lg border border-gray-700">
-                      <h2 className="text-base sm:text-lg font-bold text-gray-300 mb-2">{t('payment_details')}</h2>
+                  <div className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100">
+                      <h2 className="text-base sm:text-lg font-bold text-gray-700 mb-2">{t('payment_details')}</h2>
                       <div className="space-y-1">
                           <DetailItem label={t('payment_method')} value={t(bill.paymentMode.toLowerCase() as keyof typeof import('@/lib/locales/en').default)} />
                           <DetailItem label={`${t('date')} & ${t('time')}`} value={format(new Date(bill.createdAt), 'PPpp')} />
@@ -197,18 +197,18 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               </main>
 
               {/* Footer */}
-              <footer className="mt-6 sm:mt-10 pt-6 border-t border-gray-700 flex flex-col items-center gap-4 text-xs sm:text-sm">
+              <footer className="mt-6 sm:mt-10 pt-6 border-t border-gray-200 flex flex-col items-center gap-4 text-xs sm:text-sm">
                   <div className="flex justify-between items-center w-full">
                     <div className="text-center">
-                         <p className="text-gray-500 h-8 border-b-2 border-dotted border-gray-600 w-32"></p>
+                         <p className="text-gray-500 h-8 border-b-2 border-dotted border-gray-400 w-32"></p>
                         <p className="text-gray-500 mt-1">{t('signature_seal')}</p>
                     </div>
-                    <div className="text-gray-400 font-semibold">
+                    <div className="text-gray-500 font-semibold">
                         {t('thank_you_note')} 😊
                     </div>
                   </div>
                   {appSettings?.contactUsNumber && (
-                    <div className="text-center font-bold text-white mt-2 flex items-center gap-2">
+                    <div className="text-center font-bold text-black mt-2 flex items-center gap-2">
                       <Phone className="h-4 w-4"/>
                       <span>Contact Us: {appSettings.contactUsNumber}</span>
                     </div>
@@ -325,8 +325,8 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                 border: none;
                 box-shadow: none;
                 font-size: 14px;
-                background-color: #111827 !important; /* bg-gray-900 */
-                color: #ffffff !important;
+                background-color: #ffffff !important;
+                color: #1f2937 !important;
             }
           }
       `}</style>
