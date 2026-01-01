@@ -186,7 +186,7 @@ service cloud.firestore {
      */
     match /app_settings/{settingsId} {
       allow read: if isSignedIn();
-      allow write: if isOwnerRole();
+      allow write: if isSignedIn();
     }
 
     /**
