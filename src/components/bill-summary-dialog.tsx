@@ -243,8 +243,8 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
       <style jsx global>{`
           @media print {
             @page {
-              size: A4;
-              margin: 10mm;
+              size: auto;
+              margin: 0mm;
             }
 
             body {
@@ -266,10 +266,12 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             }
           
             #final-bill-print {
-              position: relative;
-              margin: 0 auto;
+              position: absolute;
+              left: 0;
+              top: 0;
+              right: 0;
               width: 100%;
-              max-width: 190mm;
+              height: auto;
               page-break-inside: avoid;
             }
           }
