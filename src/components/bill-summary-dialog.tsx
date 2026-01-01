@@ -264,12 +264,13 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
         @media print {
           body {
             margin: 0;
+            padding: 0;
+            height: auto;
             -webkit-print-color-adjust: exact;
             color-adjust: exact;
           }
           .print-hidden, body > *:not(#final-bill-print) {
             display: none;
-            visibility: hidden;
           }
           #final-bill-print {
             visibility: visible;
@@ -278,34 +279,24 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
             top: 0;
             right: 0;
             width: 100%;
-            height: fit-content;
-            max-height: none;
+            height: auto;
+            min-height: auto;
+            overflow: visible;
+            box-shadow: none;
+            border: none;
             margin: 0;
             padding: 1rem;
-            border: none;
-            box-shadow: none;
-            font-size: 12px;
-            background-color: #ffffff !important;
-            color: #000000 !important;
-            overflow: hidden;
             page-break-before: never;
             page-break-after: never;
             page-break-inside: avoid;
-            transform: scale(0.95);
-            transform-origin: top left;
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-size: 12px;
           }
-          /* Further compacting styles */
-          #final-bill-print header, #final-bill-print main, #final-bill-print footer {
-            padding: 0.5rem !important;
-            margin: 0 !important;
-          }
-          #final-bill-print .space-y-1 > div { margin-top: 0.1rem; }
-          #final-bill-print .space-y-2 > div { margin-top: 0.2rem; }
-          #final-bill-print .space-y-3 > div { margin-top: 0.3rem; }
-          #final-bill-print .space-y-4 > div { margin-top: 0.4rem; }
-          #final-bill-print .space-y-6 > div { margin-top: 0.6rem; }
         }
       `}</style>
     </>
   );
 }
+
+    
