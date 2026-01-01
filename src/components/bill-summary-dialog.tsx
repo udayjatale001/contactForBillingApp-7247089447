@@ -12,12 +12,14 @@ import {
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
-import type { Bill } from '@/lib/types';
+import type { AppSettings, Bill } from '@/lib/types';
 import { Loader2, Printer, X, MessageSquare, Trash2, Save } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useLanguage } from '@/context/language-context';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 
 interface BillSummaryDialogProps {
@@ -40,6 +42,13 @@ const DetailItem = ({ label, value, className, valueClassName }: { label: string
 export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, isViewing = false, onDelete }: BillSummaryDialogProps) {
   const { t } = useLanguage();
   const [isProcessing, setIsProcessing] = React.useState(false);
+
+  const firestore = useFirestore();
+  const settingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'app_settings', 'rates');
+  }, [firestore]);
+  const { data: appSettings } = useDoc<AppSettings>(settingsDocRef);
 
 
   if (!bill) {
@@ -190,12 +199,19 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               </main>
 
               {/* Footer */}
-              <footer className="mt-6 sm:mt-10 pt-6 border-t flex justify-between items-center text-xs sm:text-sm">
-                  <div className="text-center">
-                      <p className="text-gray-500">{t('signature_seal')}</p>
+              <footer className="mt-6 sm:mt-10 pt-6 border-t flex flex-col items-center gap-4 text-xs sm:text-sm">
+                  <div className="text-center font-bold">
+                      {appSettings?.contactUsNumber && (
+                        <p>Contact Us: {appSettings.contactUsNumber}</p>
+                      )}
                   </div>
-                  <div className="text-gray-600">
-                      {t('thank_you_note')} 😊
+                  <div className="flex justify-between items-center w-full">
+                    <div className="text-center">
+                        <p className="text-gray-500">{t('signature_seal')}</p>
+                    </div>
+                    <div className="text-gray-600">
+                        {t('thank_you_note')} 😊
+                    </div>
                   </div>
               </footer>
           </div>
@@ -244,38 +260,45 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
           @media print {
             @page {
               size: auto;
-              margin: 0mm;
+              margin: 0;
             }
 
-            body {
-              margin: 0;
-              padding: 0;
+            html, body {
+                height: 100%;
+                width: 100%;
+                margin: 0;
+                padding: 0;
             }
 
             .print-hidden {
-                display: none;
+                display: none !important;
             }
 
             body * {
               visibility: hidden;
             }
-          
+            
             #final-bill-print,
             #final-bill-print * {
               visibility: visible;
             }
-          
+
             #final-bill-print {
-              position: absolute;
-              left: 0;
-              top: 0;
-              right: 0;
-              width: 100%;
-              height: auto;
-              page-break-inside: avoid;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: auto;
+                min-height: 100%;
+                padding: 1.5rem; /* Add some padding for print */
+                margin: 0;
+                border: none;
+                box-shadow: none;
             }
           }
       `}</style>
     </>
   );
 }
+
+    

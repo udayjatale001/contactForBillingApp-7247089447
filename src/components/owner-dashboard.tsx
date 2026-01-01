@@ -126,6 +126,7 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
   const [smallCaratRate, setSmallCaratRate] = React.useState<number | string>('');
   const [bigCaratRate, setBigCaratRate] = React.useState<number | string>('');
   const [labourRate, setLabourRate] = React.useState<number | string>('');
+  const [contactUsNumber, setContactUsNumber] = React.useState<string>('');
   const [isSaving, setIsSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -133,6 +134,7 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
       setSmallCaratRate(appSettings.smallCaratRate ?? '');
       setBigCaratRate(appSettings.bigCaratRate ?? '');
       setLabourRate(appSettings.labourRate ?? '');
+      setContactUsNumber(appSettings.contactUsNumber ?? '');
     }
   }, [appSettings]);
 
@@ -144,13 +146,14 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
       smallCaratRate: Number(smallCaratRate) || 0,
       bigCaratRate: Number(bigCaratRate) || 0,
       labourRate: Number(labourRate) || 0,
+      contactUsNumber: contactUsNumber,
     };
 
     setDocumentNonBlocking(settingsDocRef, newRates, { merge: true });
 
     toast({
-      title: 'Rates Updated',
-      description: 'The new rates have been saved and will apply to new bills.',
+      title: 'Settings Updated',
+      description: 'The new settings have been saved and will apply to new bills.',
     });
     setIsSaving(false);
   };
@@ -160,10 +163,10 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Settings />
-          Manage Rates
+          Manage Global Settings
         </CardTitle>
         <CardDescription>
-          Update the billing rates. Changes apply to all new bills.
+          Update billing rates and contact information. Changes apply to all new bills.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -197,11 +200,21 @@ function ManageRatesCard({ isOwner }: { isOwner: boolean }) {
             disabled={!isOwner || isLoading || isSaving}
           />
         </div>
+         <div className="space-y-2">
+          <label className="text-sm font-medium">Contact Us Number</label>
+          <Input
+            type="tel"
+            placeholder="e.g., 9876543210"
+            value={contactUsNumber}
+            onChange={(e) => setContactUsNumber(e.target.value)}
+            disabled={!isOwner || isLoading || isSaving}
+          />
+        </div>
       </CardContent>
       <CardContent>
         <Button onClick={handleSaveRates} disabled={!isOwner || isLoading || isSaving} className="w-full">
           {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save Rates
+          Save Settings
         </Button>
       </CardContent>
     </Card>
@@ -524,7 +537,7 @@ export function OwnerDashboard() {
         XLSX.utils.book_append_sheet(wb, billsSheet, 'All Bills');
         XLSX.utils.book_append_sheet(wb, labourSheet, 'Labour Records');
 
-        XLSX.writeFile(wb, 'Ananad_Sagar_Data.xlsx');
+        XLSX.writeFile(wb, 'Anand_Sagar_Data.xlsx');
 
         toast({
             title: 'Export Successful',
@@ -855,50 +868,52 @@ export function OwnerDashboard() {
         </Card>
       </Tabs>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Bills</CardTitle>
-          <CardDescription>
-            Latest 5 bills generated.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          {recentBills && recentBills.length > 0 ? (
-              <Table>
-                  <TableHeader>
-                      <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead>Due</TableHead>
-                      <TableHead>Date</TableHead>
-                      </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                      {recentBills.map(bill => (
-                      <TableRow key={bill.id}>
-                          <TableCell className="font-medium">{bill.customerName}</TableCell>
-                          <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
-                          <TableCell>
-                          <Badge variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}>
-                              {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
-                          </Badge>
-                          </TableCell>
-                          <TableCell>{format(new Date(bill.createdAt), 'PPp')}</TableCell>                        
-                      </TableRow>
-                      ))}
-                  </TableBody>
-              </Table>
-          ) : (
-                <div className="text-center py-16">
-                  <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-4 text-lg font-semibold">No Bills Found</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                      No bills were generated in this period.
-                  </p>
-              </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-full lg:col-span-4">
+            <CardHeader>
+                <CardTitle>Recent Bills</CardTitle>
+                <CardDescription>Latest 5 bills generated.</CardDescription>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+            {recentBills && recentBills.length > 0 ? (
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Total</TableHead>
+                        <TableHead>Due</TableHead>
+                        <TableHead>Date</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {recentBills.map(bill => (
+                        <TableRow key={bill.id}>
+                            <TableCell className="font-medium">{bill.customerName}</TableCell>
+                            <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
+                            <TableCell>
+                            <Badge variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}>
+                                {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
+                            </Badge>
+                            </TableCell>
+                            <TableCell>{format(new Date(bill.createdAt), 'PPp')}</TableCell>                        
+                        </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            ) : (
+                    <div className="text-center py-16">
+                    <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-semibold">No Bills Found</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        No bills were generated in this period.
+                    </p>
+                </div>
+            )}
+            </CardContent>
+        </Card>
+        <ManageRatesCard isOwner={!!isOwner} />
+      </div>
+
     </div>
 
     <CustomerPaymentDialog
@@ -933,4 +948,6 @@ export function OwnerDashboard() {
 }
 
     
+    
+
     

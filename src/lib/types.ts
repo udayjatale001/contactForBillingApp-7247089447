@@ -90,6 +90,7 @@ export type AppSettings = {
   smallCaratRate: number;
   bigCaratRate: number;
   labourRate: number;
+  contactUsNumber?: string;
 };
 
 // Represents a notification document in Firestore
@@ -142,3 +143,5 @@ export type Customer = {
   totalDueAmount: number;
   lastActivity: string; // ISO string of the last bill date
 };
+
+    
