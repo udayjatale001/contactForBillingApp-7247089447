@@ -110,103 +110,6 @@ type AggregatedDueCustomer = {
   lastActivity: string;
 };
 
-
-function ManageRatesCard() {
-  const { toast } = useToast();
-  const firestore = useFirestore();
-
-  const settingsDocRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'app_settings', 'rates');
-  }, [firestore]);
-
-  const { data: appSettings, isLoading } = useDoc<AppSettings>(settingsDocRef);
-
-  const [smallCaratRate, setSmallCaratRate] = React.useState<number | string>('');
-  const [bigCaratRate, setBigCaratRate] = React.useState<number | string>('');
-  const [labourRate, setLabourRate] = React.useState<number | string>('');
-  const [isSaving, setIsSaving] = React.useState(false);
-
-  React.useEffect(() => {
-    if (appSettings) {
-      setSmallCaratRate(appSettings.smallCaratRate ?? '');
-      setBigCaratRate(appSettings.bigCaratRate ?? '');
-      setLabourRate(appSettings.labourRate ?? '');
-    }
-  }, [appSettings]);
-
-  const handleSaveRates = async () => {
-    if (!firestore || !settingsDocRef) return;
-
-    setIsSaving(true);
-    const newRates: AppSettings = {
-      smallCaratRate: Number(smallCaratRate) || 0,
-      bigCaratRate: Number(bigCaratRate) || 0,
-      labourRate: Number(labourRate) || 0,
-    };
-
-    setDocumentNonBlocking(settingsDocRef, newRates, { merge: true });
-
-    toast({
-      title: 'Settings Updated',
-      description: 'The new settings have been saved and will apply to new bills.',
-    });
-    setIsSaving(false);
-  };
-
-  return (
-    <Card className="lg:col-span-3">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings />
-          Manage Billing Rates
-        </CardTitle>
-        <CardDescription>
-          Update billing and labour rates. Changes apply to all new bills.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Small Carat Rate</label>
-          <Input
-            type="number"
-            placeholder="e.g., 17"
-            value={smallCaratRate}
-            onChange={(e) => setSmallCaratRate(e.target.value)}
-            disabled={isLoading || isSaving}
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Big Carat Rate</label>
-          <Input
-            type="number"
-            placeholder="e.g., 20"
-            value={bigCaratRate}
-            onChange={(e) => setBigCaratRate(e.target.value)}
-            disabled={isLoading || isSaving}
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Labour Rate</label>
-          <Input
-            type="number"
-            placeholder="e.g., 5"
-            value={labourRate}
-            onChange={(e) => setLabourRate(e.target.value)}
-            disabled={isLoading || isSaving}
-          />
-        </div>
-      </CardContent>
-      <CardContent>
-        <Button onClick={handleSaveRates} disabled={isLoading || isSaving} className="w-full">
-          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save Rates
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
 function GlobalBillSettingsCard() {
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -912,7 +815,7 @@ export function OwnerDashboard() {
       </Tabs>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-full lg:col-span-3">
+        <Card className="col-span-full lg:col-span-4">
             <CardHeader>
                 <CardTitle>Recent Bills</CardTitle>
                 <CardDescription>Latest 5 bills generated.</CardDescription>
@@ -954,8 +857,7 @@ export function OwnerDashboard() {
             )}
             </CardContent>
         </Card>
-        <div className="col-span-full lg:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-4 content-start">
-             <ManageRatesCard />
+        <div className="col-span-full lg:col-span-3 grid grid-cols-1 md:grid-cols-1 gap-4 content-start">
              <GlobalBillSettingsCard />
         </div>
       </div>
