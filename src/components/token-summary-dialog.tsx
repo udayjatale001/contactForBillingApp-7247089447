@@ -9,11 +9,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
-import type { Token } from '@/lib/types';
-import { Printer, X, MessageSquare, Trash2 } from 'lucide-react';
+import type { AppSettings, Token } from '@/lib/types';
+import { Printer, X, MessageSquare, Trash2, Phone } from 'lucide-react';
 import * as React from 'react';
 import { format } from 'date-fns';
 import { useLanguage } from '@/context/language-context';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+
 
 interface TokenSummaryDialogProps {
   token: Token;
@@ -32,6 +35,13 @@ const DetailItem = ({ label, value }: { label: string, value: React.ReactNode })
 
 export function TokenSummaryDialog({ token, open, onOpenChange, onPrint, onDelete }: TokenSummaryDialogProps) {
   const { t } = useLanguage();
+  const firestore = useFirestore();
+  const settingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'app_settings', 'rates');
+  }, [firestore]);
+  const { data: appSettings } = useDoc<AppSettings>(settingsDocRef);
+
 
   if (!token) {
     return null;
@@ -65,7 +75,7 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint, onDelet
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xs w-full p-0 print:border-none print:shadow-none print:bg-white sm:max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-xs w-full p-0 flex flex-col h-screen sm:h-auto sm:max-h-[90vh]">
         <DialogHeader>
             <DialogTitle className="sr-only">Token Summary</DialogTitle>
         </DialogHeader>
@@ -84,6 +94,7 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint, onDelet
                 display: flex;
                 justify-content: center;
                 align-items: center;
+                background: white;
               }
               body > * {
                 visibility: hidden;
@@ -98,18 +109,18 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint, onDelet
                 position: static;
                 display: block;
                 width: 100%;
-                height: auto;
-                min-height: initial;
+                height: fit-content;
                 max-height: none;
+                min-height: initial;
+                overflow: hidden;
                 margin: auto;
                 padding: 0;
                 background-color: #ffffff !important;
                 -webkit-print-color-adjust: exact;
                 color-adjust: exact;
-                overflow: visible;
-                page-break-before: auto;
-                page-break-after: auto;
-                page-break-inside: avoid !important;
+                page-break-before: never;
+                page-break-after: never;
+                page-break-inside: avoid;
               }
               #token-receipt {
                 width: 100%;
@@ -149,6 +160,14 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint, onDelet
                 )}
               </div>
             </main>
+             {appSettings?.contactUsNumber && (
+                <footer className="mt-4 pt-2 border-t-2 border-dashed border-gray-300 text-center">
+                    <div className="font-bold text-black flex items-center justify-center gap-2">
+                        <Phone className="h-3 w-3"/>
+                        <span>Contact Us: {appSettings.contactUsNumber}</span>
+                    </div>
+                </footer>
+              )}
           </div>
         </div>
         <DialogFooter className="px-4 py-3 rounded-b-lg border-t print-hidden bg-gray-50 flex-row justify-between w-full">
