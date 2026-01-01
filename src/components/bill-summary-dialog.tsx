@@ -200,11 +200,6 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
 
               {/* Footer */}
               <footer className="mt-6 sm:mt-10 pt-6 border-t flex flex-col items-center gap-4 text-xs sm:text-sm">
-                  <div className="text-center font-bold">
-                      {appSettings?.contactUsNumber && (
-                        <p>Contact Us: {appSettings.contactUsNumber}</p>
-                      )}
-                  </div>
                   <div className="flex justify-between items-center w-full">
                     <div className="text-center">
                         <p className="text-gray-500">{t('signature_seal')}</p>
@@ -212,6 +207,9 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                     <div className="text-gray-600">
                         {t('thank_you_note')} 😊
                     </div>
+                  </div>
+                  <div className="text-center font-bold text-gray-800">
+                    <p>Contact Us: 9826926999</p>
                   </div>
               </footer>
           </div>
@@ -260,7 +258,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
           @media print {
             @page {
               size: auto;
-              margin: 0;
+              margin: 0mm;
             }
 
             html, body {
@@ -268,18 +266,25 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                 width: 100%;
                 margin: 0;
                 padding: 0;
+                background: #fff;
+            }
+            
+            body > div[data-radix-dialog-portal] {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                visibility: visible;
+                background: #fff;
             }
 
             .print-hidden {
                 display: none !important;
             }
 
-            body > div[data-radix-dialog-portal] {
-                visibility: hidden;
-            }
-
             body > div[data-radix-dialog-portal] > div[data-radix-overlay] {
-                visibility: hidden;
+                display: none;
             }
             
             body > div[data-radix-dialog-portal] > div[data-radix-dialog-content] {
@@ -290,12 +295,13 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                 width: 100%;
                 height: 100%;
                 max-width: none;
+                max-height: none;
                 border: none;
                 box-shadow: none;
                 border-radius: 0;
                 padding: 0;
                 margin: 0;
-                overflow: hidden;
+                overflow: visible;
             }
 
             #final-bill-print,
