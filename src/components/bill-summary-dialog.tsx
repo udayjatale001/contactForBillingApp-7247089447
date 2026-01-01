@@ -121,7 +121,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
         }}
       >
         <DialogContent 
-            className="max-w-sm w-full p-0 sm:max-h-[90vh] flex flex-col"
+            className="max-w-sm w-full p-0 sm:max-h-[90vh] flex flex-col print-container"
             onPointerDownOutside={handleDialogInteraction}
             onInteractOutside={handleDialogInteraction}
         >
@@ -263,40 +263,38 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
         }
         @media print {
           body {
+            visibility: hidden;
             margin: 0;
             padding: 0;
-            height: auto;
-            -webkit-print-color-adjust: exact;
-            color-adjust: exact;
           }
-          .print-hidden, body > *:not(#final-bill-print) {
+          .print-hidden {
             display: none;
           }
-          #final-bill-print {
+          .print-container {
+            visibility: hidden;
+          }
+          #final-bill-print, #final-bill-print * {
             visibility: visible;
+          }
+          #final-bill-print {
             position: absolute;
             left: 0;
             top: 0;
             right: 0;
             width: 100%;
             height: auto;
-            min-height: auto;
-            overflow: visible;
-            box-shadow: none;
-            border: none;
             margin: 0;
             padding: 1rem;
-            page-break-before: never;
-            page-break-after: never;
-            page-break-inside: avoid;
+            border: none;
+            box-shadow: none;
             background-color: #ffffff !important;
             color: #000000 !important;
-            font-size: 12px;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+            page-break-inside: avoid;
           }
         }
       `}</style>
     </>
   );
 }
-
-    
