@@ -4,7 +4,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as React from 'react';
-import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home, Wrench, Phone, Calendar as CalendarIcon, Printer, MapPin, Save } from 'lucide-react';
+import { Gem, Loader2, User, ChevronsUpDown, Banknote, Home, Wrench, Phone, Calendar as CalendarIcon, Printer, MapPin, Save, Settings } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { collection, doc, runTransaction } from 'firebase/firestore';
 import { format, setHours, setMinutes } from 'date-fns';
@@ -40,6 +40,73 @@ import { useUser, useFirestore, addDocumentNonBlocking, useDoc, useMemoFirebase,
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { TokenSummaryDialog } from './token-summary-dialog';
+
+
+function AppSettingsCard() {
+  const { toast } = useToast();
+  const firestore = useFirestore();
+
+  const settingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'app_settings', 'rates');
+  }, [firestore]);
+
+  const { data: appSettings, isLoading } = useDoc<AppSettings>(settingsDocRef);
+
+  const [contactUsNumber, setContactUsNumber] = React.useState<string>('');
+  const [isSaving, setIsSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    if (appSettings) {
+      setContactUsNumber(appSettings.contactUsNumber ?? '');
+    }
+  }, [appSettings]);
+
+  const handleSaveSettings = async () => {
+    if (!firestore || !settingsDocRef) return;
+
+    setIsSaving(true);
+    const newSettings: Partial<AppSettings> = {
+      contactUsNumber: contactUsNumber,
+    };
+
+    setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
+
+    toast({
+      title: 'Settings Updated',
+      description: 'The contact number has been saved.',
+    });
+    setIsSaving(false);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Settings />
+          Bill Settings
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="contact-us-number">Contact Us Number</Label>
+          <Input
+            id="contact-us-number"
+            type="tel"
+            placeholder="e.g., 9876543210"
+            value={contactUsNumber}
+            onChange={(e) => setContactUsNumber(e.target.value)}
+            disabled={isLoading || isSaving}
+          />
+        </div>
+        <Button onClick={handleSaveSettings} disabled={isLoading || isSaving} className="w-full">
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Save Contact
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 
 export function BillingForm() {
@@ -904,6 +971,10 @@ export function BillingForm() {
                         />
                     </CardContent>
                 </Card>
+
+                 {/* App Settings Card */}
+                 <AppSettingsCard />
+
             </div>
 
           </div>
@@ -930,3 +1001,5 @@ export function BillingForm() {
     </>
   );
 }
+
+    

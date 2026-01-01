@@ -274,10 +274,30 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                 display: none !important;
             }
 
-            body * {
-              visibility: hidden;
+            body > div[data-radix-dialog-portal] {
+                visibility: hidden;
+            }
+
+            body > div[data-radix-dialog-portal] > div[data-radix-overlay] {
+                visibility: hidden;
             }
             
+            body > div[data-radix-dialog-portal] > div[data-radix-dialog-content] {
+                visibility: visible;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                max-width: none;
+                border: none;
+                box-shadow: none;
+                border-radius: 0;
+                padding: 0;
+                margin: 0;
+                overflow: hidden;
+            }
+
             #final-bill-print,
             #final-bill-print * {
               visibility: visible;
@@ -294,6 +314,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                 margin: 0;
                 border: none;
                 box-shadow: none;
+                font-size: 14px;
             }
           }
       `}</style>
