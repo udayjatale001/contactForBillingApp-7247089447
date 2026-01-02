@@ -64,7 +64,7 @@ import type { Bill, AppSettings, Labour, Customer } from '@/lib/types';
 import { format, getYear, getMonth, isSameDay, startOfDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
-import { Input } from './ui/input';
+import { Input } from './input';
 import { NotificationsFeed } from './notifications-feed';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
@@ -121,7 +121,7 @@ function RateManagementCard() {
     return doc(firestore, 'app_settings', 'rates');
   }, [firestore]);
 
-  const { data: appSettings, isLoading, forceRefetch } = useDoc<AppSettings>(settingsDocRef);
+  const { data: appSettings, isLoading } = useDoc<AppSettings>(settingsDocRef);
   
   const [rates, setRates] = React.useState({
     smallCaratRate: 17,
@@ -169,7 +169,6 @@ function RateManagementCard() {
     
     // Give Firestore a moment to process the non-blocking update
     setTimeout(() => {
-        forceRefetch();
         toast({
             title: 'Rates Updated',
             description: 'The new rates have been saved successfully.',
