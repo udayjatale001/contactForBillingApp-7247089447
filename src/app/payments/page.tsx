@@ -22,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import type { Customer, Bill } from '@/lib/types';
+import type { Customer, Bill, Notification } from '@/lib/types';
 import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, runTransaction, updateDoc } from 'firebase/firestore';
 import { Loader2, Search, Users, Wallet, Phone, Trash2, MessageSquare } from 'lucide-react';
@@ -71,6 +71,7 @@ function PaymentsPage() {
     customer: Customer, 
     paidAmount: number, 
     paymentMode: 'Cash' | 'Online Payment',
+    paidTo: 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gajananad Murtankar',
     paymentDate: Date
     ) => {
     if (!firestore || !user) return;
@@ -89,9 +90,22 @@ function PaymentsPage() {
         totalAmount: paidAmount, // Total amount of this transaction is what's paid
         paidAmount: paidAmount,
         dueAmount: 0, // This specific transaction has no due amount
-        paidTo: 'Gopal Temkar', // Default value
+        paidTo: paidTo,
         paymentMode: paymentMode,
         createdAt: paymentDate.toISOString(),
+    };
+    
+     const newNotification: Notification = {
+        id: uuidv4(),
+        billId: paymentBill.id,
+        managerId: user.uid,
+        createdAt: new Date().toISOString(),
+        customerName: paymentBill.customerName,
+        paidAmount: paymentBill.paidAmount,
+        dueAmount: paymentBill.dueAmount,
+        totalCarat: paymentBill.totalCarat,
+        paidTo: paymentBill.paidTo,
+        paymentMode: paymentBill.paymentMode
     };
 
     try {
@@ -116,6 +130,10 @@ function PaymentsPage() {
         // Also add to manager's subcollection
         const managerBillRef = doc(firestore, 'managers', user.uid, 'bills', paymentBill.id);
         transaction.set(managerBillRef, paymentBill);
+
+        // Save notification
+        transaction.set(doc(collection(firestore, 'notifications'), newNotification.id), newNotification);
+
       });
 
       toast({ title: 'Payment updated successfully!' });

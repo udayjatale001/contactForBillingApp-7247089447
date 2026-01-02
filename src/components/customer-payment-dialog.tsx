@@ -20,8 +20,10 @@ import type { Customer } from '@/lib/types';
 import { Loader2, MessageSquare, Trash2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 type PaymentMode = 'Cash' | 'Online Payment';
+type PaidTo = 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gajananad Murtankar';
 
 interface CustomerPaymentDialogProps {
   customer: Customer | null;
@@ -30,7 +32,8 @@ interface CustomerPaymentDialogProps {
   onConfirmPayment: (
     customer: Customer, 
     paidAmount: number, 
-    paymentMode: PaymentMode, 
+    paymentMode: PaymentMode,
+    paidTo: PaidTo,
     paymentDate: Date
   ) => Promise<void>;
   onDelete: (customer: Customer) => void;
@@ -51,11 +54,13 @@ export function CustomerPaymentDialog({
   const [paidAmount, setPaidAmount] = React.useState('');
   const [paymentDate, setPaymentDate] = React.useState(new Date());
   const [paymentMode, setPaymentMode] = React.useState<PaymentMode>('Cash');
+  const [paidTo, setPaidTo] = React.useState<PaidTo>('Gopal Temkar');
 
   React.useEffect(() => {
     if (customer) {
       setPaidAmount('');
       setPaymentDate(new Date());
+      setPaidTo('Gopal Temkar');
     }
   }, [customer]);
 
@@ -66,7 +71,7 @@ export function CustomerPaymentDialog({
   const handleConfirm = () => {
     const amount = Number(paidAmount);
     if (!isNaN(amount) && amount > 0 && amount <= customer.totalDueAmount) {
-      onConfirmPayment(customer, amount, paymentMode, paymentDate);
+      onConfirmPayment(customer, amount, paymentMode, paidTo, paymentDate);
     }
   };
   
@@ -115,6 +120,20 @@ export function CustomerPaymentDialog({
                         onChange={(e) => setPaidAmount(e.target.value)}
                         autoFocus
                     />
+                 </div>
+                  <div>
+                    <Label htmlFor="paid-to">Paid To</Label>
+                    <Select onValueChange={(value) => setPaidTo(value as PaidTo)} defaultValue={paidTo}>
+                        <SelectTrigger id="paid-to">
+                            <SelectValue placeholder="Select a person" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Gopal Temkar">Gopal Temkar</SelectItem>
+                            <SelectItem value="Yuvaraj Temkar">Yuvaraj Temkar</SelectItem>
+                            <SelectItem value="Suyash Temkar">Suyash Temkar</SelectItem>
+                            <SelectItem value="Gajananad Murtankar">Gajananad Murtankar</SelectItem>
+                        </SelectContent>
+                    </Select>
                  </div>
                  <div>
                     <Label htmlFor="payment-date">Date & Time</Label>
