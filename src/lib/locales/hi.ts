@@ -1,8 +1,8 @@
 
 export default {
   // General
-  app_title: 'आनंद सागर बिलिंग ऐप',
-  billing_app: 'बिलिंग ऐप',
+  app_title: 'आनंद सागर राइपनिंग & कूलिंग चेंबर',
+  billing_app: 'राइपनिंग & कूलिंग चेंबर',
   developed_by: 'डेवलपर: उदय जटाले और कौशल महाजन',
   language_toggle_label: 'English',
   print: 'प्रिंट',
@@ -105,8 +105,8 @@ export default {
   token_save_failed_desc: 'टोकन सहेजते समय एक त्रुटि हुई।',
 
   // Bill Summary Dialog
-  bill_receipt_title: 'आनंद सागर राइपनिंग चैंबर',
-  bill_receipt_subtitle: 'इच्छापुर रोड, शाहपुर',
+  bill_receipt_title: 'आनंद सागर राइपनिंग & कूलिंग चेंबर',
+  bill_receipt_subtitle: 'मुक्ताईनगर रोड, शाहपुर',
   bill_no: 'बिल नंबर',
   date: 'तारीख',
   time: 'समय',
