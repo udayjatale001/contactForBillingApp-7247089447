@@ -1,3 +1,4 @@
+
 'use client';
 import * as React from 'react';
 import {
@@ -110,73 +111,108 @@ type AggregatedDueCustomer = {
   lastActivity: string;
 };
 
-function GlobalBillSettingsCard() {
+function RateManagementCard() {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const [isSaving, setIsSaving] = React.useState(false);
 
   const settingsDocRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return doc(firestore, 'app_settings', 'rates');
   }, [firestore]);
 
-  const { data: appSettings, isLoading } = useDoc<AppSettings>(settingsDocRef);
-
-  const [contactUsNumber, setContactUsNumber] = React.useState<string>('');
-  const [isSaving, setIsSaving] = React.useState(false);
+  const { data: appSettings, isLoading, forceRefetch } = useDoc<AppSettings>(settingsDocRef);
+  
+  const [rates, setRates] = React.useState({
+    smallCaratRate: 17,
+    bigCaratRate: 20,
+    inCaratLabourRate: 1.5,
+    outCaratLabourRate: 1.5,
+    contactUsNumber: ''
+  });
 
   React.useEffect(() => {
     if (appSettings) {
-      setContactUsNumber(appSettings.contactUsNumber ?? '');
+        setRates({
+            smallCaratRate: appSettings.smallCaratRate ?? 17,
+            bigCaratRate: appSettings.bigCaratRate ?? 20,
+            inCaratLabourRate: appSettings.inCaratLabourRate ?? 1.5,
+            outCaratLabourRate: appSettings.outCaratLabourRate ?? 1.5,
+            contactUsNumber: appSettings.contactUsNumber ?? ''
+        });
     }
   }, [appSettings]);
 
-  const handleSaveSettings = async () => {
+  const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setRates(prev => ({ ...prev, [name]: value === '' ? '' : parseFloat(value) }));
+  };
+  
+  const handleContactChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setRates(prev => ({...prev, [name]: value}));
+  }
+
+  const handleSaveRates = async () => {
     if (!firestore || !settingsDocRef) return;
-
     setIsSaving(true);
+    
     const newSettings = {
-      contactUsNumber: contactUsNumber,
+        smallCaratRate: Number(rates.smallCaratRate),
+        bigCaratRate: Number(rates.bigCaratRate),
+        inCaratLabourRate: Number(rates.inCaratLabourRate),
+        outCaratLabourRate: Number(rates.outCaratLabourRate),
+        contactUsNumber: rates.contactUsNumber,
     };
-
+    
     setDocumentNonBlocking(settingsDocRef, newSettings, { merge: true });
-
-    toast({
-      title: 'Settings Updated',
-      description: 'The "Contact Us" number has been saved.',
-    });
-    setIsSaving(false);
+    
+    // Give Firestore a moment to process the non-blocking update
+    setTimeout(() => {
+        forceRefetch();
+        toast({
+            title: 'Rates Updated',
+            description: 'The new rates have been saved successfully.',
+        });
+        setIsSaving(false);
+    }, 1000);
   };
 
   return (
-    <Card className="lg:col-span-2">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings />
-          Global Bill Settings
-        </CardTitle>
-        <CardDescription>
-          This contact number will appear on every bill.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Contact Us Number</label>
-          <Input
-            type="tel"
-            placeholder="e.g., 9876543210"
-            value={contactUsNumber}
-            onChange={(e) => setContactUsNumber(e.target.value)}
-            disabled={isLoading || isSaving}
-          />
-        </div>
-      </CardContent>
-       <CardContent>
-        <Button onClick={handleSaveSettings} disabled={isLoading || isSaving} className="w-full">
-          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save Contact Number
-        </Button>
-      </CardContent>
-    </Card>
+      <Card className="col-span-full lg:col-span-3">
+          <CardHeader>
+              <CardTitle className='flex items-center gap-2'><Settings /> Rate Management</CardTitle>
+              <CardDescription>Set the global rates for new bills.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+               <div className="space-y-1">
+                  <Label htmlFor="smallCaratRate">Small Carat Rate</Label>
+                  <Input id="smallCaratRate" name="smallCaratRate" type="number" value={rates.smallCaratRate} onChange={handleRateChange} disabled={isLoading || isSaving} />
+              </div>
+              <div className="space-y-1">
+                  <Label htmlFor="bigCaratRate">Big Carat Rate</Label>
+                  <Input id="bigCaratRate" name="bigCaratRate" type="number" value={rates.bigCaratRate} onChange={handleRateChange} disabled={isLoading || isSaving} />
+              </div>
+              <div className="space-y-1">
+                  <Label htmlFor="inCaratLabourRate">In Labour Rate</Label>
+                  <Input id="inCaratLabourRate" name="inCaratLabourRate" type="number" value={rates.inCaratLabourRate} onChange={handleRateChange} disabled={isLoading || isSaving} />
+              </div>
+              <div className="space-y-1">
+                  <Label htmlFor="outCaratLabourRate">Out Labour Rate</Label>
+                  <Input id="outCaratLabourRate" name="outCaratLabourRate" type="number" value={rates.outCaratLabourRate} onChange={handleRateChange} disabled={isLoading || isSaving} />
+              </div>
+               <div className="space-y-1 col-span-2">
+                  <Label htmlFor="contactUsNumber">"Contact Us" Number</Label>
+                  <Input id="contactUsNumber" name="contactUsNumber" type="tel" value={rates.contactUsNumber} onChange={handleContactChange} disabled={isLoading || isSaving} />
+              </div>
+          </CardContent>
+          <CardFooter>
+              <Button onClick={handleSaveRates} disabled={isLoading || isSaving} className="w-full">
+                  {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  Save All Rates
+              </Button>
+          </CardFooter>
+      </Card>
   );
 }
 
@@ -860,7 +896,7 @@ export function OwnerDashboard() {
             </CardContent>
         </Card>
         <div className="col-span-full lg:col-span-3 grid grid-cols-1 md:grid-cols-1 gap-4 content-start">
-             <GlobalBillSettingsCard />
+             <RateManagementCard />
         </div>
       </div>
 

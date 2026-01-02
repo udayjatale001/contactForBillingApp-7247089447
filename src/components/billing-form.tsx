@@ -62,7 +62,9 @@ export function BillingForm() {
 
   const { data: appSettings, isLoading: isLoadingRates } = useDoc<AppSettings>(settingsDocRef);
 
-  const defaultFormValues: Partial<BillingFormValues> = {
+  const form = useForm<BillingFormValues>({
+    resolver: zodResolver(billingSchema),
+    defaultValues: {
       customerName: '',
       roomNumber: '',
       contactNumber: '',
@@ -71,21 +73,13 @@ export function BillingForm() {
       inCarat: undefined,
       outCarat: undefined,
       smallCarat: undefined,
-      smallCaratRate: 17,
       bigCarat: undefined,
-      bigCaratRate: 20,
       paidAmount: undefined,
-      paymentMode: 'Cash' as 'Cash' | 'Online Payment' | 'Due',
-      paidTo: 'Gopal Temkar' as 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gajananad Murtankar',
+      paymentMode: 'Cash',
+      paidTo: 'Gopal Temkar',
       inCaratLabour: undefined,
-      inCaratLabourRate: 1.5,
       outCaratLabour: undefined,
-      outCaratLabourRate: 1.5,
-  };
-
-  const form = useForm<BillingFormValues>({
-    resolver: zodResolver(billingSchema),
-    defaultValues: defaultFormValues,
+    },
     mode: 'onBlur',
   });
   
@@ -93,11 +87,10 @@ export function BillingForm() {
 
   React.useEffect(() => {
     if (appSettings) {
-        // We set the default values in the form declaration now.
-        // This effect can still be useful if we want to override with fetched settings
-        // but for now we keep the hardcoded defaults.
-        // setValue('smallCaratRate', appSettings.smallCaratRate, { shouldValidate: true });
-        // setValue('bigCaratRate', appSettings.bigCaratRate, { shouldValidate: true });
+        setValue('smallCaratRate', appSettings.smallCaratRate ?? 17, { shouldValidate: true });
+        setValue('bigCaratRate', appSettings.bigCaratRate ?? 20, { shouldValidate: true });
+        setValue('inCaratLabourRate', appSettings.inCaratLabourRate ?? 1.5, { shouldValidate: true });
+        setValue('outCaratLabourRate', appSettings.outCaratLabourRate ?? 1.5, { shouldValidate: true });
     }
   }, [appSettings, setValue]);
 
@@ -259,7 +252,21 @@ export function BillingForm() {
             description: `The bill for ${generatedBill.customerName} has been saved.`,
         });
         
-        form.reset(defaultFormValues);
+        form.reset({
+            ...getValues(),
+            customerName: '',
+            roomNumber: '',
+            contactNumber: '',
+            address: '',
+            inCarat: undefined,
+            outCarat: undefined,
+            smallCarat: undefined,
+            bigCarat: undefined,
+            paidAmount: undefined,
+            inCaratLabour: undefined,
+            outCaratLabour: undefined,
+        });
+
         // setGeneratedBill(null); // Keep dialog open after saving.
         return Promise.resolve();
 
@@ -594,12 +601,12 @@ export function BillingForm() {
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2'><ChevronsUpDown />Carat Details</CardTitle>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <CardContent className="grid grid-cols-2 gap-4">
                         <FormField
                             control={form.control}
                             name="smallCarat"
                             render={({ field }) => (
-                                <FormItem className="col-span-2 md:col-span-2">
+                                <FormItem>
                                     <FormLabel>Small Carat (Qty)</FormLabel>
                                     <FormControl>
                                     <Input type="number" placeholder="e.g., 10" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
@@ -610,38 +617,12 @@ export function BillingForm() {
                         />
                          <FormField
                             control={form.control}
-                            name="smallCaratRate"
-                            render={({ field }) => (
-                                <FormItem className="col-span-2 md:col-span-2">
-                                    <FormLabel>Rate</FormLabel>
-                                    <FormControl>
-                                    <Input type="number" placeholder="e.g., 17" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
                             name="bigCarat"
                             render={({ field }) => (
-                                <FormItem className="col-span-2 md:col-span-2">
+                                <FormItem>
                                     <FormLabel>Big Carat (Qty)</FormLabel>
                                     <FormControl>
                                     <Input type="number" placeholder="e.g., 5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="bigCaratRate"
-                            render={({ field }) => (
-                                <FormItem className="col-span-2 md:col-span-2">
-                                    <FormLabel>Rate</FormLabel>
-                                    <FormControl>
-                                    <Input type="number" placeholder="e.g., 20" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -656,12 +637,12 @@ export function BillingForm() {
                         <CardTitle className='flex items-center gap-2'><Wrench />Labour Charges (Internal)</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
                                 name="inCaratLabour"
                                 render={({ field }) => (
-                                    <FormItem className="col-span-2 md:col-span-2">
+                                    <FormItem>
                                         <FormLabel>In Carat Labour (Qty)</FormLabel>
                                         <FormControl>
                                         <Input type="number" placeholder="In Qty" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
@@ -672,38 +653,12 @@ export function BillingForm() {
                             />
                             <FormField
                                 control={form.control}
-                                name="inCaratLabourRate"
-                                render={({ field }) => (
-                                    <FormItem className="col-span-2 md:col-span-2">
-                                        <FormLabel>Rate</FormLabel>
-                                        <FormControl>
-                                        <Input type="number" step="0.1" placeholder="e.g., 1.5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
                                 name="outCaratLabour"
                                 render={({ field }) => (
-                                    <FormItem className="col-span-2 md:col-span-2">
+                                    <FormItem>
                                         <FormLabel>Out Carat Labour (Qty)</FormLabel>
                                         <FormControl>
                                         <Input type="number" placeholder="Out Qty" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="outCaratLabourRate"
-                                render={({ field }) => (
-                                    <FormItem className="col-span-2 md:col-span-2">
-                                        <FormLabel>Rate</FormLabel>
-                                        <FormControl>
-                                        <Input type="number" step="0.1" placeholder="e.g., 1.5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

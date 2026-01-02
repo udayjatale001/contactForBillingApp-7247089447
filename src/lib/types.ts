@@ -89,7 +89,8 @@ export type Bill = {
 export type AppSettings = {
   smallCaratRate: number;
   bigCaratRate: number;
-  labourRate: number;
+  inCaratLabourRate: number;
+  outCaratLabourRate: number;
   contactUsNumber?: string;
 };
 
@@ -143,5 +144,3 @@ export type Customer = {
   totalDueAmount: number;
   lastActivity: string; // ISO string of the last bill date
 };
-
-    
