@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Mail, Phone, Languages, Calendar as CalendarIcon, X, Loader2, AlertTriangle } from 'lucide-react';
+import { Mail, Phone, Languages, Calendar as CalendarIcon, X, Loader2, AlertTriangle, User, ChevronsUpDown, Banknote, Home, Wrench, FileText, DollarSign, Users, Bell, LayoutDashboard } from 'lucide-react';
 import { Logo } from '@/components/icons/logo';
 import { useLanguage } from '@/context/language-context';
 import { Label } from '@/components/ui/label';
@@ -36,6 +36,19 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
 import { collection, getDocs, writeBatch, doc, query, limit, CollectionReference } from 'firebase/firestore';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+
+const GuideItem = ({ icon, title, children }: { icon: React.ElementType, title: string, children: React.ReactNode }) => (
+    <div className="flex items-start gap-4">
+        <div className="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            {React.createElement(icon, { className: "h-5 w-5" })}
+        </div>
+        <div>
+            <h4 className="text-lg font-semibold text-foreground">{title}</h4>
+            <div className="mt-2 text-muted-foreground space-y-2">{children}</div>
+        </div>
+    </div>
+);
 
 
 export default function AboutPage() {
@@ -130,12 +143,7 @@ export default function AboutPage() {
   return (
     <>
     <div className="flex-1 space-y-4 p-2 sm:p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight font-headline">
-          {t('about_this_app')}
-        </h2>
-      </div>
-      <Card>
+       <Card>
         <CardHeader className="items-center text-center">
           <Logo />
           <CardTitle className="text-2xl pt-4">{t('app_title')}</CardTitle>
@@ -144,6 +152,65 @@ export default function AboutPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground px-4 md:px-8">
+           <Separator className="my-4" />
+           <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="item-1">
+                <AccordionTrigger className='text-xl font-bold text-foreground'>How to Use This App</AccordionTrigger>
+                <AccordionContent className='pt-4'>
+                    <div className="space-y-8">
+
+                        <GuideItem icon={Home} title="1. Create Bill / Token Flow">
+                            <p><strong>Token Generation:</strong> When you fill in the Customer Details (Name, Contact, Room No, Address, In/Out Carat) and click "Print Token," a token is generated, printed, and saved in the Token History with a unique ID.</p>
+                            <p><strong>Bill Generation:</strong> When you fill out the complete form (Customer, Carat, Labour, Payment details) and click "Generate Bill," a final bill is created, displayed for printing, and all data is saved in the Bill History.</p>
+                        </GuideItem>
+                        
+                        <GuideItem icon={FileText} title="2. Billing History Page">
+                             <p>This page stores all generated Tokens and Final Bills. Each record has a unique ID that you can use to search. The search bar allows you to find records by Bill ID or Token ID.</p>
+                            <p>Clicking any record opens a popup preview. From there, you can <strong>Print</strong> or <strong>Delete</strong> it. For Tokens, an "Edit / Continue" icon (✏️) allows you to redirect to the Create Bill page with the token's data auto-filled, so you can complete the bill without re-entering information.</p>
+                        </GuideItem>
+
+                        <GuideItem icon={DollarSign} title="3. Payments Page">
+                            <p>This page displays a list of all customers with outstanding due amounts, showing their name, mobile number, and total due.</p>
+                            <p>Clicking on a customer opens a payment popup where you can enter the amount paid. The remaining due is updated automatically. After confirming the payment, the data is saved, and a new "Payment Notification" is created in the Notifications page.</p>
+                        </GuideItem>
+
+                        <GuideItem icon={Wrench} title="4. Labour Page">
+                            <p>This page stores all internal labour records separately. Each record includes the customer's name, date, In/Out Labour calculations, and the total labour amount. These records are independent and can only be deleted manually from this page.</p>
+                        </GuideItem>
+
+                        <GuideItem icon={Bell} title="5. Notifications Page">
+                           <p>This page shows a feed of all recent activities, with two types of notifications:</p>
+                           <ul className='list-disc pl-5 space-y-1'>
+                               <li><strong>Bill Notifications (🧾):</strong> Appear when a new bill is created.</li>
+                               <li><strong>Payment Notifications (💰):</strong> Appear when a payment is made on the Payments page.</li>
+                           </ul>
+                           <p>Each notification clearly displays the customer name, paid amount, due amount, carats, payment method, and timestamp.</p>
+                        </GuideItem>
+
+                        <GuideItem icon={LayoutDashboard} title="6. Admin Page">
+                            <ul className='list-disc pl-5 space-y-2'>
+                                <li><strong>Export to Excel:</strong> Download all bill, payment, and labour data.</li>
+                                <li><strong>Today’s Snapshot:</strong> View Revenue, Labour Cost, and Net Profit for the last 24 hours.</li>
+                                <li><strong>Overall Summary:</strong> See total bills, revenue, due amounts, and labour charges.</li>
+                                <li><strong>Analytics:</strong> View monthly/yearly graphs for sales and labour comparisons.</li>
+                                <li><strong>Rate Management:</strong> Set global rates for carats and labour, and update the "Contact Us" number. These rates apply to all new bills only.</li>
+                            </ul>
+                        </GuideItem>
+
+                        <GuideItem icon={Users} title="7. Customer Details Page">
+                            <p>This page provides a summary for each customer, including the total carats supplied, total billed amount, and overall profit. It also features WhatsApp integration, allowing you to send:</p>
+                            <ul className='list-disc pl-5 space-y-1'>
+                               <li>Final Bills</li>
+                               <li>Tokens</li>
+                               <li>Due Amount reminders</li>
+                               <li>Customer summaries</li>
+                           </ul>
+                        </GuideItem>
+
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+          </Accordion>
           <Separator className="my-4" />
           <div className="flex flex-col items-center justify-center space-y-6 my-6">
              <div className="flex items-center space-x-2">
@@ -210,18 +277,6 @@ export default function AboutPage() {
                 </Alert>
               </div>
           </div>
-          <Separator className="my-4" />
-          <div className="space-y-4 text-center max-w-3xl mx-auto">
-              <p>
-                {t('about_p1')}
-              </p>
-              <p>
-                {t('about_p2')}
-              </p>
-              <p>
-                {t('about_p3')}
-              </p>
-          </div>
            <Separator className="my-6" />
            <div className="text-center">
              <h3 className="text-lg font-semibold text-foreground mb-4">{t('contact_devs')}</h3>
@@ -271,3 +326,5 @@ export default function AboutPage() {
     </>
   );
 }
+
+    
