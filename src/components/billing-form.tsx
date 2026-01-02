@@ -209,6 +209,7 @@ export function BillingForm() {
                 billId: generatedBill.id,
                 managerId: user.uid,
                 createdAt: new Date().toISOString(),
+                type: 'new-bill',
                 customerName: generatedBill.customerName,
                 paidAmount: generatedBill.paidAmount,
                 dueAmount: generatedBill.dueAmount,

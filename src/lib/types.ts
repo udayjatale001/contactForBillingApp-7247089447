@@ -101,6 +101,7 @@ export type Notification = {
     managerId: string;
     message?: string;
     createdAt: string; // ISO string
+    type: 'new-bill' | 'payment-update';
     // Denormalized fields for richer notifications
     customerName?: string;
     paidAmount?: number;
