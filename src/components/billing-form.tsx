@@ -42,11 +42,13 @@ import { Calendar } from './ui/calendar';
 import { TokenSummaryDialog } from './token-summary-dialog';
 import { Label } from './ui/label';
 import { useToken } from '@/context/token-context';
+import { useLanguage } from '@/context/language-context';
 
 export function BillingForm() {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
+  const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSavingToken, setIsSavingToken] = React.useState(false);
   const [generatedBill, setGeneratedBill] = React.useState<Bill | null>(null);
@@ -507,7 +509,7 @@ export function BillingForm() {
                 {/* Customer Details */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><User />Customer Details</CardTitle>
+                        <CardTitle className='flex items-center gap-2'><User />{t('customer_details')}</CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField
@@ -515,9 +517,9 @@ export function BillingForm() {
                             name="customerName"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Customer Name</FormLabel>
+                                <FormLabel>{t('customer_name')}</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Enter customer's name" {...field} onBlur={handleCustomerNameBlur} onKeyDown={handleKeyDown}/>
+                                    <Input placeholder={t('enter_customer_name')} {...field} onBlur={handleCustomerNameBlur} onKeyDown={handleKeyDown}/>
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -528,11 +530,11 @@ export function BillingForm() {
                             name="contactNumber"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Contact Number</FormLabel>
+                                <FormLabel>{t('contact_number')}</FormLabel>
                                 <FormControl>
                                     <div className="relative">
                                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input type="tel" placeholder="e.g., 9876543210" className="pl-10" {...field} value={field.value ?? ''} onKeyDown={handleKeyDown} />
+                                        <Input type="tel" placeholder={t('enter_contact_number')} className="pl-10" {...field} value={field.value ?? ''} onKeyDown={handleKeyDown} />
                                     </div>
                                 </FormControl>
                                 <FormMessage />
@@ -544,9 +546,9 @@ export function BillingForm() {
                             name="roomNumber"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Room Number</FormLabel>
+                                <FormLabel>{t('room_number')}</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="e.g., 09" {...field} value={field.value ?? ''} onKeyDown={handleKeyDown} />
+                                    <Input placeholder={t('enter_room_number')} {...field} value={field.value ?? ''} onKeyDown={handleKeyDown} />
                                 </FormControl>
                                 <FormMessage />
                                 </FormItem>
@@ -575,9 +577,9 @@ export function BillingForm() {
                                 name="inCarat"
                                 render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>In Carat</FormLabel>
+                                    <FormLabel>{t('in_carat')}</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder='' {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
+                                    <Input type="number" placeholder={t('in_carat_placeholder')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -588,9 +590,9 @@ export function BillingForm() {
                                 name="outCarat"
                                 render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Out Carat</FormLabel>
+                                    <FormLabel>{t('out_carat')}</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder='' {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
+                                    <Input type="number" placeholder={t('out_carat_placeholder')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -606,7 +608,7 @@ export function BillingForm() {
                             disabled={isSavingToken || (!watchedValues.customerName && !watchedValues.inCarat)}
                         >
                             {isSavingToken ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-                            Print Token
+                            {t('print_token')}
                         </Button>
                     </CardFooter>
                 </Card>
@@ -614,7 +616,7 @@ export function BillingForm() {
                 {/* Carat Details */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><ChevronsUpDown />Carat Details</CardTitle>
+                        <CardTitle className='flex items-center gap-2'><ChevronsUpDown />{t('carat_details')}</CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-2 gap-4">
                         <FormField
@@ -622,9 +624,9 @@ export function BillingForm() {
                             name="smallCarat"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Small Carat (Qty)</FormLabel>
+                                    <FormLabel>{t('small_carat_qty')}</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder="e.g., 10" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
+                                    <Input type="number" placeholder={t('small_carat_placeholder')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -635,9 +637,9 @@ export function BillingForm() {
                             name="bigCarat"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Big Carat (Qty)</FormLabel>
+                                    <FormLabel>{t('big_carat_qty')}</FormLabel>
                                     <FormControl>
-                                    <Input type="number" placeholder="e.g., 5" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
+                                    <Input type="number" placeholder={t('big_carat_placeholder')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -649,7 +651,7 @@ export function BillingForm() {
                  {/* Labour Charges */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><Wrench />Labour Charges (Internal)</CardTitle>
+                        <CardTitle className='flex items-center gap-2'><Wrench />{t('labour_charges_internal')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -658,9 +660,9 @@ export function BillingForm() {
                                 name="inCaratLabour"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>In Carat Labour (Qty)</FormLabel>
+                                        <FormLabel>{t('in_carat_labour_qty')}</FormLabel>
                                         <FormControl>
-                                        <Input type="number" placeholder="In Qty" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
+                                        <Input type="number" placeholder={t('in_qty_placeholder')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -671,9 +673,9 @@ export function BillingForm() {
                                 name="outCaratLabour"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Out Carat Labour (Qty)</FormLabel>
+                                        <FormLabel>{t('out_carat_labour_qty')}</FormLabel>
                                         <FormControl>
-                                        <Input type="number" placeholder="Out Qty" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
+                                        <Input type="number" placeholder={t('out_qty_placeholder')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -686,7 +688,7 @@ export function BillingForm() {
                 {/* Payment Details */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><Banknote />Payment Details</CardTitle>
+                        <CardTitle className='flex items-center gap-2'><Banknote />{t('payment_details')}</CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField
@@ -694,9 +696,9 @@ export function BillingForm() {
                             name="paidAmount"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Paid Amount</FormLabel>
+                                <FormLabel>{t('paid_amount')}</FormLabel>
                                 <FormControl>
-                                <Input type="number" placeholder="Enter paid amount" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} disabled={paymentMode === 'Due'} onKeyDown={handleKeyDown}/>
+                                <Input type="number" placeholder={t('enter_paid_amount')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} disabled={paymentMode === 'Due'} onKeyDown={handleKeyDown}/>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -707,11 +709,11 @@ export function BillingForm() {
                             name="paidTo"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Paid To</FormLabel>
+                                <FormLabel>{t('paid_to')}</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                     <SelectTrigger onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault();}}>
-                                        <SelectValue placeholder="Select a person" />
+                                        <SelectValue placeholder={t('select_person')} />
                                     </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
@@ -730,7 +732,7 @@ export function BillingForm() {
                             name="paymentMode"
                             render={({ field }) => (
                                 <FormItem className="space-y-3 md:col-span-2">
-                                <FormLabel>Payment Method</FormLabel>
+                                <FormLabel>{t('payment_method')}</FormLabel>
                                 <FormControl>
                                     <RadioGroup
                                     onValueChange={field.onChange}
@@ -741,19 +743,19 @@ export function BillingForm() {
                                         <FormControl>
                                         <RadioGroupItem value="Online Payment" />
                                         </FormControl>
-                                        <FormLabel className="font-normal">Online Payment</FormLabel>
+                                        <FormLabel className="font-normal">{t('online payment')}</FormLabel>
                                     </FormItem>
                                     <FormItem className="flex items-center space-x-2 space-y-0">
                                         <FormControl>
                                         <RadioGroupItem value="Cash" />
                                         </FormControl>
-                                        <FormLabel className="font-normal">Cash</FormLabel>
+                                        <FormLabel className="font-normal">{t('cash')}</FormLabel>
                                     </FormItem>
                                     <FormItem className="flex items-center space-x-2 space-y-0">
                                         <FormControl>
                                         <RadioGroupItem value="Due" />
                                         </FormControl>
-                                        <FormLabel className="font-normal">Due</FormLabel>
+                                        <FormLabel className="font-normal">{t('due')}</FormLabel>
                                     </FormItem>
                                     </RadioGroup>
                                 </FormControl>
@@ -762,12 +764,12 @@ export function BillingForm() {
                             )}
                             />
                         <div className="md:col-span-2">
-                            <FormLabel>Due Amount</FormLabel>
+                            <FormLabel>{t('due_amount')}</FormLabel>
                             <div className={cn("flex items-center justify-between rounded-md border border-input bg-muted px-3 py-2 text-sm mt-2", dueAmount > 0 ? 'text-destructive' : 'text-primary')}>
                                 <span>{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}rs</span>
                             </div>
                             {dueAmount < 0 && (
-                                <p className="text-sm text-green-600 font-medium mt-2">Change to return: {(-dueAmount).toLocaleString()}rs</p>
+                                <p className="text-sm text-green-600 font-medium mt-2">{t('change_to_return')} {(-dueAmount).toLocaleString()}rs</p>
                             )}
                         </div>
                     </CardContent>
@@ -780,46 +782,46 @@ export function BillingForm() {
                    <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Gem className="text-primary"/>
-                      Calculation Summary
+                      {t('calculation_summary')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4 text-base">
                      <div className="flex justify-between">
-                      <span className="text-muted-foreground">Carat Amount:</span>
+                      <span className="text-muted-foreground">{t('carat_amount')}</span>
                       <span>{totalCaratAmount.toLocaleString()}rs</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Internal Labour:</span>
+                      <span className="text-muted-foreground">{t('internal_labour')}</span>
                       <span className='text-muted-foreground'>{totalLabourAmount.toLocaleString()}rs</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-bold text-lg">
-                      <span className="text-muted-foreground">Total Amount:</span>
+                      <span className="text-muted-foreground">{t('total_amount')}</span>
                       <span>{totalAmount.toLocaleString()}rs</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Paid Amount:</span>
+                      <span className="text-muted-foreground">{t('paid_amount')}</span>
                       <span>{(paymentMode === 'Due' ? 0 : Number(paidAmount) || 0).toLocaleString()}rs</span>
                     </div>
                     <Separator />
                     <div className={cn("flex justify-between font-bold text-xl", dueAmount > 0 ? 'text-destructive' : 'text-primary')}>
-                      <span className="text-muted-foreground">Due Amount:</span>
+                      <span className="text-muted-foreground">{t('due_amount')}</span>
                       <span>{(dueAmount < 0 ? 0 : dueAmount).toLocaleString()}rs</span>
                     </div>
                      {dueAmount < 0 && (
-                         <p className="text-sm text-green-600 font-medium">Change to return: {(-dueAmount).toLocaleString()}rs</p>
+                         <p className="text-sm text-green-600 font-medium">{t('change_to_return')} {(-dueAmount).toLocaleString()}rs</p>
                      )}
                   </CardContent>
                   <Button type="submit" className="w-full h-12 rounded-t-none text-lg" disabled={isSubmitting || isLoadingRates}>
-                    {isSubmitting || isLoadingRates ? <Loader2 className="animate-spin" /> : 'Generate Bill'}
+                    {isSubmitting || isLoadingRates ? <Loader2 className="animate-spin" /> : t('generate_bill')}
                   </Button>
                 </Card>
                 
                  {/* Bill Date & Time */}
                 <Card>
                     <CardHeader>
-                        <CardTitle className='flex items-center gap-2'><CalendarIcon />Bill Date & Time</CardTitle>
+                        <CardTitle className='flex items-center gap-2'><CalendarIcon />{t('bill_date_time')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <FormField
@@ -841,7 +843,7 @@ export function BillingForm() {
                                         {field.value ? (
                                           format(field.value, "PP")
                                         ) : (
-                                          <span>Pick a date</span>
+                                          <span>{t('pick_a_date')}</span>
                                         )}
                                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                       </Button>

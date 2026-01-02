@@ -19,6 +19,7 @@ const ComposeReminderMessageInputSchema = z.object({
   totalBillAmount: z.string().describe('The total bill amount for the customer.'),
   amountPaid: z.string().describe('The amount already paid by the customer.'),
   pendingDue: z.string().describe('The pending due amount from the customer.'),
+  language: z.enum(['en', 'hi']).describe('The language for the output message.'),
 });
 export type ComposeReminderMessageInput = z.infer<typeof ComposeReminderMessageInputSchema>;
 
@@ -37,7 +38,7 @@ const prompt = ai.definePrompt({
   output: {schema: ComposeReminderMessageOutputSchema},
   prompt: `You are an SMS messaging assistant for Anand Sagar Fresh Fruit.
 
-  Compose a friendly and professional reminder message for a customer regarding their payment.
+  Compose a friendly and professional reminder message for a customer regarding their payment, in the specified language: {{{language}}}.
 
   The message should be structured as follows:
   - Start with "Anand Sagar Fresh Fruits 🍎".
