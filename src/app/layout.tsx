@@ -2,20 +2,21 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { Inter } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import { RootStateProvider } from '@/components/root-state-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { LanguageProvider } from '@/context/language-context';
 import { DateFilterProvider } from '@/context/date-filter-context';
+import { PT_Sans } from 'next/font/google';
 
 export const metadata: Metadata = {
   title: 'Anand Sagar Ripening & Cooling Chamber',
   description: 'Billing application for Anand Sagar Ripening & Cooling Chamber',
 };
 
-const fontSans = Inter({
+const ptSans = PT_Sans({
   subsets: ['latin'],
+  weight: ['400', '700'],
   variable: '--font-sans',
 });
 
@@ -34,7 +35,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className={cn('font-body antialiased', fontSans.variable)}>
+      <body className={cn('font-sans antialiased', ptSans.variable)}>
         <LanguageProvider>
           <DateFilterProvider>
             <FirebaseClientProvider>
