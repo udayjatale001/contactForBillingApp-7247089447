@@ -55,23 +55,33 @@ export function CustomerPaymentDialog({
   const [paymentDate, setPaymentDate] = React.useState(new Date());
   const [paymentMode, setPaymentMode] = React.useState<PaymentMode>('Cash');
   const [paidTo, setPaidTo] = React.useState<PaidTo>('Gopal Temkar');
+  const [lastCustomerId, setLastCustomerId] = React.useState<string | null>(null);
+
 
   React.useEffect(() => {
     if (customer) {
-      setPaidAmount('');
-      setPaymentDate(new Date());
-      setPaidTo('Gopal Temkar');
+      if (customer.id !== lastCustomerId) {
+        setPaidAmount('');
+        setPaymentDate(new Date());
+        setPaidTo('Gopal Temkar');
+        setPaymentMode('Cash');
+        setLastCustomerId(customer.id);
+      }
+    } else {
+        setLastCustomerId(null);
     }
-  }, [customer]);
+  }, [customer, lastCustomerId]);
 
   if (!customer) {
     return null;
   }
   
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     const amount = Number(paidAmount);
     if (!isNaN(amount) && amount > 0 && amount <= customer.totalDueAmount) {
-      onConfirmPayment(customer, amount, paymentMode, paidTo, paymentDate);
+      await onConfirmPayment(customer, amount, paymentMode, paidTo, paymentDate);
+      // After payment, reset the amount field but keep the dialog open
+      setPaidAmount('');
     }
   };
   
@@ -165,7 +175,7 @@ export function CustomerPaymentDialog({
                     <span className="text-muted-foreground font-medium">Remaining Due</span>
                     <span className={cn(
                         "font-bold text-2xl",
-                        remainingDue > 0 ? 'text-blue-600' : 'text-green-600'
+                        remainingDue >= 0 ? 'text-blue-600' : 'text-green-600'
                     )}>
                         {remainingDue.toLocaleString()}rs
                     </span>

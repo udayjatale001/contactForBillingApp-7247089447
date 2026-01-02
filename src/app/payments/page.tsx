@@ -67,6 +67,13 @@ function PaymentsPage() {
     return activeCustomers;
   }, [customers, searchTerm]);
 
+  // If selectedCustomer exists, find its latest version from the customers list
+  const latestSelectedCustomer = React.useMemo(() => {
+    if (!selectedCustomer || !customers) return selectedCustomer;
+    return customers.find(c => c.id === selectedCustomer.id) || selectedCustomer;
+  }, [customers, selectedCustomer]);
+
+
   const handleUpdatePayment = async (
     customer: Customer, 
     paidAmount: number, 
@@ -109,17 +116,18 @@ function PaymentsPage() {
     };
 
     try {
+      let newDueAmount = 0;
       await runTransaction(firestore, async (transaction) => {
         const customerDoc = await transaction.get(customerRef);
         if (!customerDoc.exists()) {
           throw 'Document does not exist!';
         }
         const currentDue = customerDoc.data().totalDueAmount;
-        const newDue = currentDue - paidAmount;
+        newDueAmount = currentDue - paidAmount;
 
         // Update the central customer record
         transaction.update(customerRef, { 
-            totalDueAmount: newDue > 0 ? newDue : 0,
+            totalDueAmount: newDueAmount > 0 ? newDueAmount : 0,
             lastActivity: paymentDate.toISOString(),
         });
         
@@ -138,7 +146,17 @@ function PaymentsPage() {
 
       toast({ title: 'Payment updated successfully!' });
       forceRefetch(); // Re-fetch data to update the UI
-      setSelectedCustomer(null); // Close the dialog
+      
+      // Update the customer in the dialog without closing it
+      setSelectedCustomer(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          totalDueAmount: newDueAmount > 0 ? newDueAmount : 0,
+          lastActivity: paymentDate.toISOString()
+        };
+      });
+
     } catch (e) {
       console.error('Payment update failed: ', e);
       toast({ variant: 'destructive', title: 'Payment update failed.' });
@@ -298,8 +316,8 @@ function PaymentsPage() {
       </AlertDialog>
 
       <CustomerPaymentDialog
-        customer={selectedCustomer}
-        open={!!selectedCustomer}
+        customer={latestSelectedCustomer}
+        open={!!latestSelectedCustomer}
         onOpenChange={setSelectedCustomer}
         onConfirmPayment={handleUpdatePayment}
         onDelete={handleDeleteRequest}
