@@ -509,7 +509,9 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
     if (searchTerm) {
         return tokens.filter(token => {
             const searchLower = searchTerm.toLowerCase();
-            return token.customerName.toLowerCase().includes(searchLower);
+            const nameMatch = token.customerName.toLowerCase().includes(searchLower);
+            const tokenNoMatch = token.id.slice(-6).toLowerCase().includes(searchLower);
+            return nameMatch || tokenNoMatch;
         });
     }
 
@@ -667,7 +669,7 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
                 <div className="relative flex-1 md:min-w-[200px]">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
-                    placeholder="Search by customer name..."
+                    placeholder="Search by customer name or token no..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
