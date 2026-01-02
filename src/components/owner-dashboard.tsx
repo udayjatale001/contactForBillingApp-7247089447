@@ -64,7 +64,7 @@ import type { Bill, AppSettings, Labour, Customer } from '@/lib/types';
 import { format, getYear, getMonth, isSameDay, startOfDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
-import { Input } from './input';
+import { Input } from '@/components/ui/input';
 import { NotificationsFeed } from './notifications-feed';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
@@ -931,3 +931,5 @@ export function OwnerDashboard() {
     </>
   );
 }
+
+    
