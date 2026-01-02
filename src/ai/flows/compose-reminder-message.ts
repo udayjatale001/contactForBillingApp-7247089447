@@ -16,7 +16,9 @@ import {z} from 'genkit';
 
 const ComposeReminderMessageInputSchema = z.object({
   customerName: z.string().describe('The name of the customer.'),
-  lastActivityDate: z.string().describe('The date of the customer\'s last carat activity (YYYY-MM-DD).'),
+  totalBillAmount: z.string().describe('The total bill amount for the customer.'),
+  amountPaid: z.string().describe('The amount already paid by the customer.'),
+  pendingDue: z.string().describe('The pending due amount from the customer.'),
 });
 export type ComposeReminderMessageInput = z.infer<typeof ComposeReminderMessageInputSchema>;
 
@@ -35,14 +37,20 @@ const prompt = ai.definePrompt({
   output: {schema: ComposeReminderMessageOutputSchema},
   prompt: `You are an SMS messaging assistant for Anand Sagar Fresh Fruit.
 
-  Compose a friendly and encouraging reminder message for a customer who hasn't had any carat activity in a month. The message should:
-  * Remind them of Anand Sagar Fresh Fruit.
-  * Mention their name.
-  * Encourage them to visit again soon.
-  * Highlight the fresh fruit available.
+  Compose a friendly and professional reminder message for a customer regarding their payment.
 
+  The message should be structured as follows:
+  - Start with "Anand Sagar Fresh Fruits 🍎".
+  - A gentle reminder about their payment.
+  - Clearly list "Total Bill Amount", "Amount Paid", and "Pending Due Amount".
+  - A request to clear the remaining due amount.
+  - End with "Thank you for your cooperation."
+
+  Use the provided details:
   Customer Name: {{{customerName}}}
-  Last Activity Date: {{{lastActivityDate}}}
+  Total Bill Amount: {{{totalBillAmount}}}
+  Amount Paid: {{{amountPaid}}}
+  Pending Due Amount: {{{pendingDue}}}
   `,
 });
 

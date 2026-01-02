@@ -146,8 +146,7 @@ export default {
   token_deleted_desc: '{0} के लिए टोकन हटा दिया गया है।',
   
   // Owner Dashboard
-  whatsapp_reminder_message: 'आनंद सागर फ्रेश फ्रूट्स 🍎\nआपका ₹{0} का भुगतान अभी बाकी है।\nकृपया सुविधा अनुसार जल्द से जल्द भुगतान कर दें।\nआपके सहयोग के लिए धन्यवाद 🙏',
-
+  
   // Whatsapp Bill Message
   whatsapp_thank_you: 'आपके व्यवसाय के लिए धन्यवाद!',
 };
