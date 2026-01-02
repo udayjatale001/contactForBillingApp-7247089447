@@ -41,6 +41,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { TokenSummaryDialog } from './token-summary-dialog';
 import { Label } from './ui/label';
+import { useToken } from '@/context/token-context';
 
 export function BillingForm() {
   const { toast } = useToast();
@@ -51,6 +52,7 @@ export function BillingForm() {
   const [generatedBill, setGeneratedBill] = React.useState<Bill | null>(null);
   const [generatedToken, setGeneratedToken] = React.useState<Token | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
+  const { tokenData, setTokenData } = useToken();
 
   // Refs for input fields
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -84,6 +86,18 @@ export function BillingForm() {
   });
   
   const { setValue } = form;
+  
+  React.useEffect(() => {
+    if (tokenData) {
+      setValue('customerName', tokenData.customerName || '');
+      setValue('contactNumber', tokenData.contactNumber || '');
+      setValue('roomNumber', tokenData.roomNumber || '');
+      setValue('address', tokenData.address || '');
+      setValue('inCarat', tokenData.inCarat);
+      // Clear the token data from context after using it
+      setTokenData(null);
+    }
+  }, [tokenData, setValue, setTokenData]);
 
   React.useEffect(() => {
     if (appSettings) {

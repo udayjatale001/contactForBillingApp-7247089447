@@ -38,6 +38,7 @@ import {
   X,
   Trash2,
   Ticket,
+  Pencil,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, getDoc, doc, deleteDoc, writeBatch, getDocs } from 'firebase/firestore';
@@ -58,6 +59,8 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDateFilter } from '@/context/date-filter-context';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useRouter } from 'next/navigation';
+import { useToken } from '@/context/token-context';
 
 
 const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}) {
@@ -471,7 +474,9 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
   const firestore = useFirestore();
   const { toast } = useToast();
   const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
-  
+  const { setTokenData } = useToken();
+  const router = useRouter();
+
   const [searchTerm, setSearchTerm] = React.useState('');
   const [tokenToDelete, setTokenToDelete] = React.useState<Token | null>(null);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -598,6 +603,12 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
       setTokenToDelete(selectedToken);
       setSelectedToken(null);
     }
+  };
+  
+  const handleContinueToBill = (e: React.MouseEvent, token: Token) => {
+    e.stopPropagation();
+    setTokenData(token);
+    router.push('/');
   };
 
   const confirmDelete = async () => {
@@ -741,6 +752,7 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
                       <TableHead>Room No.</TableHead>
                       <TableHead>Contact</TableHead>
                       <TableHead>Date & Time</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -762,6 +774,12 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
                         <TableCell>{token.roomNumber || 'N/A'}</TableCell>
                         <TableCell>{token.contactNumber || 'N/A'}</TableCell>
                         <TableCell>{format(new Date(token.createdAt), 'PPpp')}</TableCell>
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" onClick={(e) => handleContinueToBill(e, token)}>
+                                <Pencil className="h-4 w-4" />
+                                <span className="sr-only">Continue to Bill</span>
+                            </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

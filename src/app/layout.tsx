@@ -7,6 +7,7 @@ import { RootStateProvider } from '@/components/root-state-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { LanguageProvider } from '@/context/language-context';
 import { DateFilterProvider } from '@/context/date-filter-context';
+import { TokenProvider } from '@/context/token-context';
 import { PT_Sans } from 'next/font/google';
 
 export const metadata: Metadata = {
@@ -38,9 +39,11 @@ export default function RootLayout({
       <body className={cn('font-sans antialiased', ptSans.variable)}>
         <LanguageProvider>
           <DateFilterProvider>
-            <FirebaseClientProvider>
-              <RootStateProvider>{children}</RootStateProvider>
-            </FirebaseClientProvider>
+            <TokenProvider>
+              <FirebaseClientProvider>
+                <RootStateProvider>{children}</RootStateProvider>
+              </FirebaseClientProvider>
+            </TokenProvider>
           </DateFilterProvider>
         </LanguageProvider>
         <Toaster />
