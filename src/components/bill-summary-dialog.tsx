@@ -77,8 +77,8 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
     let caratDetails = `*${t('carat_details')}:*\n`;
     if (bill.inCarat) caratDetails += `${t('in_carat')}: ${bill.inCarat}\n`;
     if (bill.outCarat) caratDetails += `${t('out_carat')}: ${bill.outCarat}\n`;
-    if (bill.smallCarat && bill.smallCaratRate) caratDetails += `${t('small_carat_qty')} (${bill.smallCaratRate}${t('rs_symbol')}/kg): ${bill.smallCarat}kg\n`;
-    if (bill.bigCarat && bill.bigCaratRate) caratDetails += `${t('big_carat_qty')} (${bill.bigCaratRate}${t('rs_symbol')}/kg): ${bill.bigCarat}kg\n\n`;
+    if (bill.smallCarat && bill.smallCaratRate) caratDetails += `${t('small_carat_qty')} (${bill.smallCaratRate}${t('rs_symbol')}/kg): ${bill.smallCarat} Qty.\n`;
+    if (bill.bigCarat && bill.bigCaratRate) caratDetails += `${t('big_carat_qty')} (${bill.bigCaratRate}${t('rs_symbol')}/kg): ${bill.bigCarat} Qty.\n\n`;
     
     let amountSummary = `*${t('calculation_summary')}:*\n`;
     amountSummary += `${t('total_amount')}: ${bill.totalAmount.toLocaleString()}${t('rs_symbol')}\n`;
@@ -166,13 +166,13 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                           {bill.smallCarat && bill.smallCarat > 0 && bill.smallCaratRate && (
                               <DetailItem
                                   label={`${t('small_carat_qty')} (${bill.smallCaratRate}${t('rs_symbol')}/kg)`}
-                                  value={`${bill.smallCarat} kg`}
+                                  value={`${bill.smallCarat} Qty.`}
                               />
                           )}
                           {bill.bigCarat && bill.bigCarat > 0 && bill.bigCaratRate && (
                               <DetailItem
                                   label={`${t('big_carat_qty')} (${bill.bigCaratRate}${t('rs_symbol')}/kg)`}
-                                  value={`${bill.bigCarat} kg`}
+                                  value={`${bill.bigCarat} Qty.`}
                               />
                           )}
                           <Separator className="my-2 bg-gray-200" />
