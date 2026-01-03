@@ -69,7 +69,7 @@
         },
         "paidTo": {
           "type": "string",
-          "description": "Name of the person to whom the payment was made (Gopal Temkar, Yuvaraj Temkar, Suyash Temkar, Gajananad Murtankar)."
+          "description": "Name of the person to whom the payment was made (Gopal Temkar, Yuvaraj Temkar, Suyash Temkar, Gajanan Murtalkar)."
         },
         "paymentMode": {
           "type": "string",

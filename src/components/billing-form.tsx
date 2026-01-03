@@ -720,7 +720,7 @@ export function BillingForm() {
                                     <SelectItem value="Gopal Temkar">Gopal Temkar</SelectItem>
                                     <SelectItem value="Yuvaraj Temkar">Yuvaraj Temkar</SelectItem>
                                     <SelectItem value="Suyash Temkar">Suyash Temkar</SelectItem>
-                                    <SelectItem value="Gajananad Murtankar">Gajananad Murtankar</SelectItem>
+                                    <SelectItem value="Gajanan Murtalkar">Gajanan Murtalkar</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />

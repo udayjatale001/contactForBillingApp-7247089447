@@ -23,7 +23,7 @@ import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 type PaymentMode = 'Cash' | 'Online Payment';
-type PaidTo = 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gajananad Murtankar';
+type PaidTo = 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gajanan Murtalkar';
 
 interface CustomerPaymentDialogProps {
   customer: Customer | null;
@@ -141,7 +141,7 @@ export function CustomerPaymentDialog({
                             <SelectItem value="Gopal Temkar">Gopal Temkar</SelectItem>
                             <SelectItem value="Yuvaraj Temkar">Yuvaraj Temkar</SelectItem>
                             <SelectItem value="Suyash Temkar">Suyash Temkar</SelectItem>
-                            <SelectItem value="Gajananad Murtankar">Gajananad Murtankar</SelectItem>
+                            <SelectItem value="Gajanan Murtalkar">Gajanan Murtalkar</SelectItem>
                         </SelectContent>
                     </Select>
                  </div>

@@ -370,7 +370,7 @@ export function OwnerDashboard() {
     customer: Customer, 
     paidAmount: number, 
     paymentMode: 'Cash' | 'Online Payment', 
-    paidTo: 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gajananad Murtankar',
+    paidTo: 'Gopal Temkar' | 'Yuvaraj Temkar' | 'Suyash Temkar' | 'Gajanan Murtalkar',
     paymentDate: Date
     ) => {
     if (!firestore || !user) return;
@@ -931,5 +931,3 @@ export function OwnerDashboard() {
     </>
   );
 }
-
-    
