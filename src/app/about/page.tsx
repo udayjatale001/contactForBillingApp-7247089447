@@ -160,13 +160,13 @@ export default function AboutPage() {
                     <div className="space-y-8">
 
                         <GuideItem icon={Home} title="1. Create Bill / Token Flow">
-                            <p><strong>Token Generation:</strong> When you fill in the Customer Details (Name, Contact, Room No, Address, In/Out Carat) and click "Print Token," a token is generated, printed, and saved in the Token History with a unique ID.</p>
-                            <p><strong>Bill Generation:</strong> When you fill out the complete form (Customer, Carat, Labour, Payment details) and click "Generate Bill," a final bill is created, displayed for printing, and all data is saved in the Bill History.</p>
+                            <p><strong>Token Generation:</strong> When you fill in the Customer Details (Name, Contact, Room No, Address, In/Out Carat) and click "Print Token," a <strong>Token</strong> is generated, printed, and saved in the Token History with a unique ID.</p>
+                            <p><strong>Bill Generation:</strong> When you fill out the complete form (Customer, Carat, Labour, Payment details) and click "Generate Bill," a final <strong>Bill</strong> is created, displayed for printing, and all data is saved in the Bill History.</p>
                         </GuideItem>
                         
                         <GuideItem icon={FileText} title="2. Billing History Page">
-                             <p>This page stores all generated Tokens and Final Bills. Each record has a unique ID that you can use to search. The search bar allows you to find records by Bill ID or Token ID.</p>
-                            <p>Clicking any record opens a popup preview. From there, you can <strong>Print</strong> or <strong>Delete</strong> it. For Tokens, an "Edit / Continue" icon (✏️) allows you to redirect to the Create Bill page with the token's data auto-filled, so you can complete the bill without re-entering information.</p>
+                             <p>This page stores all generated <strong>Tokens</strong> and Final <strong>Bills</strong>. Each record has a unique ID that you can use to search. The search bar allows you to find records by <strong>Bill</strong> ID or <strong>Token</strong> ID.</p>
+                            <p>Clicking any record opens a popup preview. From there, you can <strong>Print</strong> or <strong>Delete</strong> it. For <strong>Tokens</strong>, an "Edit / Continue" icon (✏️) allows you to redirect to the Create Bill page with the token's data auto-filled, so you can complete the bill without re-entering information.</p>
                         </GuideItem>
 
                         <GuideItem icon={DollarSign} title="3. Payments Page">
@@ -181,7 +181,7 @@ export default function AboutPage() {
                         <GuideItem icon={Bell} title="5. Notifications Page">
                            <p>This page shows a feed of all recent activities, with two types of notifications:</p>
                            <ul className='list-disc pl-5 space-y-1'>
-                               <li><strong>Bill Notifications (🧾):</strong> Appear when a new bill is created.</li>
+                               <li><strong>Bill Notifications (🧾):</strong> Appear when a new <strong>Bill</strong> is created.</li>
                                <li><strong>Payment Notifications (💰):</strong> Appear when a payment is made on the Payments page.</li>
                            </ul>
                            <p>Each notification clearly displays the customer name, paid amount, due amount, carats, payment method, and timestamp.</p>
@@ -200,8 +200,8 @@ export default function AboutPage() {
                         <GuideItem icon={Users} title="7. Customer Details Page">
                             <p>This page provides a summary for each customer, including the total carats supplied, total billed amount, and overall profit. It also features WhatsApp integration, allowing you to send:</p>
                             <ul className='list-disc pl-5 space-y-1'>
-                               <li>Final Bills</li>
-                               <li>Tokens</li>
+                               <li>Final <strong>Bills</strong></li>
+                               <li><strong>Tokens</strong></li>
                                <li>Due Amount reminders</li>
                                <li>Customer summaries</li>
                            </ul>
@@ -326,5 +326,3 @@ export default function AboutPage() {
     </>
   );
 }
-
-    
