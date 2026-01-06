@@ -28,8 +28,8 @@ interface TokenSummaryDialogProps {
 
 const DetailItem = ({ label, value }: { label: string, value: React.ReactNode }) => (
     <div className="flex justify-between items-center py-1 sm:py-2">
-      <p className="text-xs sm:text-sm text-gray-500">{label}</p>
-      <p className="text-xs sm:text-sm font-semibold text-gray-800 text-right">{value}</p>
+      <p className="text-xs sm:text-sm text-black font-bold">{label}</p>
+      <p className="text-xs sm:text-sm font-bold text-black text-right">{value}</p>
     </div>
 );
 
@@ -138,8 +138,8 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint, onDelet
           <div className="p-4 bg-white rounded-lg border-2 border-dashed border-gray-400" id="token-receipt">
             {/* Header */}
             <header className="text-center mb-3 pb-2 border-b-2 border-dashed border-gray-300">
-                <h1 className="text-lg font-bold text-gray-800">{t('bill_receipt_title')}</h1>
-                <p className="text-xs text-gray-500">{t('customer_token')}</p>
+                <h1 className="text-lg font-bold text-black">{t('bill_receipt_title')}</h1>
+                <p className="text-xs text-black font-bold">{t('customer_token')}</p>
             </header>
 
             <main className="space-y-1">
@@ -154,8 +154,8 @@ export function TokenSummaryDialog({ token, open, onOpenChange, onPrint, onDelet
               <div className="pt-2 mt-2 border-t-2 border-dashed border-gray-300">
                 {typeof token.inCarat === 'number' && (
                     <div className="flex justify-between text-sm font-bold">
-                        <span>{t('in_carat')}:</span>
-                        <span>{token.inCarat}</span>
+                        <span className='text-black font-bold'>{t('in_carat')}:</span>
+                        <span className='text-black font-bold'>{token.inCarat}</span>
                     </div>
                 )}
               </div>
