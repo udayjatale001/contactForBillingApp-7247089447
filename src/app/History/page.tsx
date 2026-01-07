@@ -61,6 +61,7 @@ import { useDateFilter } from '@/context/date-filter-context';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRouter } from 'next/navigation';
 import { useToken } from '@/context/token-context';
+import { DailySummaryWhatsAppDialog } from '@/components/daily-summary-whatsapp-dialog';
 
 
 const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}) {
@@ -401,6 +402,10 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
                 )}
             </CardContent>
             </Card>
+
+            <div className="mt-6 flex justify-end">
+                <DailySummaryWhatsAppDialog />
+            </div>
 
       {selectedBill && (
         <BillSummaryDialog
