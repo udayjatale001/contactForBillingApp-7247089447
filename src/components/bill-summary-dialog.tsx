@@ -34,8 +34,8 @@ interface BillSummaryDialogProps {
 
 const DetailItem = ({ label, value, className, valueClassName }: { label: string, value: React.ReactNode, className?: string, valueClassName?: string }) => (
     <div className={cn("flex justify-between items-start text-xs sm:text-sm", className)}>
-      <p className="text-black font-bold">{label}</p>
-      <p className={cn("font-bold text-right text-black", valueClassName)}>{value}</p>
+      <p className="text-black">{label}</p>
+      <p className={cn("text-right text-black", valueClassName)}>{value}</p>
     </div>
   );
 
@@ -137,9 +137,9 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
           <div id="final-bill-print" className="p-4 sm:p-6 bg-white text-black rounded-t-lg overflow-y-auto flex-1 font-sans">
               {/* Header */}
               <header className="text-center mb-4 sm:mb-6 pb-4 border-b border-gray-200">
-                  <h1 className="text-xl sm:text-2xl font-bold text-black tracking-wider">{t('app_title')}</h1>
-                  <p className="text-xs sm:text-sm text-black font-bold">{t('bill_receipt_subtitle')}</p>
-                   <div className='flex justify-between text-xs sm:text-sm text-black font-bold mt-4'>
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-wider">{t('app_title')}</h1>
+                  <p className="text-xs sm:text-sm text-black">{t('bill_receipt_subtitle')}</p>
+                   <div className='flex justify-between text-xs sm:text-sm text-black mt-4'>
                       <span>{t('bill_no')}: #{bill.id.slice(-6).toUpperCase()}</span>
                       <span>{t('date')}: {format(new Date(bill.createdAt), 'PP')}</span>
                   </div>
@@ -148,7 +148,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               <main className="space-y-4 sm:space-y-6">
                   {/* Customer Details */}
                   <div className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100">
-                      <h2 className="text-base sm:text-lg font-bold text-black mb-2">{t('customer_details')}</h2>
+                      <h2 className="text-base sm:text-lg text-black mb-2">{t('customer_details')}</h2>
                       <div className="space-y-1">
                           <DetailItem label={t('customer_name')} value={bill.customerName} />
                           {bill.roomNumber && <DetailItem label={t('room_number')} value={bill.roomNumber} />}
@@ -159,7 +159,7 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
 
                   {/* Carat Details */}
                   <div className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100">
-                      <h2 className="text-base sm:text-lg font-bold text-black mb-3">{t('carat_details')}</h2>
+                      <h2 className="text-base sm:text-lg text-black mb-3">{t('carat_details')}</h2>
                       <div className="space-y-2 sm:space-y-3">
                           {bill.inCarat && bill.inCarat > 0 && <DetailItem label={t('in_carat')} value={bill.inCarat} />}
                           {bill.outCarat && bill.outCarat > 0 && <DetailItem label={t('out_carat')} value={bill.outCarat} />}
@@ -176,19 +176,19 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
                               />
                           )}
                           <Separator className="my-2 bg-gray-200" />
-                          <DetailItem label={t('total_amount')} value={`${bill.totalAmount.toLocaleString()}${t('rs_symbol')}`} valueClassName="text-base sm:text-lg font-bold text-black" />
+                          <DetailItem label={t('total_amount')} value={`${bill.totalAmount.toLocaleString()}${t('rs_symbol')}`} valueClassName="text-base sm:text-lg text-black" />
                           <DetailItem label={t('paid_amount')} value={`${bill.paidAmount.toLocaleString()}${t('rs_symbol')}`} />
                           <DetailItem
                               label={t('due_amount')}
                               value={`${bill.dueAmount.toLocaleString()}${t('rs_symbol')}`}
-                              valueClassName={cn("font-bold text-lg text-black")}
+                              valueClassName={cn("text-lg text-black")}
                           />
                       </div>
                   </div>
 
                   {/* Payment Details */}
                   <div className="p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-100">
-                      <h2 className="text-base sm:text-lg font-bold text-black mb-2">{t('payment_details')}</h2>
+                      <h2 className="text-base sm:text-lg text-black mb-2">{t('payment_details')}</h2>
                       <div className="space-y-1">
                           <DetailItem label={t('payment_method')} value={t(bill.paymentMode.toLowerCase() as keyof typeof import('@/lib/locales/en').default)} />
                           <DetailItem label={`${t('date')} & ${t('time')}`} value={format(new Date(bill.createdAt), 'PPpp')} />
@@ -200,15 +200,15 @@ export function BillSummaryDialog({ bill, open, onOpenChange, onSave, isSaving, 
               <footer className="mt-6 sm:mt-10 pt-6 border-t border-gray-200 flex flex-col items-center gap-4 text-xs sm:text-sm">
                   <div className="flex justify-between items-center w-full">
                     <div className="text-center">
-                         <p className="text-black font-bold h-8 border-b-2 border-dotted border-gray-400 w-32"></p>
-                        <p className="text-black font-bold mt-1">{t('signature_seal')}</p>
+                         <p className="text-black h-8 border-b-2 border-dotted border-gray-400 w-32"></p>
+                        <p className="text-black mt-1">{t('signature_seal')}</p>
                     </div>
-                    <div className="text-black font-bold">
+                    <div className="text-black">
                         {t('thank_you_note')} 😊
                     </div>
                   </div>
                   {appSettings?.contactUsNumber && (
-                    <div className="text-center font-bold text-black mt-2 flex items-center gap-2">
+                    <div className="text-center text-black mt-2 flex items-center gap-2">
                       <Phone className="h-4 w-4"/>
                       <span>Contact Us: {appSettings.contactUsNumber}</span>
                     </div>
