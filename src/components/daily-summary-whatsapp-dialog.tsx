@@ -20,17 +20,21 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Loader2, MessageSquare, Pencil } from 'lucide-react';
 import { format, startOfDay, endOfDay } from 'date-fns';
+import { useDateFilter } from '@/context/date-filter-context';
 
 const WHATSAPP_NUMBER_KEY = 'daily-summary-whatsapp-number';
 
 export function DailySummaryWhatsAppDialog() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { globalDate } = useDateFilter();
   
   const [isOpen, setIsOpen] = React.useState(false);
   const [phoneNumber, setPhoneNumber] = React.useState('');
   const [isEditingNumber, setIsEditingNumber] = React.useState(false);
   const [isSending, setIsSending] = React.useState(false);
+
+  const reportDate = globalDate || new Date();
 
   React.useEffect(() => {
     const savedNumber = localStorage.getItem(WHATSAPP_NUMBER_KEY);
@@ -42,24 +46,25 @@ export function DailySummaryWhatsAppDialog() {
   }, []);
 
   const billsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    const todayStart = startOfDay(new Date());
-    const todayEnd = endOfDay(new Date());
+    if (!firestore || !isOpen) return null; // Only query when the dialog is open
+    const dateToFilter = reportDate;
+    const startDate = startOfDay(dateToFilter);
+    const endDate = endOfDay(dateToFilter);
     return query(
       collection(firestore, 'bills'),
-      where('createdAt', '>=', todayStart.toISOString()),
-      where('createdAt', '<=', todayEnd.toISOString()),
+      where('createdAt', '>=', startDate.toISOString()),
+      where('createdAt', '<=', endDate.toISOString()),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore]);
+  }, [firestore, reportDate, isOpen]);
 
-  const { data: todaysBills, isLoading } = useCollection<Bill>(billsQuery);
+  const { data: billsForDate, isLoading } = useCollection<Bill>(billsQuery);
 
   const summary = React.useMemo(() => {
-    if (!todaysBills) {
+    if (!billsForDate) {
       return { received: 0, issued: 0, amountReceived: 0, amountPending: 0 };
     }
-    return todaysBills.reduce(
+    return billsForDate.reduce(
       (acc, bill) => {
         acc.received += bill.inCarat || 0;
         acc.issued += bill.outCarat || 0;
@@ -69,7 +74,7 @@ export function DailySummaryWhatsAppDialog() {
       },
       { received: 0, issued: 0, amountReceived: 0, amountPending: 0 }
     );
-  }, [todaysBills]);
+  }, [billsForDate]);
 
   const handleSaveNumber = () => {
     if (phoneNumber.trim().length === 10) {
@@ -91,13 +96,13 @@ export function DailySummaryWhatsAppDialog() {
     setIsSending(true);
     
     const message = `
-*Daily Summary: ${format(new Date(), 'PPP')}*
+*Daily Summary: ${format(reportDate, 'PPP')}*
 
 - *Total Carat Received:* ${summary.received.toLocaleString()}
 - *Total Carat Issued:* ${summary.issued.toLocaleString()}
 - *Total Amount Received:* ${summary.amountReceived.toLocaleString()}rs
 - *Total Amount Pending:* ${summary.amountPending.toLocaleString()}rs
-    `.trim();
+    `.trim().replace(/^\s+/gm, '');
 
     const whatsappUrl = `https://wa.me/91${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
@@ -110,7 +115,7 @@ export function DailySummaryWhatsAppDialog() {
     <>
       <Button onClick={() => setIsOpen(true)} variant="outline">
         <MessageSquare className="mr-2 h-4 w-4" />
-        Send Daily Summary
+        Send Daily Report
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -118,7 +123,7 @@ export function DailySummaryWhatsAppDialog() {
           <DialogHeader>
             <DialogTitle>Send Daily Report</DialogTitle>
             <DialogDescription>
-              Enter the WhatsApp number to receive the daily summary.
+              Enter the WhatsApp number to receive the day summary.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -144,7 +149,7 @@ export function DailySummaryWhatsAppDialog() {
             </div>
             
             <div className="p-4 bg-muted/50 rounded-lg space-y-2 text-sm">
-                <h4 className="font-semibold mb-2">Today's Summary ({format(new Date(), 'PP')})</h4>
+                <h4 className="font-semibold mb-2">Summary for {format(reportDate, 'PP')}</h4>
                 {isLoading ? <Loader2 className="animate-spin" /> : (
                     <>
                         <div className="flex justify-between"><span>Carat Received:</span> <span>{summary.received.toLocaleString()}</span></div>

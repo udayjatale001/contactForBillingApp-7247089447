@@ -255,176 +255,165 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
 
   return (
     <>
-        <Card>
-            <CardHeader>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                    <div>
-                        <CardTitle>All Bills</CardTitle>
-                        <CardDescription>
-                        A complete record of all generated bills.
-                        </CardDescription>
-                    </div>
-                    {selectedIds.size > 0 && !isOwner && (
-                        <Button 
-                            variant="destructive" 
-                            onClick={() => setShowBulkDeleteConfirm(true)}
-                            disabled={isBulkDeleting}
-                        >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete ({selectedIds.size})
-                        </Button>
-                    )}
-                </div>
-
-                <div className="border-t pt-4 mt-4 space-y-4">
-                <div className="flex flex-col md:flex-row flex-wrap gap-2">
-                    <div className="relative flex-1 md:min-w-[200px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input
-                        placeholder="Search by customer name or bill no..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                    />
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                            <PopoverTrigger asChild>
-                            <Button
-                                variant={'outline'}
-                                className={cn(
-                                'w-full justify-start text-left font-normal',
-                                !globalDate && 'text-muted-foreground'
-                                )}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {globalDate ? format(globalDate, 'PPP') : <span>Today</span>}
-                            </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="end">
-                            <Calendar
-                                mode="single"
-                                selected={globalDate ?? undefined}
-                                onSelect={(date) => {
-                                    setGlobalDate(date || new Date());
-                                    setIsCalendarOpen(false);
-                                }}
-                                initialFocus
-                            />
-                            </PopoverContent>
-                        </Popover>
-                        {globalDate && (
-                            <Button variant="ghost" size="icon" onClick={clearGlobalDate}>
-                            <X className="h-4 w-4" />
-                            </Button>
-                        )}
-                    </div>
-                </div>
-                 {filteredBills.length > 0 && !isOwner && (
-                    <div className="flex items-center space-x-2">
-                        <Checkbox 
-                            id="select-all-bills" 
-                            checked={allFilteredSelected}
-                            onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                        />
-                        <label
-                            htmlFor="select-all-bills"
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                        >
-                           Select all ({filteredBills.length})
-                        </label>
-                    </div>
-                )}
-                </div>
-            </CardHeader>
-            <CardContent>
-                {isLoading ? (
-                <div className="flex justify-center items-center py-16">
-                    <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
-                </div>
-                ) : filteredBills && filteredBills.length > 0 ? (
-                <div className="w-full overflow-x-auto">
-                    <Table>
-                    <TableHeader>
-                        <TableRow>
-                          {!isOwner && <TableHead className="w-10"></TableHead>}
-                          <TableHead>Customer</TableHead>
-                          <TableHead>Total Amount</TableHead>
-                          <TableHead>Paid Amount</TableHead>
-                          <TableHead>Due Amount</TableHead>
-                          <TableHead>Date & Time</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredBills.map((bill) => (
-                        <TableRow
-                            key={bill.id}
-                            className={cn("cursor-pointer", selectedIds.has(bill.id) && 'bg-primary/10')}
-                            onClick={() => handleRowClick(bill)}
-                        >
-                            {!isOwner && 
-                            <TableCell onClick={(e) => e.stopPropagation()}>
-                                 <Checkbox 
-                                    checked={selectedIds.has(bill.id)} 
-                                    onCheckedChange={(checked) => handleSelectOne(bill.id, !!checked)}
-                                    aria-label={`Select bill ${bill.id}`}
-                                />
-                            </TableCell>
-                            }
-                            <TableCell>{bill.customerName}</TableCell>
-                            <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
-                            <TableCell>{bill.paidAmount.toLocaleString()}rs</TableCell>
-                            <TableCell>
-                            <Badge
-                                variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}
-                            >
-                                {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
-                            </Badge>
-                            </TableCell>
-                            <TableCell>{format(new Date(bill.createdAt), 'PPpp')}</TableCell>
-                        </TableRow>
-                        ))}
-                    </TableBody>
-                    </Table>
-                </div>
-                ) : (
-                <div className="text-center py-16">
-                    <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-semibold">No Bills Found</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        No records found for the selected period.
-                    </p>
-                </div>
-                )}
-            </CardContent>
-            </Card>
-
-            <div className="mt-6 flex justify-end">
-                <DailySummaryWhatsAppDialog />
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div>
+              <CardTitle>All Bills</CardTitle>
+              <CardDescription>A complete record of all generated bills.</CardDescription>
             </div>
+            {selectedIds.size > 0 && !isOwner && (
+              <Button variant="destructive" onClick={() => setShowBulkDeleteConfirm(true)} disabled={isBulkDeleting}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete ({selectedIds.size})
+              </Button>
+            )}
+          </div>
+
+          <div className="border-t pt-4 mt-4 space-y-4">
+            <div className="flex flex-col md:flex-row flex-wrap gap-2">
+              <div className="relative flex-1 md:min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder="Search by customer name or bill no..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={'outline'}
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !globalDate && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {globalDate ? format(globalDate, 'PPP') : <span>Today</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                      mode="single"
+                      selected={globalDate ?? undefined}
+                      onSelect={(date) => {
+                        setGlobalDate(date || new Date());
+                        setIsCalendarOpen(false);
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                {globalDate && (
+                  <Button variant="ghost" size="icon" onClick={clearGlobalDate}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+            {filteredBills.length > 0 && !isOwner && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="select-all-bills"
+                  checked={allFilteredSelected}
+                  onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                />
+                <label
+                  htmlFor="select-all-bills"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Select all ({filteredBills.length})
+                </label>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-16">
+              <Loader2 className="h-12 w-12 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredBills && filteredBills.length > 0 ? (
+            <div className="w-full overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {!isOwner && <TableHead className="w-10"></TableHead>}
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Total Amount</TableHead>
+                    <TableHead>Paid Amount</TableHead>
+                    <TableHead>Due Amount</TableHead>
+                    <TableHead>Date & Time</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredBills.map((bill) => (
+                    <TableRow
+                      key={bill.id}
+                      className={cn('cursor-pointer', selectedIds.has(bill.id) && 'bg-primary/10')}
+                      onClick={() => handleRowClick(bill)}
+                    >
+                      {!isOwner && (
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedIds.has(bill.id)}
+                            onCheckedChange={(checked) => handleSelectOne(bill.id, !!checked)}
+                            aria-label={`Select bill ${bill.id}`}
+                          />
+                        </TableCell>
+                      )}
+                      <TableCell>{bill.customerName}</TableCell>
+                      <TableCell>{bill.totalAmount.toLocaleString()}rs</TableCell>
+                      <TableCell>{bill.paidAmount.toLocaleString()}rs</TableCell>
+                      <TableCell>
+                        <Badge variant={bill.dueAmount > 0 ? 'destructive' : 'outline'}>
+                          {bill.dueAmount > 0 ? `${bill.dueAmount.toLocaleString()}rs` : 'Paid'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{format(new Date(bill.createdAt), 'PPpp')}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-semibold">No Bills Found</h3>
+              <p className="mt-1 text-sm text-muted-foreground">No records found for the selected period.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="mt-6 flex justify-end">
+        <DailySummaryWhatsAppDialog />
+      </div>
 
       {selectedBill && (
         <BillSummaryDialog
           bill={selectedBill}
           open={!!selectedBill}
           onOpenChange={handleCloseDialog}
-          onSave={async () => { /* Dummy */ }}
+          onSave={async () => {
+            /* Dummy */
+          }}
           isSaving={false}
           isViewing
           onDelete={handleDeleteFromDialog}
         />
       )}
-      
-       <AlertDialog
-        open={!!billToDelete}
-        onOpenChange={() => setBillToDelete(null)}
-      >
+
+      <AlertDialog open={!!billToDelete} onOpenChange={() => setBillToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action will permanently delete the bill for{' '}
-              <span className='font-semibold'>{billToDelete?.customerName}</span>.
+              <span className="font-semibold">{billToDelete?.customerName}</span>.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -440,16 +429,14 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
-      <AlertDialog
-        open={showBulkDeleteConfirm && !isOwner}
-        onOpenChange={setShowBulkDeleteConfirm}
-      >
+
+      <AlertDialog open={showBulkDeleteConfirm && !isOwner} onOpenChange={setShowBulkDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the {selectedIds.size} selected bills from your history.
+              This action cannot be undone. This will permanently delete the {selectedIds.size} selected bills from
+              your history.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -459,16 +446,14 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
               disabled={isBulkDeleting}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {isBulkDeleting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              {isBulkDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Delete Selected
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
+  );
 });
 
 const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}) {
