@@ -41,18 +41,17 @@ export function DailySummaryWhatsAppDialog() {
     }
   }, []);
 
-  const todayStart = startOfDay(new Date());
-  const todayEnd = endOfDay(new Date());
-
   const billsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
+    const todayStart = startOfDay(new Date());
+    const todayEnd = endOfDay(new Date());
     return query(
       collection(firestore, 'bills'),
       where('createdAt', '>=', todayStart.toISOString()),
       where('createdAt', '<=', todayEnd.toISOString()),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, todayStart, todayEnd]);
+  }, [firestore]);
 
   const { data: todaysBills, isLoading } = useCollection<Bill>(billsQuery);
 

@@ -115,9 +115,10 @@ export function useCollection<T = any>(
 
     return () => unsubscribe();
   }, [memoizedTargetRefOrQuery, refetchToggle]); // Re-run if the target query/reference changes or on force refetch
+
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
-    throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
+    // throw new Error('Input to useCollection must be memoized with useMemoFirebase. Path: ' + (memoizedTargetRefOrQuery.type === 'collection' ? (memoizedTargetRefOrQuery as CollectionReference).path : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()));
   }
+
   return { data, isLoading, error, forceRefetch };
 }
-

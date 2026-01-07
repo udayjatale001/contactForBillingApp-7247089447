@@ -79,14 +79,10 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = React.useState(false);
 
 
-  const collectionPath = React.useMemo(() => {
-    if (isOwner === null || !user) return null;
-    return isOwner ? 'bills' : `managers/${user.uid}/bills`;
-  }, [isOwner, user]);
-
   const billsQuery = useMemoFirebase(() => {
-    if (!firestore || !collectionPath) return null;
-
+    if (isOwner === null || !user || !firestore) return null;
+    
+    const collectionPath = isOwner ? 'bills' : `managers/${user.uid}/bills`;
     const dateToFilter = globalDate || new Date();
     const startDate = startOfDay(dateToFilter);
     const endDate = endOfDay(dateToFilter);
@@ -97,7 +93,7 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
       where('createdAt', '<=', endDate.toISOString()),
       orderBy('createdAt', 'desc')
     );
-  }, [firestore, collectionPath, globalDate]);
+  }, [isOwner, user, firestore, globalDate]);
 
 
   const { data: bills, isLoading } = useCollection<Bill>(billsQuery);
@@ -491,14 +487,10 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
   const [isBulkDeleting, setIsBulkDeleting] = React.useState(false);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = React.useState(false);
 
-  const collectionPath = React.useMemo(() => {
-    if (isOwner === null || !user) return null;
-    return isOwner ? 'tokens' : `managers/${user.uid}/tokens`;
-  }, [isOwner, user]);
-
   const tokensQuery = useMemoFirebase(() => {
-    if (!firestore || !collectionPath) return null;
+    if (isOwner === null || !user || !firestore) return null;
     
+    const collectionPath = isOwner ? 'tokens' : `managers/${user.uid}/tokens`;
     const dateToFilter = globalDate || new Date();
     const startDate = startOfDay(dateToFilter);
     const endDate = endOfDay(dateToFilter);
@@ -509,7 +501,7 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
         where('createdAt', '<=', endDate.toISOString()),
         orderBy('createdAt', 'desc')
     );
-  }, [firestore, collectionPath, globalDate]);
+  }, [isOwner, user, firestore, globalDate]);
 
   const { data: tokens, isLoading } = useCollection<Token>(tokensQuery);
 
