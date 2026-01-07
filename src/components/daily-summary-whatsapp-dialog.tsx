@@ -12,38 +12,23 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { useToast } from '@/hooks/use-toast';
 import type { Bill } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
-import { Loader2, MessageSquare, Pencil } from 'lucide-react';
+import { Loader2, MessageSquare } from 'lucide-react';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { useDateFilter } from '@/context/date-filter-context';
 
-const WHATSAPP_NUMBER_KEY = 'daily-summary-whatsapp-number';
+const PERMANENT_WHATSAPP_NUMBER = '7247089447';
 
 export function DailySummaryWhatsAppDialog() {
   const firestore = useFirestore();
-  const { toast } = useToast();
   const { globalDate } = useDateFilter();
   
   const [isOpen, setIsOpen] = React.useState(false);
-  const [phoneNumber, setPhoneNumber] = React.useState('');
-  const [isEditingNumber, setIsEditingNumber] = React.useState(false);
   const [isSending, setIsSending] = React.useState(false);
 
   const reportDate = globalDate || new Date();
-
-  React.useEffect(() => {
-    const savedNumber = localStorage.getItem(WHATSAPP_NUMBER_KEY);
-    if (savedNumber) {
-      setPhoneNumber(savedNumber);
-    } else {
-      setIsEditingNumber(true); // Force edit if no number is saved
-    }
-  }, []);
 
   const billsQuery = useMemoFirebase(() => {
     if (!firestore || !isOpen) return null; // Only query when the dialog is open
@@ -76,22 +61,8 @@ export function DailySummaryWhatsAppDialog() {
     );
   }, [billsForDate]);
 
-  const handleSaveNumber = () => {
-    if (phoneNumber.trim().length === 10) {
-      localStorage.setItem(WHATSAPP_NUMBER_KEY, phoneNumber.trim());
-      setIsEditingNumber(false);
-      toast({ title: 'Number Saved Successfully!' });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Invalid Number',
-        description: 'Please enter a valid 10-digit mobile number.',
-      });
-    }
-  };
-
   const handleSend = () => {
-    if (!phoneNumber || isLoading) return;
+    if (isLoading) return;
 
     setIsSending(true);
     
@@ -104,7 +75,7 @@ export function DailySummaryWhatsAppDialog() {
 - *Total Amount Pending:* ${summary.amountPending.toLocaleString()}rs
     `.trim().replace(/^\s+/gm, '');
 
-    const whatsappUrl = `https://wa.me/91${phoneNumber}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/91${PERMANENT_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
     
     setIsSending(false);
@@ -123,31 +94,10 @@ export function DailySummaryWhatsAppDialog() {
           <DialogHeader>
             <DialogTitle>Send Daily Report</DialogTitle>
             <DialogDescription>
-              Enter the WhatsApp number to receive the day summary.
+              A summary for the selected date will be sent to a pre-configured WhatsApp number.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="whatsapp-number">WhatsApp Number</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="whatsapp-number"
-                  type="tel"
-                  placeholder="10-digit number"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  disabled={!isEditingNumber}
-                />
-                {!isEditingNumber ? (
-                  <Button variant="outline" size="icon" onClick={() => setIsEditingNumber(true)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                ) : (
-                   <Button onClick={handleSaveNumber}>Save</Button>
-                )}
-              </div>
-            </div>
-            
             <div className="p-4 bg-muted/50 rounded-lg space-y-2 text-sm">
                 <h4 className="font-semibold mb-2">Summary for {format(reportDate, 'PP')}</h4>
                 {isLoading ? <Loader2 className="animate-spin" /> : (
@@ -170,7 +120,7 @@ export function DailySummaryWhatsAppDialog() {
             <Button
               type="button"
               onClick={handleSend}
-              disabled={isSending || isLoading || isEditingNumber || !phoneNumber}
+              disabled={isSending || isLoading}
             >
               {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Send
