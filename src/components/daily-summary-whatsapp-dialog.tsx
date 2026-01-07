@@ -32,9 +32,10 @@ export function DailySummaryWhatsAppDialog() {
 
   const billsQuery = useMemoFirebase(() => {
     if (!firestore || !isOpen) return null; // Only query when the dialog is open
-    const dateToFilter = reportDate;
-    const startDate = startOfDay(dateToFilter);
-    const endDate = endOfDay(dateToFilter);
+    
+    const startDate = startOfDay(reportDate);
+    const endDate = endOfDay(reportDate);
+
     return query(
       collection(firestore, 'bills'),
       where('createdAt', '>=', startDate.toISOString()),
