@@ -262,12 +262,15 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
               <CardTitle>All Bills</CardTitle>
               <CardDescription>A complete record of all generated bills.</CardDescription>
             </div>
-            {selectedIds.size > 0 && !isOwner && (
-              <Button variant="destructive" onClick={() => setShowBulkDeleteConfirm(true)} disabled={isBulkDeleting}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete ({selectedIds.size})
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {selectedIds.size > 0 && !isOwner && (
+                <Button variant="destructive" onClick={() => setShowBulkDeleteConfirm(true)} disabled={isBulkDeleting}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete ({selectedIds.size})
+                </Button>
+              )}
+              <DailySummaryWhatsAppDialog />
+            </div>
           </div>
 
           <div className="border-t pt-4 mt-4 space-y-4">
@@ -388,10 +391,6 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
           )}
         </CardContent>
       </Card>
-
-      <div className="mt-6 flex justify-end">
-        <DailySummaryWhatsAppDialog />
-      </div>
 
       {selectedBill && (
         <BillSummaryDialog
