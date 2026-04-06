@@ -77,12 +77,16 @@ export function BillingForm() {
       inCarat: undefined,
       outCarat: undefined,
       smallCarat: undefined,
+      smallCaratRate: undefined,
       bigCarat: undefined,
+      bigCaratRate: undefined,
       paidAmount: undefined,
       paymentMode: 'Cash',
       paidTo: 'Gopal Temkar',
       inCaratLabour: undefined,
+      inCaratLabourRate: undefined,
       outCaratLabour: undefined,
+      outCaratLabourRate: undefined,
     },
     mode: 'onBlur',
   });
@@ -143,9 +147,9 @@ export function BillingForm() {
   const totalCaratAmount = React.useMemo(() => {
     const smallRate = Number(smallCaratRate) || 0;
     const bigRate = Number(bigCaratRate) || 0;
-    const smallCaratAmount = (Number(smallCarat) || 0) * smallRate;
-    const bigCaratAmount = (Number(bigCarat) || 0) * bigRate;
-    return smallCaratAmount + bigCaratAmount;
+    const smallQty = Number(smallCarat) || 0;
+    const bigQty = Number(bigCarat) || 0;
+    return (smallQty * smallRate) + (bigQty * bigRate);
   }, [smallCarat, smallCaratRate, bigCarat, bigCaratRate]);
   
   const totalLabourAmount = React.useMemo(() => {
@@ -618,33 +622,71 @@ export function BillingForm() {
                     <CardHeader>
                         <CardTitle className='flex items-center gap-2'><ChevronsUpDown />{t('carat_details')}</CardTitle>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="smallCarat"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('small_carat_qty')}</FormLabel>
-                                    <FormControl>
-                                    <Input type="number" placeholder={t('small_carat_placeholder')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="bigCarat"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('big_carat_qty')}</FormLabel>
-                                    <FormControl>
-                                    <Input type="number" placeholder={t('big_carat_placeholder')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
+                                <h3 className="font-semibold text-sm text-primary">Small Carat</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="smallCarat"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>{t('small_carat_qty')}</FormLabel>
+                                                <FormControl>
+                                                <Input type="number" placeholder="Qty" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="smallCaratRate"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>{t('rate')}</FormLabel>
+                                                <FormControl>
+                                                <Input type="number" placeholder="Rate" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
+                                <h3 className="font-semibold text-sm text-primary">Big Carat</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="bigCarat"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>{t('big_carat_qty')}</FormLabel>
+                                                <FormControl>
+                                                <Input type="number" placeholder="Qty" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="bigCaratRate"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>{t('rate')}</FormLabel>
+                                                <FormControl>
+                                                <Input type="number" placeholder="Rate" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -654,33 +696,63 @@ export function BillingForm() {
                         <CardTitle className='flex items-center gap-2'><Wrench />{t('labour_charges_internal')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="inCaratLabour"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t('in_carat_labour_qty')}</FormLabel>
-                                        <FormControl>
-                                        <Input type="number" placeholder={t('in_qty_placeholder')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="outCaratLabour"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t('out_carat_labour_qty')}</FormLabel>
-                                        <FormControl>
-                                        <Input type="number" placeholder={t('out_qty_placeholder')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                             <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="inCaratLabour"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>{t('in_carat_labour_qty')}</FormLabel>
+                                            <FormControl>
+                                            <Input type="number" placeholder={t('in_qty_placeholder')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="inCaratLabourRate"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>{t('rate')}</FormLabel>
+                                            <FormControl>
+                                            <Input type="number" placeholder="Rate" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                             </div>
+                             <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="outCaratLabour"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>{t('out_carat_labour_qty')}</FormLabel>
+                                            <FormControl>
+                                            <Input type="number" placeholder={t('out_qty_placeholder')} {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="outCaratLabourRate"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>{t('rate')}</FormLabel>
+                                            <FormControl>
+                                            <Input type="number" placeholder="Rate" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))} onKeyDown={handleKeyDown}/>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                             </div>
                         </div>
                     </CardContent>
                 </Card>
