@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -40,7 +39,7 @@ import { cn } from '@/lib/utils';
 
 // This new interface represents a single, aggregated customer record.
 export interface AggregatedCustomer {
-  id: string; // We'll use the customer name as a unique key
+  id: string; // We'll use the normalized customer name as a unique key
   name: string;
   contactNumber?: string;
   address?: string;
@@ -48,6 +47,14 @@ export interface AggregatedCustomer {
   totalCarat: number;
   billIds: string[]; // Keep track of all associated bill IDs for deletion
 }
+
+const normalizeName = (name: string) => {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s]/gi, ''); // Removes punctuation like periods, commas, etc.
+};
 
 export default function KoushalPage() {
   const { isUserLoading } = useUser();
@@ -78,14 +85,14 @@ export default function KoushalPage() {
       // Ensure we don't process bills without a customer name
       if (!bill.customerName) return;
 
-      const customerNameKey = bill.customerName.trim().toLowerCase();
+      const customerNameKey = normalizeName(bill.customerName);
       let customer = customerMap.get(customerNameKey);
 
       if (!customer) {
         // If customer doesn't exist, create a new entry
         customer = {
           id: customerNameKey,
-          name: bill.customerName,
+          name: bill.customerName, // Original name from bill for display
           contactNumber: bill.contactNumber,
           address: bill.address,
           totalAmount: 0,
@@ -112,8 +119,9 @@ export default function KoushalPage() {
   const filteredCustomers = React.useMemo(() => {
     if (!aggregatedCustomers) return [];
     if (!searchTerm) return aggregatedCustomers;
+    const searchLower = normalizeName(searchTerm);
     return aggregatedCustomers.filter((customer) =>
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase())
+      customer.id.includes(searchLower)
     );
   }, [aggregatedCustomers, searchTerm]);
 
@@ -338,7 +346,7 @@ export default function KoushalPage() {
                               aria-label={`Select customer ${customer.name}`}
                           />
                         </TableCell>
-                        <TableCell className="font-medium">{customer.name}</TableCell>
+                        <TableCell className="font-medium">{customer.name.toUpperCase()}</TableCell>
                         <TableCell>{customer.contactNumber || 'N/A'}</TableCell>
                         <TableCell>{customer.address || 'N/A'}</TableCell>
                         <TableCell className="text-green-600 font-medium">{(customer.totalAmount || 0).toLocaleString()}rs</TableCell>

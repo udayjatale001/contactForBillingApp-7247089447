@@ -1,4 +1,3 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -312,21 +311,27 @@ export function BillingForm() {
     }
   }
 
-  const capitalizeFirstLetter = (string: string) => {
-    if (!string) return '';
-    return string.charAt(0).toUpperCase() + string.slice(1);
+  const normalizeName = (name: string) => {
+    if (!name) return '';
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s]/gi, ''); // Removes punctuation like periods, commas, etc.
   };
   
   const handleCustomerNameBlur = async () => {
     await trigger('customerName');
     const currentValue = getValues('customerName');
-    setValue('customerName', capitalizeFirstLetter(currentValue), { shouldValidate: true });
+    setValue('customerName', normalizeName(currentValue), { shouldValidate: true });
   };
 
   const handleAddressBlur = async () => {
     await trigger('address');
     const currentValue = getValues('address');
-    setValue('address', capitalizeFirstLetter(currentValue || ''), { shouldValidate: true });
+    if (currentValue) {
+        const cleaned = currentValue.trim();
+        setValue('address', cleaned.charAt(0).toUpperCase() + cleaned.slice(1), { shouldValidate: true });
+    }
   };
 
 
@@ -370,7 +375,7 @@ export function BillingForm() {
         const fullBillDetails: Bill = {
             id: uuidv4(),
             managerId: user.uid,
-            customerName: data.customerName,
+            customerName: normalizeName(data.customerName),
             ...(data.roomNumber && { roomNumber: data.roomNumber }),
             ...(data.contactNumber && { contactNumber: data.contactNumber }),
             ...(data.address && { address: data.address }),
@@ -434,10 +439,12 @@ export function BillingForm() {
       return;
     }
     
+    const normalizedNameValue = normalizeName(data.customerName);
+
     const newToken: Token = {
       id: uuidv4(),
       managerId: user.uid,
-      customerName: data.customerName,
+      customerName: normalizedNameValue,
       roomNumber: data.roomNumber,
       contactNumber: data.contactNumber,
       address: data.address,
@@ -457,7 +464,7 @@ export function BillingForm() {
       
       toast({
         title: 'Token Saved',
-        description: `Token for ${data.customerName} has been saved.`,
+        description: `Token for ${normalizedNameValue} has been saved.`,
       });
 
     } catch (error) {
