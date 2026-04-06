@@ -106,7 +106,7 @@ function PaymentsPage() {
         id: uuidv4(),
         billId: paymentBill.id,
         managerId: user.uid,
-        createdAt: new Date().toISOString(),
+        createdAt: paymentDate.toISOString(),
         type: 'payment-update',
         customerName: paymentBill.customerName,
         paidAmount: paymentBill.paidAmount,

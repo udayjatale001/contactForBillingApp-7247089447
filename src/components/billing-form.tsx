@@ -100,6 +100,10 @@ export function BillingForm() {
       setValue('roomNumber', tokenData.roomNumber || '');
       setValue('address', tokenData.address || '');
       setValue('inCarat', tokenData.inCarat);
+      // Preserve the date if the token has one, otherwise keep current form date
+      if (tokenData.createdAt) {
+        setValue('createdAt', new Date(tokenData.createdAt));
+      }
       // Clear the token data from context after using it
       setTokenData(null);
     }
@@ -223,12 +227,12 @@ export function BillingForm() {
             transaction.set(doc(billCollectionRef, generatedBill.id), generatedBill);
             transaction.set(doc(managerBillCollectionRef, generatedBill.id), generatedBill);
     
-            // Save notification
+            // Save notification using the bill's createdAt date
             const newNotification: Notification = {
                 id: uuidv4(),
                 billId: generatedBill.id,
                 managerId: user.uid,
-                createdAt: new Date().toISOString(),
+                createdAt: generatedBill.createdAt,
                 type: 'new-bill',
                 customerName: generatedBill.customerName,
                 paidAmount: generatedBill.paidAmount,
@@ -438,7 +442,7 @@ export function BillingForm() {
       contactNumber: data.contactNumber,
       address: data.address,
       inCarat: data.inCarat,
-      createdAt: new Date().toISOString(),
+      createdAt: (data.createdAt || new Date()).toISOString(),
     };
 
     try {
