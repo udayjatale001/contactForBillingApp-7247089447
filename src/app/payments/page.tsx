@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -24,7 +23,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import type { Customer, Bill, Notification } from '@/lib/types';
 import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, doc, runTransaction, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, runTransaction, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Loader2, Search, Users, Wallet, Phone, Trash2, MessageSquare } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
 import { CustomerPaymentDialog } from '@/components/customer-payment-dialog';
@@ -32,6 +31,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
 import withPasswordProtection from '@/components/with-password-protection';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
+import { useUndo } from '@/context/undo-context';
 
 
 function PaymentsPage() {
@@ -39,6 +39,7 @@ function PaymentsPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const { t, language } = useLanguage();
+  const { registerUndo } = useUndo();
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [customerToDelete, setCustomerToDelete] = React.useState<Customer | null>(null);
@@ -67,7 +68,6 @@ function PaymentsPage() {
     return activeCustomers;
   }, [customers, searchTerm]);
 
-  // If selectedCustomer exists, find its latest version from the customers list
   const latestSelectedCustomer = React.useMemo(() => {
     if (!selectedCustomer || !customers) return selectedCustomer;
     return customers.find(c => c.id === selectedCustomer.id) || selectedCustomer;
@@ -86,7 +86,6 @@ function PaymentsPage() {
 
     const customerRef = doc(firestore, 'customers', customer.id);
     
-    // Create a new bill to record this specific payment transaction
     const paymentBill: Bill = {
         id: uuidv4(),
         managerId: user.uid,
@@ -94,9 +93,9 @@ function PaymentsPage() {
         contactNumber: customer.contactNumber,
         totalCarat: 0,
         caratType: 'N/A',
-        totalAmount: paidAmount, // Total amount of this transaction is what's paid
+        totalAmount: paidAmount,
         paidAmount: paidAmount,
-        dueAmount: 0, // This specific transaction has no due amount
+        dueAmount: 0,
         paidTo: paidTo,
         paymentMode: paymentMode,
         createdAt: paymentDate.toISOString(),
@@ -117,43 +116,48 @@ function PaymentsPage() {
     };
 
     try {
-      let newDueAmount = 0;
+      let oldDueAmount = customer.totalDueAmount;
       await runTransaction(firestore, async (transaction) => {
         const customerDoc = await transaction.get(customerRef);
         if (!customerDoc.exists()) {
           throw 'Document does not exist!';
         }
         const currentDue = customerDoc.data().totalDueAmount;
-        newDueAmount = currentDue - paidAmount;
+        const newDueAmount = currentDue - paidAmount;
 
-        // Update the central customer record
         transaction.update(customerRef, { 
             totalDueAmount: newDueAmount > 0 ? newDueAmount : 0,
             lastActivity: paymentDate.toISOString(),
         });
         
-        // Add the payment record as a new bill document in the global collection
         const globalBillRef = doc(firestore, 'bills', paymentBill.id);
         transaction.set(globalBillRef, paymentBill);
 
-        // Also add to manager's subcollection
         const managerBillRef = doc(firestore, 'managers', user.uid, 'bills', paymentBill.id);
         transaction.set(managerBillRef, paymentBill);
 
-        // Save notification
         transaction.set(doc(collection(firestore, 'notifications'), newNotification.id), newNotification);
+      });
 
+      registerUndo(`Payment Update (${customer.name})`, async () => {
+        await runTransaction(firestore, async (transaction) => {
+          transaction.update(customerRef, { totalDueAmount: oldDueAmount });
+          transaction.delete(doc(firestore, 'bills', paymentBill.id));
+          transaction.delete(doc(firestore, 'managers', user.uid, 'bills', paymentBill.id));
+          transaction.delete(doc(firestore, 'notifications', newNotification.id));
+        });
+        forceRefetch();
       });
 
       toast({ title: 'Payment updated successfully!' });
-      forceRefetch(); // Re-fetch data to update the UI
+      forceRefetch(); 
       
-      // Update the customer in the dialog without closing it
       setSelectedCustomer(prev => {
         if (!prev) return null;
+        const newDue = prev.totalDueAmount - paidAmount;
         return {
           ...prev,
-          totalDueAmount: newDueAmount > 0 ? newDueAmount : 0,
+          totalDueAmount: newDue > 0 ? newDue : 0,
           lastActivity: paymentDate.toISOString()
         };
       });
@@ -175,8 +179,15 @@ function PaymentsPage() {
     if (!firestore || !customerToDelete) return;
     
     const customerRef = doc(firestore, 'customers', customerToDelete.id);
+    const oldDue = customerToDelete.totalDueAmount;
     try {
         await updateDoc(customerRef, { totalDueAmount: 0 });
+        
+        registerUndo(`Clear Due (${customerToDelete.name})`, async () => {
+          await updateDoc(customerRef, { totalDueAmount: oldDue });
+          forceRefetch();
+        });
+
         toast({ title: `Due cleared for ${customerToDelete.name}` });
         forceRefetch();
     } catch (e) {
@@ -194,10 +205,8 @@ function PaymentsPage() {
     
     try {
         if (paidAmount && remainingDue !== undefined && date) {
-            // This is a payment confirmation message
             message = `${t('app_title')}\n\n${t('whatsapp_thank_you_payment', customer.name)}\n\n${t('paid_amount')}: ₹${paidAmount.toLocaleString()}\n${t('due_amount')}: ₹${remainingDue.toLocaleString()}\n${t('date')}: ${format(date, 'PPpp')}\n\n${t('whatsapp_thank_you')} 😊`;
         } else {
-            // This is a payment reminder message, generated by AI
             const response = await composeReminderMessage({
                 customerName: customer.name,
                 totalBillAmount: 'N/A',

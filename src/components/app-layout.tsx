@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -17,6 +16,7 @@ import {
   Globe,
   Users,
   DollarSign,
+  Undo2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -39,6 +39,7 @@ import { useAuth, useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useLanguage } from '@/context/language-context';
+import { useUndo } from '@/context/undo-context';
 
 function AppLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -50,6 +51,7 @@ function AppLayoutClient({ children }: { children: React.ReactNode }) {
   const [isOwner, setIsOwner] = React.useState<boolean | null>(null);
   const { t } = useLanguage();
   const { setOpenMobile } = useSidebar();
+  const { lastAction, undo, isUndoing } = useUndo();
 
   React.useEffect(() => {
     if (!isUserLoading && !user) {
@@ -188,6 +190,19 @@ function AppLayoutClient({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter>
           <SidebarMenu>
+            {lastAction && (
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={undo}
+                  disabled={isUndoing}
+                  className="bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 hover:text-orange-700 transition-colors"
+                  tooltip="Undo Last Action"
+                >
+                  {isUndoing ? <Loader2 className="animate-spin" /> : <Undo2 />}
+                  <span>Undo: {lastAction.label}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={handleLogout}
@@ -201,8 +216,23 @@ function AppLayoutClient({ children }: { children: React.ReactNode }) {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6 md:hidden">
-          <SidebarTrigger />
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger />
+            <Logo />
+          </div>
+          {lastAction && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={undo}
+              disabled={isUndoing}
+              className="md:hidden border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100"
+            >
+              {isUndoing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4 mr-2" />}
+              Undo
+            </Button>
+          )}
         </header>
         {children}
       </SidebarInset>

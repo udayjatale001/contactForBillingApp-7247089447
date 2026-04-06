@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -8,6 +7,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { LanguageProvider } from '@/context/language-context';
 import { DateFilterProvider } from '@/context/date-filter-context';
 import { TokenProvider } from '@/context/token-context';
+import { UndoProvider } from '@/context/undo-context';
 import { PT_Sans } from 'next/font/google';
 
 export const metadata: Metadata = {
@@ -40,9 +40,11 @@ export default function RootLayout({
         <LanguageProvider>
           <DateFilterProvider>
             <TokenProvider>
-              <FirebaseClientProvider>
-                <RootStateProvider>{children}</RootStateProvider>
-              </FirebaseClientProvider>
+              <UndoProvider>
+                <FirebaseClientProvider>
+                  <RootStateProvider>{children}</RootStateProvider>
+                </FirebaseClientProvider>
+              </UndoProvider>
             </TokenProvider>
           </DateFilterProvider>
         </LanguageProvider>

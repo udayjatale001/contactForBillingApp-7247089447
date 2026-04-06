@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -62,12 +61,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useRouter } from 'next/navigation';
 import { useToken } from '@/context/token-context';
 import { DailySummaryWhatsAppDialog } from '@/components/daily-summary-whatsapp-dialog';
+import { useUndo } from '@/context/undo-context';
 
 
 const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { isOwner: boolean | null, user: any}) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
+  const { registerUndo } = useUndo();
   
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedBill, setSelectedBill] = React.useState<Bill | null>(null);
@@ -154,22 +155,17 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
 
     try {
         if (isOwner) {
-            // Owner needs to delete from global `bills` and potentially from manager subcollections
-            // For simplicity, we assume we need to find the manager for each bill.
-            // This is a slow operation, but necessary if not deleting from subcollections directly.
             for (const billId of selectedIds) {
                 const billRef = doc(firestore, 'bills', billId);
                 const billDoc = await getDoc(billRef);
                 if (billDoc.exists()) {
                     const billData = billDoc.data() as Bill;
                     batch.delete(billRef);
-                    // Also delete from manager subcollection
                     const managerBillRef = doc(firestore, 'managers', billData.managerId, 'bills', billId);
                     batch.delete(managerBillRef);
                 }
             }
         } else {
-            // Manager only deletes from their own subcollection
             selectedIds.forEach(id => {
                 const managerBillRef = doc(firestore, 'managers', user.uid, 'bills', id);
                 batch.delete(managerBillRef);
@@ -202,7 +198,7 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
   const handleDeleteFromDialog = () => {
     if (selectedBill) {
       setBillToDelete(selectedBill);
-      setSelectedBill(null); // Close the summary dialog
+      setSelectedBill(null);
     }
   };
 
@@ -210,19 +206,25 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
     if (!firestore || !billToDelete || !user) return;
 
     setIsDeleting(true);
+    const billData = { ...billToDelete };
 
     try {
         const batch = writeBatch(firestore);
         
-        // Both owner and manager need to delete from the global collection
         const globalBillRef = doc(firestore, 'bills', billToDelete.id);
         batch.delete(globalBillRef);
 
-        // Also delete from the manager's subcollection
         const managerBillRef = doc(firestore, 'managers', billToDelete.managerId, 'bills', billToDelete.id);
         batch.delete(managerBillRef);
         
         await batch.commit();
+
+        registerUndo(`Delete Bill (${billData.customerName})`, async () => {
+          const undoBatch = writeBatch(firestore);
+          undoBatch.set(doc(firestore, 'bills', billData.id), billData);
+          undoBatch.set(doc(firestore, 'managers', billData.managerId, 'bills', billData.id), billData);
+          await undoBatch.commit();
+        });
 
         toast({
             title: 'Bill Deleted',
@@ -232,7 +234,7 @@ const BillHistoryTab = React.memo(function BillHistoryTab({ isOwner, user }: { i
     } catch (error) {
         console.error("Error deleting bill: ", error);
         const permissionError = new FirestorePermissionError({
-            path: `bills/${billToDelete.id}`, // Specific path for error
+            path: `bills/${billToDelete.id}`, 
             operation: 'delete',
         });
         errorEmitter.emit('permission-error', permissionError);
@@ -460,6 +462,7 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
   const { toast } = useToast();
   const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
   const { setTokenData } = useToken();
+  const { registerUndo } = useUndo();
   const router = useRouter();
 
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -596,6 +599,7 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
     if (!firestore || !tokenToDelete || !user) return;
 
     setIsDeleting(true);
+    const tokenData = { ...tokenToDelete };
 
     try {
         const batch = writeBatch(firestore);
@@ -607,6 +611,13 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
         batch.delete(managerTokenRef);
         
         await batch.commit();
+
+        registerUndo(`Delete Token (${tokenData.customerName})`, async () => {
+          const undoBatch = writeBatch(firestore);
+          undoBatch.set(doc(firestore, 'tokens', tokenData.id), tokenData);
+          undoBatch.set(doc(firestore, 'managers', tokenData.managerId, 'tokens', tokenData.id), tokenData);
+          await undoBatch.commit();
+        });
 
         toast({
             title: 'Token Deleted',
@@ -659,7 +670,7 @@ const TokenHistoryTab = React.memo(function TokenHistoryTab({ isOwner, user }: {
             <div className="border-t pt-4 mt-4 space-y-4">
               <div className="flex flex-col md:flex-row flex-wrap gap-2">
                 <div className="relative flex-1 md:min-w-[200px]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Ticket className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     placeholder="Search by customer name or token no..."
                     value={searchTerm}

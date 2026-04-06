@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -41,6 +40,7 @@ import {
   deleteDoc,
   where,
   writeBatch,
+  setDoc,
 } from 'firebase/firestore';
 import type { Labour } from '@/lib/types';
 import {
@@ -68,12 +68,14 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { useDateFilter } from '@/context/date-filter-context';
 import { LabourSummaryDialog } from '@/components/labour-summary-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useUndo } from '@/context/undo-context';
 
 export default function LabourerPage() {
   const { isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const { globalDate, setGlobalDate, clearGlobalDate } = useDateFilter();
+  const { registerUndo } = useUndo();
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedRecord, setSelectedRecord] = React.useState<Labour | null>(null);
@@ -114,7 +116,6 @@ export default function LabourerPage() {
   }, [labourRecords, searchTerm]);
 
   React.useEffect(() => {
-    // When filters change, we need to remove selected IDs that are no longer visible.
     const visibleIds = new Set(filteredRecords.map(r => r.id));
     setSelectedIds(currentIds => {
       const newIds = new Set<string>();
@@ -125,7 +126,6 @@ export default function LabourerPage() {
       });
       return newIds;
     });
-     // Close dialog if the selected record is no longer visible
     if (selectedRecord && !visibleIds.has(selectedRecord.id)) {
         setSelectedRecord(null);
     }
@@ -188,7 +188,7 @@ export default function LabourerPage() {
   const handleDeleteRequest = (record: Labour | null) => {
     if (record) {
       setRecordToDelete(record);
-      setSelectedRecord(null); // Close summary dialog if open
+      setSelectedRecord(null);
     }
   };
 
@@ -196,13 +196,20 @@ export default function LabourerPage() {
     if (!firestore || !recordToDelete) return;
     setIsDeleting(true);
     const docRef = doc(firestore, 'labours', recordToDelete.id);
+    const dataToSave = { ...recordToDelete };
+
     try {
       await deleteDoc(docRef);
+      
+      registerUndo(`Delete Labour (${dataToSave.customerName})`, async () => {
+        await setDoc(doc(firestore, 'labours', dataToSave.id), dataToSave);
+      });
+
       toast({
         title: 'Record Deleted',
         description: 'The labour record has been successfully removed.',
       });
-      setSelectedRecord(null); // Deselect after deletion
+      setSelectedRecord(null);
     } catch (error) {
       console.error('Error deleting labour record: ', error);
       const permissionError = new FirestorePermissionError({
