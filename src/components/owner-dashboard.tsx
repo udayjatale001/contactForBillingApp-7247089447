@@ -283,30 +283,25 @@ export function OwnerDashboard() {
       return initialResult;
     }
     
+    // --- Today's Snapshot Calculations ---
     const todayFilterStart = startOfDay(globalDate || new Date());
-    
     const todaysBills = allBills.filter(bill => isSameDay(new Date(bill.createdAt), todayFilterStart));
-
 
     const todaysRevenue = todaysBills.reduce((acc, bill) => acc + bill.paidAmount, 0);
     const todaysLabourCost = todaysBills.reduce((acc, bill) => acc + (bill.totalLabourAmount || 0), 0);
     const todaysNetProfit = todaysRevenue - todaysLabourCost;
 
+    // --- Overall Summary Calculations (Lifetime) ---
+    const totalAmount = allBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
+    const totalRevenue = allBills.reduce((acc, bill) => acc + bill.paidAmount, 0);
+    const totalDue = allBills.reduce((acc, bill) => acc + bill.dueAmount, 0);
+    const totalSales = allBills.length;
+    const totalLabour = allBills.reduce((acc, bill) => acc + (bill.totalLabourAmount || 0), 0);
+
     const yearsInData = new Set<string>();
     allBills.forEach(bill => yearsInData.add(getYear(new Date(bill.createdAt)).toString()));
     const allAvailableYears = Array.from(yearsInData).sort((a,b) => Number(b) - Number(a));
 
-    const filteredBills = globalDate 
-        ? allBills.filter(bill => isSameDay(new Date(bill.createdAt), globalDate))
-        : allBills.filter(bill => isSameDay(new Date(bill.createdAt), new Date()));
-    
-
-    const totalAmount = filteredBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
-    const totalRevenue = filteredBills.reduce((acc, bill) => acc + bill.paidAmount, 0);
-    const totalDue = filteredBills.reduce((acc, bill) => acc + bill.dueAmount, 0);
-    const totalSales = filteredBills.length;
-    const totalLabour = filteredBills.reduce((acc, bill) => acc + (bill.totalLabourAmount || 0), 0);
-    
     // --- Chart Data Calculations ---
     const yearlySales: { [key: string]: number } = {};
     const yearlyLabour: { [key: string]: number } = {};
@@ -641,7 +636,7 @@ export function OwnerDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{totalRevenue.toLocaleString()}rs</div>
             <p className="text-xs text-muted-foreground">
-              Total paid amount
+              Total amount paid
             </p>
           </CardContent>
         </Card>
