@@ -358,8 +358,6 @@ function PaymentsPage() {
       await setDoc(customerRef, newCustomer);
 
       registerUndo(`Add Customer (${newCustomer.name})`, async () => {
-        // Since we don't know if the customer existed before, we clear their due
-        // In a more complex app we'd check if we should delete or revert
         await updateDoc(customerRef, { totalDueAmount: 0 });
         forceRefetch();
       });
@@ -587,7 +585,7 @@ function PaymentsPage() {
               <Label htmlFor="cust-name">Customer Name</Label>
               <Input 
                 id="cust-name" 
-                placeholder="Enter name"
+                placeholder="e.g. rambhau"
                 value={newCustomerData.name} 
                 onChange={(e) => setNewCustomerData(prev => ({...prev, name: e.target.value}))} 
                 autoFocus
@@ -608,7 +606,7 @@ function PaymentsPage() {
               <Input 
                 id="cust-due" 
                 type="number"
-                placeholder="0"
+                placeholder="e.g. 200"
                 value={newCustomerData.dueAmount} 
                 onChange={(e) => setNewCustomerData(prev => ({...prev, dueAmount: e.target.value}))} 
               />
