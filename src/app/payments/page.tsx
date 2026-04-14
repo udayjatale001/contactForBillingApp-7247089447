@@ -33,8 +33,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import type { Customer, Bill, Notification } from '@/lib/types';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, runTransaction, updateDoc } from 'firebase/firestore';
-import { Loader2, Search, Wallet, Phone, Trash2, MessageSquare, Undo2, Pencil, Lock } from 'lucide-react';
+import { collection, query, orderBy, doc, runTransaction, updateDoc, setDoc } from 'firebase/firestore';
+import { Loader2, Search, Wallet, Phone, Trash2, MessageSquare, Undo2, Pencil, Lock, Plus } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
 import { CustomerPaymentDialog } from '@/components/customer-payment-dialog';
 import { v4 as uuidv4 } from 'uuid';
@@ -42,6 +42,14 @@ import { format } from 'date-fns';
 import withPasswordProtection from '@/components/with-password-protection';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
 import { useUndo } from '@/context/undo-context';
+
+const normalizeName = (name: string) => {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s]/gi, ''); 
+};
 
 function PaymentsPage() {
   const { user, isUserLoading } = useUser();
@@ -56,19 +64,30 @@ function PaymentsPage() {
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [isSendingWhatsapp, setIsSendingWhatsapp] = React.useState<string | null>(null);
 
-  // States for manual balance adjustment
-  const [editingBalanceCustomer, setEditingBalanceCustomer] = React.useState<Customer | null>(null);
+  // States for security and manual operations
+  const [passwordAction, setPasswordAction] = React.useState<'edit' | 'add' | null>(null);
   const [showPasswordDialog, setShowPasswordDialog] = React.useState(false);
   const [passwordInput, setPasswordInput] = React.useState('');
+  
+  // States for manual balance adjustment
+  const [editingBalanceCustomer, setEditingBalanceCustomer] = React.useState<Customer | null>(null);
   const [showAdjustmentDialog, setShowBalanceAdjustmentDialog] = React.useState(false);
   const [newBalanceInput, setNewBalanceInput] = React.useState('');
+
+  // States for adding new customer
+  const [showAddCustomerDialog, setShowAddCustomerDialog] = React.useState(false);
+  const [newCustomerData, setNewCustomerData] = React.useState({
+    name: '',
+    contactNumber: '',
+    dueAmount: '',
+  });
 
   const customersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'customers'), orderBy('lastActivity', 'desc'));
   }, [firestore]);
 
-  const { data: customers, isLoading: isLoadingCustomers, error, forceRefetch } = useCollection<Customer>(customersQuery);
+  const { data: customers, isLoading: isLoadingCustomers, forceRefetch } = useCollection<Customer>(customersQuery);
 
   const filteredCustomers = React.useMemo(() => {
     if (!customers) return [];
@@ -246,11 +265,18 @@ function PaymentsPage() {
     }
   };
 
-  // --- Manual Balance Adjustment Logic ---
+  // --- Manual Security Logic ---
 
   const openEditBalance = (e: React.MouseEvent, customer: Customer) => {
     e.stopPropagation();
     setEditingBalanceCustomer(customer);
+    setPasswordAction('edit');
+    setPasswordInput('');
+    setShowPasswordDialog(true);
+  };
+
+  const openAddCustomer = () => {
+    setPasswordAction('add');
     setPasswordInput('');
     setShowPasswordDialog(true);
   };
@@ -259,13 +285,18 @@ function PaymentsPage() {
     e.preventDefault();
     if (passwordInput === '9981') {
       setShowPasswordDialog(false);
-      setNewBalanceInput(editingBalanceCustomer?.totalDueAmount.toString() || '');
-      setShowBalanceAdjustmentDialog(true);
+      if (passwordAction === 'edit') {
+        setNewBalanceInput(editingBalanceCustomer?.totalDueAmount.toString() || '');
+        setShowBalanceAdjustmentDialog(true);
+      } else if (passwordAction === 'add') {
+        setNewCustomerData({ name: '', contactNumber: '', dueAmount: '' });
+        setShowAddCustomerDialog(true);
+      }
     } else {
       toast({
         variant: 'destructive',
         title: 'Incorrect Password',
-        description: 'You do not have permission to manually edit balances.'
+        description: 'You do not have permission for this action.'
       });
     }
   };
@@ -301,6 +332,48 @@ function PaymentsPage() {
     }
   };
 
+  const handleAddCustomer = async () => {
+    if (!firestore) return;
+    const { name, contactNumber, dueAmount } = newCustomerData;
+    const normalizedId = normalizeName(name);
+    const amount = parseFloat(dueAmount) || 0;
+
+    if (!normalizedId) {
+      toast({ variant: 'destructive', title: 'Customer name is required.' });
+      return;
+    }
+
+    setIsProcessing(true);
+    const customerRef = doc(firestore, 'customers', normalizedId);
+
+    try {
+      const newCustomer: Customer = {
+        id: normalizedId,
+        name: name.trim(),
+        contactNumber: contactNumber.trim() || undefined,
+        totalDueAmount: amount,
+        lastActivity: new Date().toISOString(),
+      };
+
+      await setDoc(customerRef, newCustomer);
+
+      registerUndo(`Add Customer (${newCustomer.name})`, async () => {
+        // Since we don't know if the customer existed before, we clear their due
+        // In a more complex app we'd check if we should delete or revert
+        await updateDoc(customerRef, { totalDueAmount: 0 });
+        forceRefetch();
+      });
+
+      toast({ title: 'Customer added successfully!' });
+      setShowAddCustomerDialog(false);
+      forceRefetch();
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Failed to add customer.' });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const isLoading = isUserLoading || isLoadingCustomers;
 
   return (
@@ -310,17 +383,28 @@ function PaymentsPage() {
           <h2 className="text-3xl font-bold tracking-tight font-headline">
             Customer Payments
           </h2>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={undo} 
-            disabled={!lastAction || isUndoing}
-            className="flex items-center gap-2 border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 disabled:opacity-50 disabled:bg-muted transition-colors"
-          >
-            {isUndoing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />}
-            <span className="hidden sm:inline">{lastAction ? `Undo: ${lastAction.label}` : 'Undo'}</span>
-            <span className="sm:hidden">Undo</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={openAddCustomer}
+              className="flex items-center gap-2 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add Customer</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={undo} 
+              disabled={!lastAction || isUndoing}
+              className="flex items-center gap-2 border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 disabled:opacity-50 disabled:bg-muted transition-colors"
+            >
+              {isUndoing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />}
+              <span className="hidden sm:inline">{lastAction ? `Undo: ${lastAction.label}` : 'Undo'}</span>
+              <span className="sm:hidden">Undo</span>
+            </Button>
+          </div>
         </div>
         <Card>
           <CardHeader>
@@ -397,7 +481,7 @@ function PaymentsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will clear the outstanding due for <span className="font-semibold">{customerToDelete?.name}</span> by setting it to 0. This action cannot be undone.
+              This will clear the outstanding due for <span className="font-semibold">{customerToDelete?.name}</span> by setting it to 0. This action can be undone using the Undo button.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -419,7 +503,7 @@ function PaymentsPage() {
         isProcessing={isProcessing}
       />
 
-      {/* Manual Balance Edit Password Dialog */}
+      {/* Manual Action Password Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
         <DialogContent className="sm:max-w-md">
           <form onSubmit={handlePasswordSubmit}>
@@ -428,7 +512,10 @@ function PaymentsPage() {
                 <Lock className="h-5 w-5" /> Security Check
               </DialogTitle>
               <DialogDescription>
-                Enter the override password to manually edit the balance for {editingBalanceCustomer?.name.toUpperCase()}.
+                {passwordAction === 'edit' 
+                  ? `Enter the password to manually edit the balance for ${editingBalanceCustomer?.name.toUpperCase()}.`
+                  : 'Enter the password to manually add a new customer record.'
+                }
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
@@ -481,6 +568,57 @@ function PaymentsPage() {
             <Button onClick={handleAdjustBalance} disabled={isProcessing}>
               {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save New Balance
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add New Customer Dialog */}
+      <Dialog open={showAddCustomerDialog} onOpenChange={setShowAddCustomerDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Customer</DialogTitle>
+            <DialogDescription>
+              Create a new customer profile with an initial due amount.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cust-name">Customer Name</Label>
+              <Input 
+                id="cust-name" 
+                placeholder="Enter name"
+                value={newCustomerData.name} 
+                onChange={(e) => setNewCustomerData(prev => ({...prev, name: e.target.value}))} 
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cust-phone">Contact Number (10-digit)</Label>
+              <Input 
+                id="cust-phone" 
+                type="tel"
+                placeholder="9876543210"
+                value={newCustomerData.contactNumber} 
+                onChange={(e) => setNewCustomerData(prev => ({...prev, contactNumber: e.target.value}))} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cust-due">Initial Due Amount (rs)</Label>
+              <Input 
+                id="cust-due" 
+                type="number"
+                placeholder="0"
+                value={newCustomerData.dueAmount} 
+                onChange={(e) => setNewCustomerData(prev => ({...prev, dueAmount: e.target.value}))} 
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowAddCustomerDialog(false)}>Cancel</Button>
+            <Button onClick={handleAddCustomer} disabled={isProcessing || !newCustomerData.name}>
+              {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Add Customer
             </Button>
           </DialogFooter>
         </DialogContent>
