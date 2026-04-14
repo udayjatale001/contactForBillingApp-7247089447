@@ -42,6 +42,8 @@ import { format } from 'date-fns';
 import withPasswordProtection from '@/components/with-password-protection';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
 import { useUndo } from '@/context/undo-context';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const normalizeName = (name: string) => {
   if (!name) return '';
@@ -313,23 +315,30 @@ function PaymentsPage() {
     const customerRef = doc(firestore, 'customers', editingBalanceCustomer.id);
     const oldBalance = editingBalanceCustomer.totalDueAmount;
 
-    try {
-      await updateDoc(customerRef, { totalDueAmount: newBalance });
-      
-      registerUndo(`Adjust Balance (${editingBalanceCustomer.name})`, async () => {
-        await updateDoc(customerRef, { totalDueAmount: oldBalance });
-        forceRefetch();
-      });
+    updateDoc(customerRef, { totalDueAmount: newBalance })
+      .then(() => {
+        registerUndo(`Adjust Balance (${editingBalanceCustomer.name})`, async () => {
+          await updateDoc(customerRef, { totalDueAmount: oldBalance });
+          forceRefetch();
+        });
 
-      toast({ title: 'Balance adjusted successfully!' });
-      setShowBalanceAdjustmentDialog(false);
-      forceRefetch();
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Failed to adjust balance.' });
-    } finally {
-      setIsProcessing(false);
-      setEditingBalanceCustomer(null);
-    }
+        toast({ title: 'Balance adjusted successfully!' });
+        setShowBalanceAdjustmentDialog(false);
+        forceRefetch();
+      })
+      .catch(error => {
+        const permissionError = new FirestorePermissionError({
+          path: customerRef.path,
+          operation: 'update',
+          requestResourceData: { totalDueAmount: newBalance },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({ variant: 'destructive', title: 'Failed to adjust balance.' });
+      })
+      .finally(() => {
+        setIsProcessing(false);
+        setEditingBalanceCustomer(null);
+      });
   };
 
   const handleAddCustomer = async () => {
@@ -346,30 +355,41 @@ function PaymentsPage() {
     setIsProcessing(true);
     const customerRef = doc(firestore, 'customers', normalizedId);
 
-    try {
-      const newCustomer: Customer = {
-        id: normalizedId,
-        name: name.trim(),
-        contactNumber: contactNumber.trim() || undefined,
-        totalDueAmount: amount,
-        lastActivity: new Date().toISOString(),
-      };
+    const newCustomer: Customer = {
+      id: normalizedId,
+      name: name.trim(),
+      totalDueAmount: amount,
+      lastActivity: new Date().toISOString(),
+    };
 
-      await setDoc(customerRef, newCustomer);
-
-      registerUndo(`Add Customer (${newCustomer.name})`, async () => {
-        await updateDoc(customerRef, { totalDueAmount: 0 });
-        forceRefetch();
-      });
-
-      toast({ title: 'Customer added successfully!' });
-      setShowAddCustomerDialog(false);
-      forceRefetch();
-    } catch (e) {
-      toast({ variant: 'destructive', title: 'Failed to add customer.' });
-    } finally {
-      setIsProcessing(false);
+    const trimmedContact = contactNumber.trim();
+    if (trimmedContact) {
+      newCustomer.contactNumber = trimmedContact;
     }
+
+    setDoc(customerRef, newCustomer)
+      .then(() => {
+        registerUndo(`Add Customer (${newCustomer.name})`, async () => {
+          await updateDoc(customerRef, { totalDueAmount: 0 });
+          forceRefetch();
+        });
+
+        toast({ title: 'Customer added successfully!' });
+        setShowAddCustomerDialog(false);
+        forceRefetch();
+      })
+      .catch(error => {
+        const permissionError = new FirestorePermissionError({
+          path: customerRef.path,
+          operation: 'create',
+          requestResourceData: newCustomer,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({ variant: 'destructive', title: 'Failed to add customer.' });
+      })
+      .finally(() => {
+        setIsProcessing(false);
+      });
   };
 
   const isLoading = isUserLoading || isLoadingCustomers;
