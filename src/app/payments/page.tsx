@@ -18,13 +18,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import type { Customer, Bill, Notification } from '@/lib/types';
-import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, query, orderBy, doc, runTransaction, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Loader2, Search, Users, Wallet, Phone, Trash2, MessageSquare, Undo2 } from 'lucide-react';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, doc, runTransaction, updateDoc } from 'firebase/firestore';
+import { Loader2, Search, Wallet, Phone, Trash2, MessageSquare, Undo2, Pencil, Lock } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
 import { CustomerPaymentDialog } from '@/components/customer-payment-dialog';
 import { v4 as uuidv4 } from 'uuid';
@@ -32,7 +42,6 @@ import { format } from 'date-fns';
 import withPasswordProtection from '@/components/with-password-protection';
 import { composeReminderMessage } from '@/ai/flows/compose-reminder-message';
 import { useUndo } from '@/context/undo-context';
-
 
 function PaymentsPage() {
   const { user, isUserLoading } = useUser();
@@ -47,6 +56,12 @@ function PaymentsPage() {
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [isSendingWhatsapp, setIsSendingWhatsapp] = React.useState<string | null>(null);
 
+  // States for manual balance adjustment
+  const [editingBalanceCustomer, setEditingBalanceCustomer] = React.useState<Customer | null>(null);
+  const [showPasswordDialog, setShowPasswordDialog] = React.useState(false);
+  const [passwordInput, setPasswordInput] = React.useState('');
+  const [showAdjustmentDialog, setShowBalanceAdjustmentDialog] = React.useState(false);
+  const [newBalanceInput, setNewBalanceInput] = React.useState('');
 
   const customersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -72,7 +87,6 @@ function PaymentsPage() {
     if (!selectedCustomer || !customers) return selectedCustomer;
     return customers.find(c => c.id === selectedCustomer.id) || selectedCustomer;
   }, [customers, selectedCustomer]);
-
 
   const handleUpdatePayment = async (
     customer: Customer, 
@@ -230,7 +244,62 @@ function PaymentsPage() {
     } finally {
         setIsSendingWhatsapp(null);
     }
-};
+  };
+
+  // --- Manual Balance Adjustment Logic ---
+
+  const openEditBalance = (e: React.MouseEvent, customer: Customer) => {
+    e.stopPropagation();
+    setEditingBalanceCustomer(customer);
+    setPasswordInput('');
+    setShowPasswordDialog(true);
+  };
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === '9981') {
+      setShowPasswordDialog(false);
+      setNewBalanceInput(editingBalanceCustomer?.totalDueAmount.toString() || '');
+      setShowBalanceAdjustmentDialog(true);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Incorrect Password',
+        description: 'You do not have permission to manually edit balances.'
+      });
+    }
+  };
+
+  const handleAdjustBalance = async () => {
+    if (!firestore || !editingBalanceCustomer) return;
+    const newBalance = parseFloat(newBalanceInput);
+    if (isNaN(newBalance) || newBalance < 0) {
+      toast({ variant: 'destructive', title: 'Invalid Amount' });
+      return;
+    }
+
+    setIsProcessing(true);
+    const customerRef = doc(firestore, 'customers', editingBalanceCustomer.id);
+    const oldBalance = editingBalanceCustomer.totalDueAmount;
+
+    try {
+      await updateDoc(customerRef, { totalDueAmount: newBalance });
+      
+      registerUndo(`Adjust Balance (${editingBalanceCustomer.name})`, async () => {
+        await updateDoc(customerRef, { totalDueAmount: oldBalance });
+        forceRefetch();
+      });
+
+      toast({ title: 'Balance adjusted successfully!' });
+      setShowBalanceAdjustmentDialog(false);
+      forceRefetch();
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Failed to adjust balance.' });
+    } finally {
+      setIsProcessing(false);
+      setEditingBalanceCustomer(null);
+    }
+  };
 
   const isLoading = isUserLoading || isLoadingCustomers;
 
@@ -297,6 +366,9 @@ function PaymentsPage() {
                             <p className="text-xs text-muted-foreground">Due Amount</p>
                         </div>
                         <div className="flex items-center">
+                            <Button variant="ghost" size="icon" onClick={(e) => openEditBalance(e, customer)}>
+                                <Pencil className="h-5 w-5 text-muted-foreground" />
+                            </Button>
                             <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleWhatsAppReminder(customer);}} disabled={isSendingWhatsapp === customer.id}>
                                 {isSendingWhatsapp === customer.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <MessageSquare className="h-5 w-5 text-green-500" />}
                             </Button>
@@ -346,6 +418,73 @@ function PaymentsPage() {
         onWhatsApp={handleWhatsAppReminder}
         isProcessing={isProcessing}
       />
+
+      {/* Manual Balance Edit Password Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={handlePasswordSubmit}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" /> Security Check
+              </DialogTitle>
+              <DialogDescription>
+                Enter the override password to manually edit the balance for {editingBalanceCustomer?.name.toUpperCase()}.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Label htmlFor="edit-password">Password</Label>
+              <Input 
+                id="edit-password" 
+                type="password" 
+                autoFocus 
+                value={passwordInput} 
+                onChange={(e) => setPasswordInput(e.target.value)} 
+              />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="ghost">Cancel</Button>
+              </DialogClose>
+              <Button type="submit">Verify</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manual Balance Adjustment Dialog */}
+      <Dialog open={showAdjustmentDialog} onOpenChange={setShowBalanceAdjustmentDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adjust Balance</DialogTitle>
+            <DialogDescription>
+              Manually change the outstanding balance for {editingBalanceCustomer?.name.toUpperCase()}. This does not create a bill entry.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <span className="text-sm text-muted-foreground">Current Balance:</span>
+              <p className="text-xl font-bold">{editingBalanceCustomer?.totalDueAmount.toLocaleString()}rs</p>
+            </div>
+            <div>
+              <Label htmlFor="new-balance">New Outstanding Balance</Label>
+              <Input 
+                id="new-balance" 
+                type="number" 
+                value={newBalanceInput} 
+                onChange={(e) => setNewBalanceInput(e.target.value)} 
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowBalanceAdjustmentDialog(false)}>Cancel</Button>
+            <Button onClick={handleAdjustBalance} disabled={isProcessing}>
+              {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save New Balance
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
