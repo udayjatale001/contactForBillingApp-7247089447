@@ -24,7 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Customer, Bill, Notification } from '@/lib/types';
 import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, runTransaction, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Loader2, Search, Users, Wallet, Phone, Trash2, MessageSquare } from 'lucide-react';
+import { Loader2, Search, Users, Wallet, Phone, Trash2, MessageSquare, Undo2 } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
 import { CustomerPaymentDialog } from '@/components/customer-payment-dialog';
 import { v4 as uuidv4 } from 'uuid';
@@ -39,7 +39,7 @@ function PaymentsPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const { t, language } = useLanguage();
-  const { registerUndo } = useUndo();
+  const { registerUndo, lastAction, undo, isUndoing } = useUndo();
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [customerToDelete, setCustomerToDelete] = React.useState<Customer | null>(null);
@@ -241,6 +241,17 @@ function PaymentsPage() {
           <h2 className="text-3xl font-bold tracking-tight font-headline">
             Customer Payments
           </h2>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={undo} 
+            disabled={!lastAction || isUndoing}
+            className="flex items-center gap-2 border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 disabled:opacity-50 disabled:bg-muted transition-colors"
+          >
+            {isUndoing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Undo2 className="h-4 w-4" />}
+            <span className="hidden sm:inline">{lastAction ? `Undo: ${lastAction.label}` : 'Undo'}</span>
+            <span className="sm:hidden">Undo</span>
+          </Button>
         </div>
         <Card>
           <CardHeader>
