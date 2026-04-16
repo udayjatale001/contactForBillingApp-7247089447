@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -8,12 +7,11 @@ import {
   DialogClose,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
 import type { AggregatedCustomer } from '@/app/koushal/page';
-import { Loader2, Printer, X, MessageSquare, Trash2, Pencil, Lock, Save } from 'lucide-react';
+import { Loader2, X, MessageSquare, Trash2, Pencil, Lock, Save } from 'lucide-react';
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/context/language-context';
@@ -91,10 +89,10 @@ export function CustomerSummaryDialog({ customer, open, onOpenChange, onWhatsApp
     }
   };
 
-  const DetailItem = ({ label, value, className, valueClassName }: { label: string, value: React.ReactNode, className?: string, valueClassName?: string }) => (
-    <div className={cn("flex justify-between items-start text-sm", className)}>
-      <p className="text-muted-foreground">{label}</p>
-      <p className={cn("font-medium text-right", valueClassName)}>{value}</p>
+  const DetailItem = ({ label, value, valueClassName }: { label: string, value: React.ReactNode, valueClassName?: string }) => (
+    <div className="flex justify-between items-center py-1">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className={cn("text-sm font-semibold text-right text-foreground", valueClassName)}>{value}</p>
     </div>
   );
 
@@ -103,42 +101,37 @@ export function CustomerSummaryDialog({ customer, open, onOpenChange, onWhatsApp
       <Dialog open={open} onOpenChange={(val) => { if(!val) { setIsEditing(false); onOpenChange(false); } }}>
         <DialogContent className="max-w-md w-full p-0 sm:max-h-[90vh] flex flex-col">
           <DialogHeader className="p-6 pb-0">
-            <DialogTitle>{isEditing ? `Edit ${customer.name}` : `${customer.name} Summary`}</DialogTitle>
+            <DialogTitle className="text-xl font-bold tracking-tight">
+                {isEditing ? `Edit ${customer.name}` : `${customer.name.toUpperCase()}`}
+            </DialogTitle>
           </DialogHeader>
 
-          <div className="p-6 bg-white rounded-t-lg overflow-y-auto flex-1">
+          <div className="p-6 bg-background overflow-y-auto flex-1 space-y-6">
               {!isEditing ? (
                   <>
-                    <header className="flex justify-between items-start mb-6 pb-4 border-b">
-                        <div>
-                        <h1 className="text-2xl font-bold text-gray-800">{t('app_title')}</h1>
-                        <p className="text-sm text-gray-500">{t('customer_details')}</p>
-                        </div>
-                    </header>
-
-                    <main className="space-y-6">
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                        <h2 className="text-lg font-bold text-gray-700 mb-2">{t('customer_details')}</h2>
-                        <div className="space-y-1">
-                            <DetailItem label={t('customer_name')} value={customer.name} />
-                            {customer.contactNumber && <DetailItem label={t('contact_number')} value={customer.contactNumber} />}
-                            {customer.address && <DetailItem label='Address' value={customer.address} />}
-                        </div>
+                    <div className="space-y-4">
+                        <div className="rounded-xl border bg-card p-4 shadow-sm">
+                            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">{t('customer_details')}</h2>
+                            <div className="space-y-2">
+                                <DetailItem label={t('customer_name')} value={customer.name.toUpperCase()} />
+                                <DetailItem label={t('contact_number')} value={customer.contactNumber || 'N/A'} />
+                                <DetailItem label='Address' value={customer.address || 'N/A'} />
+                            </div>
                         </div>
 
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                        <h2 className="text-lg font-bold text-gray-700 mb-3">Transaction Summary</h2>
-                        <div className="space-y-3">
-                            <DetailItem label={'Total Carat'} value={customer.totalCarat.toLocaleString()} />
-                            <Separator className="my-2" />
-                            <DetailItem 
-                            label={'Total Billed Amount'} 
-                            value={`${customer.totalAmount.toLocaleString()}${t('rs_symbol')}`} 
-                            valueClassName="text-lg font-bold text-gray-800"
-                            />
+                        <div className="rounded-xl border bg-card p-4 shadow-sm">
+                            <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Transaction Summary</h2>
+                            <div className="space-y-2">
+                                <DetailItem label={'Total Carat'} value={customer.totalCarat.toLocaleString()} />
+                                <Separator className="my-2" />
+                                <DetailItem 
+                                    label={'Total Billed Amount'} 
+                                    value={`${customer.totalAmount.toLocaleString()}${t('rs_symbol')}`} 
+                                    valueClassName="text-lg font-bold text-primary"
+                                />
+                            </div>
                         </div>
-                        </div>
-                    </main>
+                    </div>
                   </>
               ) : (
                   <main className="space-y-4">
@@ -190,38 +183,38 @@ export function CustomerSummaryDialog({ customer, open, onOpenChange, onWhatsApp
                   </main>
               )}
             </div>
-          <DialogFooter className="px-6 pb-4 rounded-b-lg border-t bg-gray-50 flex flex-col sm:flex-row gap-2 flex-shrink-0">
+          <DialogFooter className="px-6 py-4 rounded-b-lg border-t bg-muted/30 flex flex-row items-center justify-between gap-2 flex-shrink-0">
               {!isEditing ? (
                   <>
                     <Button 
-                        variant="destructive" 
+                        variant="ghost" 
+                        size="icon"
                         onClick={onDelete} 
-                        className='flex-1'
+                        className='text-destructive hover:bg-destructive/10 hover:text-destructive'
+                        title={t('delete')}
                     >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {t('delete')}
+                        <Trash2 className="h-5 w-5" />
                     </Button>
-                    <div className='flex flex-1 gap-2'>
+                    <div className='flex gap-2'>
                         <Button 
                             variant="outline" 
+                            size="sm"
                             onClick={() => setShowPasswordDialog(true)} 
-                            className='flex-1'
                         >
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit
                         </Button>
                         <Button 
                             variant="secondary" 
+                            size="sm"
                             onClick={onWhatsApp} 
-                            className='flex-1' 
                             disabled={!customer.contactNumber}
-                            >
+                        >
                             <MessageSquare className="mr-2 h-4 w-4" />
                             WhatsApp
                         </Button>
                         <DialogClose asChild>
-                            <Button variant="outline" className='flex-1'>
-                                <X className="mr-2 h-4 w-4" />
+                            <Button variant="default" size="sm">
                                 {t('close')}
                             </Button>
                         </DialogClose>
@@ -251,9 +244,9 @@ export function CustomerSummaryDialog({ customer, open, onOpenChange, onWhatsApp
               <DialogTitle className="flex items-center gap-2">
                 <Lock className="h-5 w-5" /> Security Check
               </DialogTitle>
-              <DialogDescription>
+              <p className="text-sm text-muted-foreground">
                 Enter the password to edit details for {customer.name.toUpperCase()}.
-              </DialogDescription>
+              </p>
             </DialogHeader>
             <div className="py-4">
               <Label htmlFor="edit-password">Password</Label>
