@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -29,9 +30,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import type { Bill } from '@/lib/types';
+import type { Bill, Customer } from '@/lib/types';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, getDocs, writeBatch, doc } from 'firebase/firestore';
+import { collection, query, getDocs, writeBatch, doc, setDoc } from 'firebase/firestore';
 import { Loader2, Search, Users, MessageSquare, Trash2, AlertCircle } from 'lucide-react';
 import { CustomerSummaryDialog } from '@/components/customer-summary-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -46,6 +47,9 @@ export interface AggregatedCustomer {
   totalAmount: number;
   totalCarat: number;
   billIds: string[]; // Keep track of all associated bill IDs for deletion
+  // Base values before offsets for calculation
+  baseAmount: number;
+  baseCarat: number;
 }
 
 const normalizeName = (name: string) => {
@@ -76,6 +80,12 @@ export default function KoushalPage() {
 
   const { data: allBills, isLoading: isLoadingBills, error: billsError } = useCollection<Bill>(billsQuery);
 
+  const customersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'customers'));
+  }, [firestore]);
+  const { data: allCustomers, isLoading: isLoadingCustomers } = useCollection<Customer>(customersQuery);
+
   const aggregatedCustomers = React.useMemo(() => {
     if (!allBills) return [];
 
@@ -98,12 +108,14 @@ export default function KoushalPage() {
           totalAmount: 0,
           totalCarat: 0,
           billIds: [],
+          baseAmount: 0,
+          baseCarat: 0,
         };
       }
 
       // Update the totals and details for the customer
-      customer.totalAmount += bill.totalAmount || 0;
-      customer.totalCarat += bill.totalCarat || 0;
+      customer.baseAmount += bill.totalAmount || 0;
+      customer.baseCarat += bill.totalCarat || 0;
       // Always use the latest contact info if available
       if (bill.contactNumber) customer.contactNumber = bill.contactNumber;
       if (bill.address) customer.address = bill.address;
@@ -112,8 +124,28 @@ export default function KoushalPage() {
       customerMap.set(customerNameKey, customer);
     });
 
-    return Array.from(customerMap.values());
-  }, [allBills]);
+    // Merge with manual offsets and details from the customers collection
+    const results = Array.from(customerMap.values()).map(agg => {
+        const customerDoc = allCustomers?.find(c => c.id === agg.id);
+        if (customerDoc) {
+            return {
+                ...agg,
+                name: customerDoc.name || agg.name,
+                contactNumber: customerDoc.contactNumber || agg.contactNumber,
+                address: customerDoc.address || agg.address,
+                totalAmount: agg.baseAmount + (customerDoc.totalAmountOffset || 0),
+                totalCarat: agg.baseCarat + (customerDoc.totalCaratOffset || 0),
+            };
+        }
+        return {
+            ...agg,
+            totalAmount: agg.baseAmount,
+            totalCarat: agg.baseCarat,
+        };
+    });
+
+    return results;
+  }, [allBills, allCustomers]);
 
 
   const filteredCustomers = React.useMemo(() => {
@@ -252,7 +284,43 @@ export default function KoushalPage() {
     }
   };
 
-  const isLoading = isUserLoading || isLoadingBills;
+  const handleEditCustomer = async (customerId: string, data: Partial<Customer> & { totalCarat?: number, totalAmount?: number }) => {
+    if (!firestore) return;
+    
+    const customerRef = doc(firestore, 'customers', customerId);
+    const existing = allCustomers?.find(c => c.id === customerId);
+    
+    // Calculate new offsets if totals were adjusted
+    const updates: any = {
+        name: data.name,
+        address: data.address,
+        contactNumber: data.contactNumber,
+    };
+
+    if (data.totalCarat !== undefined) {
+        const agg = aggregatedCustomers.find(c => c.id === customerId);
+        if (agg) {
+            updates.totalCaratOffset = data.totalCarat - agg.baseCarat;
+        }
+    }
+    if (data.totalAmount !== undefined) {
+        const agg = aggregatedCustomers.find(c => c.id === customerId);
+        if (agg) {
+            updates.totalAmountOffset = data.totalAmount - agg.baseAmount;
+        }
+    }
+
+    try {
+        await setDoc(customerRef, updates, { merge: true });
+        toast({ title: 'Customer Details Updated' });
+        setSelectedCustomer(null);
+    } catch (error) {
+        console.error("Update failed:", error);
+        toast({ variant: 'destructive', title: 'Update Failed' });
+    }
+  };
+
+  const isLoading = isUserLoading || isLoadingBills || isLoadingCustomers;
   const allFilteredSelected = filteredCustomers.length > 0 && selectedIds.size === filteredCustomers.length;
 
   return (
@@ -376,6 +444,7 @@ export default function KoushalPage() {
             onOpenChange={() => setSelectedCustomer(null)}
             onWhatsApp={() => handleWhatsAppClick(selectedCustomer)}
             onDelete={() => handleDeleteClick(selectedCustomer)}
+            onEdit={(data) => handleEditCustomer(selectedCustomer.id, data)}
         />
       )}
 

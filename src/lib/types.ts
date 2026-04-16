@@ -147,6 +147,9 @@ export type Customer = {
   id: string; // Unique ID, typically customer name lowercased
   name: string;
   contactNumber?: string;
+  address?: string; // Added field
   totalDueAmount: number;
   lastActivity: string; // ISO string of the last bill date
+  totalCaratOffset?: number; // Added offset
+  totalAmountOffset?: number; // Added offset
 };
