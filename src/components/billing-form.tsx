@@ -43,6 +43,14 @@ import { Label } from './ui/label';
 import { useToken } from '@/context/token-context';
 import { useLanguage } from '@/context/language-context';
 
+const CUSTOMER_PHONE_MAP: Record<string, string> = {
+  'aakash rajput': '8871383797',
+  'vijay omkar': '9977649384',
+  'nijam bhai': '7828569010',
+  'rambhau choudhary': '7610695597',
+  'musa bhai': '8889350373',
+};
+
 export function BillingForm() {
   const { toast } = useToast();
   const { user } = useUser();
@@ -322,7 +330,13 @@ export function BillingForm() {
   const handleCustomerNameBlur = async () => {
     await trigger('customerName');
     const currentValue = getValues('customerName');
-    setValue('customerName', normalizeName(currentValue), { shouldValidate: true });
+    const normalized = normalizeName(currentValue);
+    setValue('customerName', normalized, { shouldValidate: true });
+
+    // Automatically fill contact number if name exists in our known list
+    if (normalized && CUSTOMER_PHONE_MAP[normalized]) {
+        setValue('contactNumber', CUSTOMER_PHONE_MAP[normalized], { shouldValidate: true });
+    }
   };
 
   const handleAddressBlur = async () => {
