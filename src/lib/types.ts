@@ -93,6 +93,10 @@ export type AppSettings = {
   outCaratLabourRate: number;
   contactUsNumber?: string;
   totalAmountOffset?: number;
+  totalRevenueOffset?: number;
+  totalDueOffset?: number;
+  totalLabourOffset?: number;
+  totalSalesOffset?: number;
 };
 
 // Represents a notification document in Firestore

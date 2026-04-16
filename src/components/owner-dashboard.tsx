@@ -113,6 +113,8 @@ type AggregatedDueCustomer = {
   lastActivity: string;
 };
 
+type SummaryField = 'totalAmount' | 'totalRevenue' | 'totalDue' | 'totalLabour' | 'totalSales';
+
 function RateManagementCard() {
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -231,11 +233,12 @@ export function OwnerDashboard() {
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [customerToDelete, setCustomerToDelete] = React.useState<Customer | null>(null);
 
-  // States for manual total amount edit
+  // States for manual summary edit
   const [showPasswordDialog, setShowPasswordDialog] = React.useState(false);
   const [passwordInput, setPasswordInput] = React.useState('');
   const [showAdjustmentDialog, setShowAdjustmentDialog] = React.useState(false);
-  const [newTotalAmountInput, setNewTotalAmountInput] = React.useState('');
+  const [newValInput, setNewValInput] = React.useState('');
+  const [editingField, setEditingField] = React.useState<SummaryField | null>(null);
 
   const billsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -275,7 +278,7 @@ export function OwnerDashboard() {
     yearlyLabourData,
     recentBills,
     availableYears,
-    calculatedTotalAmount, // We need this to calculate the offset later
+    calcBase, // Calculated values before offsets
   } = React.useMemo(() => {
     const initialResult = {
       totalAmount: 0,
@@ -292,7 +295,7 @@ export function OwnerDashboard() {
       yearlyLabourData: [],
       recentBills: [],
       availableYears: [] as string[],
-      calculatedTotalAmount: 0,
+      calcBase: { amount: 0, revenue: 0, due: 0, labour: 0, sales: 0 }
     };
 
     if (!allBills) {
@@ -308,12 +311,19 @@ export function OwnerDashboard() {
     const todaysNetProfit = todaysRevenue - todaysLabourCost;
 
     // --- Overall Summary Calculations (Lifetime) ---
-    const calculatedTotalAmount = allBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
-    const totalAmount = calculatedTotalAmount + (appSettings?.totalAmountOffset || 0);
-    const totalRevenue = allBills.reduce((acc, bill) => acc + bill.paidAmount, 0);
-    const totalDue = allBills.reduce((acc, bill) => acc + bill.dueAmount, 0);
-    const totalSales = allBills.length;
-    const totalLabour = allBills.reduce((acc, bill) => acc + (bill.totalLabourAmount || 0), 0);
+    const calcBase = {
+        amount: allBills.reduce((acc, bill) => acc + bill.totalAmount, 0),
+        revenue: allBills.reduce((acc, bill) => acc + bill.paidAmount, 0),
+        due: allBills.reduce((acc, bill) => acc + bill.dueAmount, 0),
+        labour: allBills.reduce((acc, bill) => acc + (bill.totalLabourAmount || 0), 0),
+        sales: allBills.length,
+    };
+
+    const totalAmount = calcBase.amount + (appSettings?.totalAmountOffset || 0);
+    const totalRevenue = calcBase.revenue + (appSettings?.totalRevenueOffset || 0);
+    const totalDue = calcBase.due + (appSettings?.totalDueOffset || 0);
+    const totalLabour = calcBase.labour + (appSettings?.totalLabourOffset || 0);
+    const totalSales = calcBase.sales + (appSettings?.totalSalesOffset || 0);
 
     const yearsInData = new Set<string>();
     allBills.forEach(bill => yearsInData.add(getYear(new Date(bill.createdAt)).toString()));
@@ -375,7 +385,7 @@ export function OwnerDashboard() {
       yearlyLabourData: formattedYearlyLabourData,
       recentBills: allBills.slice(0, 5),
       availableYears: allAvailableYears,
-      calculatedTotalAmount,
+      calcBase,
     };
   }, [allBills, globalDate, selectedYear, appSettings]);
 
@@ -556,36 +566,63 @@ export function OwnerDashboard() {
     if (passwordInput === '9981') {
       setShowPasswordDialog(false);
       setPasswordInput('');
-      setNewTotalAmountInput(totalAmount.toString());
+      const currentVal = editingField === 'totalAmount' ? totalAmount : 
+                        editingField === 'totalRevenue' ? totalRevenue :
+                        editingField === 'totalDue' ? totalDue :
+                        editingField === 'totalLabour' ? totalLabour :
+                        totalSales;
+      setNewValInput(currentVal.toString());
       setShowAdjustmentDialog(true);
     } else {
       toast({
         variant: 'destructive',
         title: 'Incorrect Password',
-        description: 'You do not have permission to edit the total amount.',
+        description: 'You do not have permission for this action.',
       });
       setPasswordInput('');
     }
   };
 
+  const openAdjustmentDialog = (field: SummaryField) => {
+    setEditingField(field);
+    setShowPasswordDialog(true);
+  }
+
   const handleSaveAdjustment = () => {
-    if (!firestore || !settingsDocRef) return;
-    const newTotal = parseFloat(newTotalAmountInput);
-    if (isNaN(newTotal)) {
+    if (!firestore || !settingsDocRef || !editingField) return;
+    const newVal = parseFloat(newValInput);
+    if (isNaN(newVal)) {
       toast({ variant: 'destructive', title: 'Invalid value entered.' });
       return;
     }
 
-    const newOffset = newTotal - calculatedTotalAmount;
+    let updateData: Partial<AppSettings> = {};
+    if (editingField === 'totalAmount') updateData.totalAmountOffset = newVal - calcBase.amount;
+    if (editingField === 'totalRevenue') updateData.totalRevenueOffset = newVal - calcBase.revenue;
+    if (editingField === 'totalDue') updateData.totalDueOffset = newVal - calcBase.due;
+    if (editingField === 'totalLabour') updateData.totalLabourOffset = newVal - calcBase.labour;
+    if (editingField === 'totalSales') updateData.totalSalesOffset = newVal - calcBase.sales;
     
-    setDocumentNonBlocking(settingsDocRef, { totalAmountOffset: newOffset }, { merge: true });
+    setDocumentNonBlocking(settingsDocRef, updateData, { merge: true });
     
     toast({
-      title: 'Total Amount Adjusted',
-      description: 'The overall total amount has been updated successfully.',
+      title: 'Summary Adjusted',
+      description: 'The overall totals have been updated successfully.',
     });
     setShowAdjustmentDialog(false);
+    setEditingField(null);
   };
+
+  const getFieldLabel = (field: SummaryField | null) => {
+    switch (field) {
+        case 'totalAmount': return 'Total Amount';
+        case 'totalRevenue': return 'Total Revenue';
+        case 'totalDue': return 'Total Due';
+        case 'totalLabour': return 'Labour Paid';
+        case 'totalSales': return 'Total Sales';
+        default: return 'Value';
+    }
+  }
 
   const isLoading = isUserLoading || isLoadingBills || isLoadingCustomers;
 
@@ -679,7 +716,7 @@ export function OwnerDashboard() {
                     variant="ghost" 
                     size="icon" 
                     className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => setShowPasswordDialog(true)}
+                    onClick={() => openAdjustmentDialog('totalAmount')}
                 >
                     <Pencil className="h-3 w-3" />
                 </Button>
@@ -693,10 +730,20 @@ export function OwnerDashboard() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="relative group">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+             <div className="flex items-center gap-1">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => openAdjustmentDialog('totalRevenue')}
+                >
+                    <Pencil className="h-3 w-3" />
+                </Button>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalRevenue.toLocaleString()}rs</div>
@@ -705,10 +752,20 @@ export function OwnerDashboard() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="relative group">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Due</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+             <div className="flex items-center gap-1">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => openAdjustmentDialog('totalDue')}
+                >
+                    <Pencil className="h-3 w-3" />
+                </Button>
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalDue.toLocaleString()}rs</div>
@@ -717,10 +774,20 @@ export function OwnerDashboard() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="relative group">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Labour Paid</CardTitle>
-            <Wrench className="h-4 w-4 text-muted-foreground" />
+             <div className="flex items-center gap-1">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => openAdjustmentDialog('totalLabour')}
+                >
+                    <Pencil className="h-3 w-3" />
+                </Button>
+                <Wrench className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalLabour.toLocaleString()}rs</div>
@@ -729,10 +796,20 @@ export function OwnerDashboard() {
             </p>
           </CardContent>
         </Card>
-        <Card className='col-span-2 md:col-span-1'>
+        <Card className='col-span-2 md:col-span-1 relative group'>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Sales</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+             <div className="flex items-center gap-1">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => openAdjustmentDialog('totalSales')}
+                >
+                    <Pencil className="h-3 w-3" />
+                </Button>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+{totalSales}</div>
@@ -997,7 +1074,7 @@ export function OwnerDashboard() {
                 <Lock className="h-5 w-5" /> Security Check
               </DialogTitle>
               <DialogDescription>
-                Enter the password to manually edit the overall total amount.
+                Enter the password to manually edit the overall summary data.
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
@@ -1024,31 +1101,38 @@ export function OwnerDashboard() {
       <Dialog open={showAdjustmentDialog} onOpenChange={setShowAdjustmentDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Adjust Total Amount</DialogTitle>
+            <DialogTitle>Adjust {getFieldLabel(editingField)}</DialogTitle>
             <DialogDescription>
-              Enter the new desired lifetime total amount. This will save an offset to adjust the calculated sum.
+              Enter the new desired lifetime {getFieldLabel(editingField).toLowerCase()}. This will save an offset to adjust the calculated sum.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
             <div className="p-3 bg-muted/50 rounded-lg">
-              <span className="text-sm text-muted-foreground">Current Displayed Total:</span>
-              <p className="text-xl font-bold">{totalAmount.toLocaleString()}rs</p>
+              <span className="text-sm text-muted-foreground">Current Displayed Value:</span>
+              <p className="text-xl font-bold">
+                {editingField === 'totalAmount' ? totalAmount.toLocaleString() : 
+                 editingField === 'totalRevenue' ? totalRevenue.toLocaleString() :
+                 editingField === 'totalDue' ? totalDue.toLocaleString() :
+                 editingField === 'totalLabour' ? totalLabour.toLocaleString() :
+                 totalSales.toLocaleString()}
+                {editingField !== 'totalSales' && 'rs'}
+              </p>
             </div>
             <div>
-              <Label htmlFor="new-total">New Lifetime Total (rs)</Label>
+              <Label htmlFor="new-val">New Lifetime {getFieldLabel(editingField)} {editingField !== 'totalSales' && '(rs)'}</Label>
               <Input 
-                id="new-total" 
+                id="new-val" 
                 type="number" 
-                value={newTotalAmountInput} 
-                onChange={(e) => setNewTotalAmountInput(e.target.value)} 
+                value={newValInput} 
+                onChange={(e) => setNewValInput(e.target.value)} 
                 autoFocus
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowAdjustmentDialog(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => { setShowAdjustmentDialog(false); setEditingField(null); }}>Cancel</Button>
             <Button onClick={handleSaveAdjustment}>
-              Save New Total
+              Save New Value
             </Button>
           </DialogFooter>
         </DialogContent>
