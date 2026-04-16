@@ -57,6 +57,8 @@ import {
   FileDown,
   ArrowRight,
   Wallet,
+  Pencil,
+  Lock,
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, doc, getDoc, getDocs, writeBatch, updateDoc, runTransaction } from 'firebase/firestore';
@@ -229,6 +231,12 @@ export function OwnerDashboard() {
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [customerToDelete, setCustomerToDelete] = React.useState<Customer | null>(null);
 
+  // States for manual total amount edit
+  const [showPasswordDialog, setShowPasswordDialog] = React.useState(false);
+  const [passwordInput, setPasswordInput] = React.useState('');
+  const [showAdjustmentDialog, setShowAdjustmentDialog] = React.useState(false);
+  const [newTotalAmountInput, setNewTotalAmountInput] = React.useState('');
+
   const billsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'bills'), orderBy('createdAt', 'desc'));
@@ -240,6 +248,12 @@ export function OwnerDashboard() {
     return query(collection(firestore, 'customers'), orderBy('totalDueAmount', 'desc'));
   }, [firestore]);
   const { data: customers, isLoading: isLoadingCustomers, forceRefetch } = useCollection<Customer>(customersQuery);
+
+  const settingsDocRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return doc(firestore, 'app_settings', 'rates');
+  }, [firestore]);
+  const { data: appSettings } = useDoc<AppSettings>(settingsDocRef);
 
   const topDueCustomers = React.useMemo(() => {
     if (!customers) return [];
@@ -261,6 +275,7 @@ export function OwnerDashboard() {
     yearlyLabourData,
     recentBills,
     availableYears,
+    calculatedTotalAmount, // We need this to calculate the offset later
   } = React.useMemo(() => {
     const initialResult = {
       totalAmount: 0,
@@ -277,6 +292,7 @@ export function OwnerDashboard() {
       yearlyLabourData: [],
       recentBills: [],
       availableYears: [] as string[],
+      calculatedTotalAmount: 0,
     };
 
     if (!allBills) {
@@ -292,7 +308,8 @@ export function OwnerDashboard() {
     const todaysNetProfit = todaysRevenue - todaysLabourCost;
 
     // --- Overall Summary Calculations (Lifetime) ---
-    const totalAmount = allBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
+    const calculatedTotalAmount = allBills.reduce((acc, bill) => acc + bill.totalAmount, 0);
+    const totalAmount = calculatedTotalAmount + (appSettings?.totalAmountOffset || 0);
     const totalRevenue = allBills.reduce((acc, bill) => acc + bill.paidAmount, 0);
     const totalDue = allBills.reduce((acc, bill) => acc + bill.dueAmount, 0);
     const totalSales = allBills.length;
@@ -358,8 +375,9 @@ export function OwnerDashboard() {
       yearlyLabourData: formattedYearlyLabourData,
       recentBills: allBills.slice(0, 5),
       availableYears: allAvailableYears,
+      calculatedTotalAmount,
     };
-  }, [allBills, globalDate, selectedYear]);
+  }, [allBills, globalDate, selectedYear, appSettings]);
 
   const handleUpdatePayment = async (
     customer: Customer, 
@@ -421,7 +439,7 @@ export function OwnerDashboard() {
   };
 
   const handleDeleteRequest = (customer: Customer) => {
-    setCustomerToDelete(customer);
+    setRecordToDelete(customer);
     setSelectedCustomer(null);
   };
 
@@ -463,7 +481,7 @@ export function OwnerDashboard() {
 
         const [billsSnapshot, labourSnapshot] = await Promise.all([
             getDocs(billsQuery),
-            getDocs(labourQuery)
+            getDocs(labourSnapshot)
         ]);
 
         const billsData = billsSnapshot.docs.map(doc => {
@@ -530,6 +548,43 @@ export function OwnerDashboard() {
     } finally {
         setIsExporting(false);
     }
+  };
+
+  // --- Manual Edit Logic ---
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === '9981') {
+      setShowPasswordDialog(false);
+      setPasswordInput('');
+      setNewTotalAmountInput(totalAmount.toString());
+      setShowAdjustmentDialog(true);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Incorrect Password',
+        description: 'You do not have permission to edit the total amount.',
+      });
+      setPasswordInput('');
+    }
+  };
+
+  const handleSaveAdjustment = () => {
+    if (!firestore || !settingsDocRef) return;
+    const newTotal = parseFloat(newTotalAmountInput);
+    if (isNaN(newTotal)) {
+      toast({ variant: 'destructive', title: 'Invalid value entered.' });
+      return;
+    }
+
+    const newOffset = newTotal - calculatedTotalAmount;
+    
+    setDocumentNonBlocking(settingsDocRef, { totalAmountOffset: newOffset }, { merge: true });
+    
+    toast({
+      title: 'Total Amount Adjusted',
+      description: 'The overall total amount has been updated successfully.',
+    });
+    setShowAdjustmentDialog(false);
   };
 
   const isLoading = isUserLoading || isLoadingBills || isLoadingCustomers;
@@ -616,10 +671,20 @@ export function OwnerDashboard() {
       </Card>
 
       <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-        <Card>
+        <Card className="relative group">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Amount</CardTitle>
-            <ClipboardList className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-1">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => setShowPasswordDialog(true)}
+                >
+                    <Pencil className="h-3 w-3" />
+                </Button>
+                <ClipboardList className="h-4 w-4 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalAmount.toLocaleString()}rs</div>
@@ -922,6 +987,72 @@ export function OwnerDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Manual Action Password Dialog */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={handlePasswordSubmit}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" /> Security Check
+              </DialogTitle>
+              <DialogDescription>
+                Enter the password to manually edit the overall total amount.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Label htmlFor="edit-password">Password</Label>
+              <Input 
+                id="edit-password" 
+                type="password" 
+                autoFocus 
+                value={passwordInput} 
+                onChange={(e) => setPasswordInput(e.target.value)} 
+              />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="ghost">Cancel</Button>
+              </DialogClose>
+              <Button type="submit">Verify</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manual Adjustment Dialog */}
+      <Dialog open={showAdjustmentDialog} onOpenChange={setShowAdjustmentDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adjust Total Amount</DialogTitle>
+            <DialogDescription>
+              Enter the new desired lifetime total amount. This will save an offset to adjust the calculated sum.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <span className="text-sm text-muted-foreground">Current Displayed Total:</span>
+              <p className="text-xl font-bold">{totalAmount.toLocaleString()}rs</p>
+            </div>
+            <div>
+              <Label htmlFor="new-total">New Lifetime Total (rs)</Label>
+              <Input 
+                id="new-total" 
+                type="number" 
+                value={newTotalAmountInput} 
+                onChange={(e) => setNewTotalAmountInput(e.target.value)} 
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowAdjustmentDialog(false)}>Cancel</Button>
+            <Button onClick={handleSaveAdjustment}>
+              Save New Total
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </>
   );

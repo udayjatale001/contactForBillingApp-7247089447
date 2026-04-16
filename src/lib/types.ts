@@ -92,6 +92,7 @@ export type AppSettings = {
   inCaratLabourRate: number;
   outCaratLabourRate: number;
   contactUsNumber?: string;
+  totalAmountOffset?: number;
 };
 
 // Represents a notification document in Firestore
